@@ -22,6 +22,7 @@
 #include "BLI_endian_switch.h"
 #include "BLI_ghash.h"
 #include "BLI_hash.h"
+#include "BLI_implicit_sharing.hh"
 #include "BLI_index_range.hh"
 #include "BLI_linklist.h"
 #include "BLI_listbase.h"
@@ -150,14 +151,16 @@ static void mesh_copy_data(Main *bmain, ID *id_dst, const ID *id_src, const int 
   mesh_dst->default_color_attribute = static_cast<char *>(
       MEM_dupallocN(mesh_src->default_color_attribute));
 
-  const eCDAllocType alloc_type = (flag & LIB_ID_COPY_CD_REFERENCE) ? CD_REFERENCE : CD_DUPLICATE;
-  CustomData_copy(&mesh_src->vdata, &mesh_dst->vdata, mask.vmask, alloc_type, mesh_dst->totvert);
-  CustomData_copy(&mesh_src->edata, &mesh_dst->edata, mask.emask, alloc_type, mesh_dst->totedge);
-  CustomData_copy(&mesh_src->ldata, &mesh_dst->ldata, mask.lmask, alloc_type, mesh_dst->totloop);
-  CustomData_copy(&mesh_src->pdata, &mesh_dst->pdata, mask.pmask, alloc_type, mesh_dst->totpoly);
-  mesh_dst->poly_offset_indices = static_cast<int *>(MEM_dupallocN(mesh_src->poly_offset_indices));
+  CustomData_copy(&mesh_src->vdata, &mesh_dst->vdata, mask.vmask, mesh_dst->totvert);
+  CustomData_copy(&mesh_src->edata, &mesh_dst->edata, mask.emask, mesh_dst->totedge);
+  CustomData_copy(&mesh_src->ldata, &mesh_dst->ldata, mask.lmask, mesh_dst->totloop);
+  CustomData_copy(&mesh_src->pdata, &mesh_dst->pdata, mask.pmask, mesh_dst->totpoly);
+  blender::implicit_sharing::copy_shared_pointer(mesh_src->poly_offset_indices,
+                                                 mesh_src->runtime->poly_offsets_sharing_info,
+                                                 &mesh_dst->poly_offset_indices,
+                                                 &mesh_dst->runtime->poly_offsets_sharing_info);
   if (do_tessface) {
-    CustomData_copy(&mesh_src->fdata, &mesh_dst->fdata, mask.fmask, alloc_type, mesh_dst->totface);
+    CustomData_copy(&mesh_src->fdata, &mesh_dst->fdata, mask.fmask, mesh_dst->totface);
   }
   else {
     mesh_tessface_clear_intern(mesh_dst, false);
@@ -369,8 +372,6 @@ static void mesh_blend_read_data(BlendDataReader *reader, ID *id)
 
   BLO_read_list(reader, &mesh->vertex_group_names);
 
-  BLO_read_int32_array(reader, mesh->totpoly + 1, &mesh->poly_offset_indices);
-
   CustomData_blend_read(reader, &mesh->vdata, mesh->totvert);
   CustomData_blend_read(reader, &mesh->edata, mesh->totedge);
   CustomData_blend_read(reader, &mesh->fdata, mesh->totface);
@@ -388,6 +389,12 @@ static void mesh_blend_read_data(BlendDataReader *reader, ID *id)
   mesh->edit_mesh = nullptr;
 
   mesh->runtime = new blender::bke::MeshRuntime();
+
+  if (mesh->poly_offset_indices) {
+    BLO_read_int32_array(reader, mesh->totpoly + 1, &mesh->poly_offset_indices);
+    mesh->runtime->poly_offsets_sharing_info = blender::implicit_sharing::info_for_mem_free(
+        mesh->poly_offset_indices);
+  }
 
   /* happens with old files */
   if (mesh->mselect == nullptr) {
@@ -615,6 +622,16 @@ static int customdata_compare(
             }
           }
           BLI_edgehash_free(eh, nullptr);
+          break;
+        }
+        case CD_PROP_INT32_2D: {
+          const blender::int2 *l1_data = static_cast<const blender::int2 *>(l1->data);
+          const blender::int2 *l2_data = static_cast<const blender::int2 *>(l2->data);
+          for (int i = 0; i < total_length; i++) {
+            if (l1_data[i] != l2_data[i]) {
+              return MESHCMP_ATTRIBUTE_VALUE_MISMATCH;
+            }
+          }
           break;
         }
         case CD_PROP_BYTE_COLOR: {
@@ -912,8 +929,10 @@ static void mesh_clear_geometry(Mesh &mesh)
   CustomData_free(&mesh.fdata, mesh.totface);
   CustomData_free(&mesh.ldata, mesh.totloop);
   CustomData_free(&mesh.pdata, mesh.totpoly);
-  MEM_SAFE_FREE(mesh.poly_offset_indices);
-
+  if (mesh.poly_offset_indices) {
+    blender::implicit_sharing::free_shared_data(&mesh.poly_offset_indices,
+                                                &mesh.runtime->poly_offsets_sharing_info);
+  }
   MEM_SAFE_FREE(mesh.mselect);
 
   mesh.totvert = 0;
@@ -967,18 +986,29 @@ Mesh *BKE_mesh_add(Main *bmain, const char *name)
 void BKE_mesh_poly_offsets_ensure_alloc(Mesh *mesh)
 {
   BLI_assert(mesh->poly_offset_indices == nullptr);
+  BLI_assert(mesh->runtime->poly_offsets_sharing_info == nullptr);
   if (mesh->totpoly == 0) {
     return;
   }
   mesh->poly_offset_indices = static_cast<int *>(
       MEM_malloc_arrayN(mesh->totpoly + 1, sizeof(int), __func__));
+  mesh->runtime->poly_offsets_sharing_info = blender::implicit_sharing::info_for_mem_free(
+      mesh->poly_offset_indices);
 
 #ifdef DEBUG
   /* Fill offsets with obviously bad values to simplify finding missing initialization. */
   mesh->poly_offsets_for_write().fill(-1);
 #endif
+  /* Set common values for convenience. */
   mesh->poly_offset_indices[0] = 0;
   mesh->poly_offset_indices[mesh->totpoly] = mesh->totloop;
+}
+
+int *BKE_mesh_poly_offsets_for_write(Mesh *mesh)
+{
+  blender::implicit_sharing::make_trivial_data_mutable(
+      &mesh->poly_offset_indices, &mesh->runtime->poly_offsets_sharing_info, mesh->totpoly + 1);
+  return mesh->poly_offset_indices;
 }
 
 static void mesh_ensure_cdlayers_primary(Mesh &mesh)
@@ -1102,12 +1132,13 @@ Mesh *BKE_mesh_new_nomain_from_template_ex(const Mesh *me_src,
 
   BKE_mesh_copy_parameters_for_eval(me_dst, me_src);
 
-  CustomData_copy(&me_src->vdata, &me_dst->vdata, mask.vmask, CD_SET_DEFAULT, verts_len);
-  CustomData_copy(&me_src->edata, &me_dst->edata, mask.emask, CD_SET_DEFAULT, edges_len);
-  CustomData_copy(&me_src->ldata, &me_dst->ldata, mask.lmask, CD_SET_DEFAULT, loops_len);
-  CustomData_copy(&me_src->pdata, &me_dst->pdata, mask.pmask, CD_SET_DEFAULT, polys_len);
+  CustomData_copy_layout(&me_src->vdata, &me_dst->vdata, mask.vmask, CD_SET_DEFAULT, verts_len);
+  CustomData_copy_layout(&me_src->edata, &me_dst->edata, mask.emask, CD_SET_DEFAULT, edges_len);
+  CustomData_copy_layout(&me_src->ldata, &me_dst->ldata, mask.lmask, CD_SET_DEFAULT, loops_len);
+  CustomData_copy_layout(&me_src->pdata, &me_dst->pdata, mask.pmask, CD_SET_DEFAULT, polys_len);
   if (do_tessface) {
-    CustomData_copy(&me_src->fdata, &me_dst->fdata, mask.fmask, CD_SET_DEFAULT, tessface_len);
+    CustomData_copy_layout(
+        &me_src->fdata, &me_dst->fdata, mask.fmask, CD_SET_DEFAULT, tessface_len);
   }
   else {
     mesh_tessface_clear_intern(me_dst, false);
@@ -1384,7 +1415,7 @@ void BKE_mesh_orco_ensure(Object *ob, Mesh *mesh)
   /* Orcos are stored in normalized 0..1 range by convention. */
   float(*orcodata)[3] = BKE_mesh_orco_verts_get(ob);
   BKE_mesh_orco_verts_transform(mesh, orcodata, mesh->totvert, false);
-  CustomData_add_layer_with_data(&mesh->vdata, CD_ORCO, orcodata, mesh->totvert);
+  CustomData_add_layer_with_data(&mesh->vdata, CD_ORCO, orcodata, mesh->totvert, nullptr);
 }
 
 Mesh *BKE_mesh_from_object(Object *ob)
