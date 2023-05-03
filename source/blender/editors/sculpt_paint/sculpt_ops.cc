@@ -11,9 +11,9 @@
 #include "BLI_ghash.h"
 #include "BLI_gsqueue.h"
 #include "BLI_math.h"
+#include "BLI_math_vector_types.hh"
 #include "BLI_task.h"
 #include "BLI_utildefines.h"
-#include "BLI_math_vector_types.hh"
 
 #include "BLT_translation.h"
 
@@ -106,8 +106,7 @@ static int sculpt_set_persistent_base_exec(bContext *C, wmOperator * /*op*/)
     PBVHVertRef vertex = BKE_pbvh_index_to_vertex(ss->pbvh, i);
 
     vertex_attr_set<float3>(vertex, ss->attrs.persistent_co, SCULPT_vertex_co_get(ss, vertex));
-    SCULPT_vertex_normal_get(
-        ss, vertex, vertex_attr_ptr<float *>(vertex, ss->attrs.persistent_no));
+    SCULPT_vertex_normal_get(ss, vertex, vertex_attr_ptr<float>(vertex, ss->attrs.persistent_no));
     vertex_attr_set<float>(vertex, ss->attrs.persistent_disp, 0.0f);
   }
 

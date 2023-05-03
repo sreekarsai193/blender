@@ -268,7 +268,7 @@ static float automasking_view_occlusion_factor(AutomaskingCache *automasking,
   char f = vertex_attr_get<char>(vertex, ss->attrs.automasking_occlusion);
 
   if (stroke_id != automasking->current_stroke_id) {
-    f = *vertex_attr_ptr<char *>(
+    f = *vertex_attr_ptr<char>(
         vertex,
         ss->attrs.automasking_occlusion) = SCULPT_vertex_is_occluded(ss, vertex, true) ? 2 : 1;
   }
@@ -748,8 +748,8 @@ static void SCULPT_boundary_automasking_init(Object *ob,
     const float p = 1.0f - (float(edge_distance[i]) / float(propagation_steps));
     const float edge_boundary_automask = pow2f(p);
 
-    *vertex_attr_ptr<float *>(vertex,
-                              ss->attrs.automasking_factor) *= (1.0f - edge_boundary_automask);
+    *vertex_attr_ptr<float>(vertex,
+                            ss->attrs.automasking_factor) *= (1.0f - edge_boundary_automask);
   }
 
   MEM_SAFE_FREE(edge_distance);

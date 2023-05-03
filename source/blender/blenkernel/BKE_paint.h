@@ -907,8 +907,8 @@ namespace blender::bke::paint {
 /* Base implementation for vertex_attr_*** and face_attr_*** methods.
  * Returns a pointer to the attribute data (as defined by attr) for elem.
  */
-template<typename Tptr, typename ElemRef = PBVHVertRef>
-static Tptr elem_attr_ptr(const ElemRef elem, const SculptAttribute *attr)
+template<typename T, typename ElemRef = PBVHVertRef>
+static T *elem_attr_ptr(const ElemRef elem, const SculptAttribute *attr)
 {
   void *ptr = nullptr;
 
@@ -928,18 +928,18 @@ static Tptr elem_attr_ptr(const ElemRef elem, const SculptAttribute *attr)
     ptr = BM_ELEM_CD_GET_VOID_P(v, attr->bmesh_cd_offset);
   }
 
-  return static_cast<Tptr>(ptr);
+  return static_cast<T *>(ptr);
 }
 
 /*
  * Get a pointer to attribute data at vertex.
  *
- * Example: float *persistent_co = vertex_attr_ptr<float*>(vertex, ss->attrs.persistent_co);
+ * Example: float *persistent_co = vertex_attr_ptr<float>(vertex, ss->attrs.persistent_co);
  */
-template<typename Tptr>
-static Tptr vertex_attr_ptr(const PBVHVertRef vertex, const SculptAttribute *attr)
+template<typename T>
+static T *vertex_attr_ptr(const PBVHVertRef vertex, const SculptAttribute *attr)
 {
-  return elem_attr_ptr<Tptr, PBVHVertRef>(vertex, attr);
+  return elem_attr_ptr<T, PBVHVertRef>(vertex, attr);
 }
 
 /*
@@ -950,7 +950,7 @@ static Tptr vertex_attr_ptr(const PBVHVertRef vertex, const SculptAttribute *att
 template<typename T>
 static T vertex_attr_get(const PBVHVertRef vertex, const SculptAttribute *attr)
 {
-  return *vertex_attr_ptr<T *>(vertex, attr);
+  return *vertex_attr_ptr<T>(vertex, attr);
 }
 
 /*
@@ -961,24 +961,23 @@ static T vertex_attr_get(const PBVHVertRef vertex, const SculptAttribute *attr)
 template<typename T>
 static void vertex_attr_set(const PBVHVertRef vertex, const SculptAttribute *attr, T data)
 {
-  *vertex_attr_ptr<T *>(vertex, attr) = data;
+  *vertex_attr_ptr<T>(vertex, attr) = data;
 }
 
-template<typename Tptr>
-static Tptr face_attr_ptr(const PBVHVertRef face, const SculptAttribute *attr)
+template<typename T> static T *face_attr_ptr(const PBVHFaceRef face, const SculptAttribute *attr)
 {
-  return elem_attr_ptr<Tptr, PBVHFaceRef>(face, attr);
+  return elem_attr_ptr<T, PBVHFaceRef>(face, attr);
 }
 
 template<typename T> static T face_attr_get(const PBVHFaceRef face, const SculptAttribute *attr)
 {
-  return *face_attr_ptr<T *>(face, attr);
+  return *face_attr_ptr<T>(face, attr);
 }
 
 template<typename T>
 static void face_attr_set(const PBVHFaceRef face, const SculptAttribute *attr, T data)
 {
-  *face_attr_ptr<T *>(face, attr) = data;
+  *face_attr_ptr<T>(face, attr) = data;
 }
 }  // namespace blender::bke::paint
 #endif

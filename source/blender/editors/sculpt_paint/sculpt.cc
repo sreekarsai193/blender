@@ -212,7 +212,7 @@ void SCULPT_vertex_normal_get(SculptSession *ss, PBVHVertRef vertex, float no[3]
 const float *SCULPT_vertex_persistent_co_get(SculptSession *ss, PBVHVertRef vertex)
 {
   if (ss->attrs.persistent_co) {
-    return vertex_attr_ptr<const float *>(vertex, ss->attrs.persistent_co);
+    return vertex_attr_ptr<const float>(vertex, ss->attrs.persistent_co);
   }
 
   return SCULPT_vertex_co_get(ss, vertex);
@@ -260,7 +260,7 @@ void SCULPT_vertex_limit_surface_get(SculptSession *ss, PBVHVertRef vertex, floa
 void SCULPT_vertex_persistent_normal_get(SculptSession *ss, PBVHVertRef vertex, float no[3])
 {
   if (ss->attrs.persistent_no) {
-    copy_v3_v3(no, vertex_attr_ptr<float *>(vertex, ss->attrs.persistent_no));
+    copy_v3_v3(no, vertex_attr_ptr<float>(vertex, ss->attrs.persistent_no));
     return;
   }
   SCULPT_vertex_normal_get(ss, vertex, no);
