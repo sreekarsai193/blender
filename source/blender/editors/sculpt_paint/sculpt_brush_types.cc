@@ -97,7 +97,8 @@ static void calc_sculpt_plane(
 
   if (SCULPT_stroke_is_main_symmetry_pass(ss->cache) &&
       (SCULPT_stroke_is_first_brush_step_of_symmetry_pass(ss->cache) ||
-       !(brush->flag & BRUSH_ORIGINAL_PLANE) || !(brush->flag & BRUSH_ORIGINAL_NORMAL))) {
+       !(brush->flag & BRUSH_ORIGINAL_PLANE) || !(brush->flag & BRUSH_ORIGINAL_NORMAL)))
+  {
     switch (brush->sculpt_plane) {
       case SCULPT_DISP_DIR_VIEW:
         copy_v3_v3(r_area_no, ss->cache->true_view_normal);
@@ -135,7 +136,8 @@ static void calc_sculpt_plane(
 
     /* For area normal. */
     if (!SCULPT_stroke_is_first_brush_step_of_symmetry_pass(ss->cache) &&
-        (brush->flag & BRUSH_ORIGINAL_NORMAL)) {
+        (brush->flag & BRUSH_ORIGINAL_NORMAL))
+    {
       copy_v3_v3(r_area_no, ss->cache->sculpt_normal);
     }
     else {
@@ -144,7 +146,8 @@ static void calc_sculpt_plane(
 
     /* For flatten center. */
     if (!SCULPT_stroke_is_first_brush_step_of_symmetry_pass(ss->cache) &&
-        (brush->flag & BRUSH_ORIGINAL_PLANE)) {
+        (brush->flag & BRUSH_ORIGINAL_PLANE))
+    {
       copy_v3_v3(r_area_co, ss->cache->last_center);
     }
     else {
@@ -270,7 +273,8 @@ static void do_draw_brush_task_cb_ex(void *__restrict userdata,
 
     /* Offset vertex. */
     if (ss->cache->brush->flag2 & BRUSH_USE_COLOR_AS_DISPLACEMENT &&
-        (brush->mtex.brush_map_mode == MTEX_MAP_MODE_AREA)) {
+        (brush->mtex.brush_map_mode == MTEX_MAP_MODE_AREA))
+    {
       float r_rgba[4];
       SCULPT_brush_strength_color(ss,
                                   brush,
@@ -2422,7 +2426,8 @@ void SCULPT_relax_vertex(SculptSession *ss,
   SCULPT_VERTEX_NEIGHBORS_ITER_BEGIN (ss, vd->vertex, ni) {
     neighbor_count++;
     if (!filter_boundary_face_sets ||
-        (filter_boundary_face_sets && !SCULPT_vertex_has_unique_face_set(ss, ni.vertex))) {
+        (filter_boundary_face_sets && !SCULPT_vertex_has_unique_face_set(ss, ni.vertex)))
+    {
 
       /* When the vertex to relax is boundary, use only connected boundary vertices for the average
        * position. */
