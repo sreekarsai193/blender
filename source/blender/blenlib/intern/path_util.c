@@ -1137,7 +1137,7 @@ bool BLI_path_abs_from_cwd(char *path, const size_t maxlen)
 #ifdef _WIN32
 /**
  * Tries appending each of the semicolon-separated extensions in the `PATHEXT`
- * environment variable (Windows-only) onto `name` in turn until such a file is found.
+ * environment variable (Windows-only) onto `program_name` in turn until such a file is found.
  * Returns success/failure.
  */
 bool BLI_path_program_extensions_add_win32(char *program_name, const size_t maxlen)
@@ -1145,19 +1145,19 @@ bool BLI_path_program_extensions_add_win32(char *program_name, const size_t maxl
   bool retval = false;
   int type;
 
-  type = BLI_exists(name);
+  type = BLI_exists(program_name);
   if ((type == 0) || S_ISDIR(type)) {
     /* Typically 3-5, ".EXE", ".BAT"... etc. */
     const int ext_max = 12;
     const char *ext = BLI_getenv("PATHEXT");
     if (ext) {
-      const int name_len = strlen(name);
+      const int name_len = strlen(program_name);
       char *filename = alloca(name_len + ext_max);
       char *filename_ext;
       const char *ext_next;
 
       /* Null terminated in the loop. */
-      memcpy(filename, name, name_len);
+      memcpy(filename, program_name, name_len);
       filename_ext = filename + name_len;
 
       do {
@@ -1172,7 +1172,7 @@ bool BLI_path_program_extensions_add_win32(char *program_name, const size_t maxl
           type = BLI_exists(filename);
           if (type && (!S_ISDIR(type))) {
             retval = true;
-            BLI_strncpy(name, filename, maxlen);
+            BLI_strncpy(program_name, filename, maxlen);
             break;
           }
         }
@@ -1478,43 +1478,43 @@ static size_t path_split_dir_file_offset(const char *string)
 }
 
 void BLI_path_split_dir_file(
-    const char *string, char *dir, const size_t dirlen, char *file, const size_t filelen)
+    const char *filepath, char *dir, const size_t dirlen, char *file, const size_t filelen)
 {
 #ifdef DEBUG_STRSIZE
   memset(dir, 0xff, sizeof(*dir) * dirlen);
   memset(file, 0xff, sizeof(*file) * filelen);
 #endif
-  const size_t lslash = path_split_dir_file_offset(string);
+  const size_t lslash = path_split_dir_file_offset(filepath);
   if (lslash) { /* +1 to include the slash and the last char. */
-    BLI_strncpy(dir, string, MIN2(dirlen, lslash + 1));
+    BLI_strncpy(dir, filepath, MIN2(dirlen, lslash + 1));
   }
   else {
     dir[0] = '\0';
   }
-  BLI_strncpy(file, string + lslash, filelen);
+  BLI_strncpy(file, filepath + lslash, filelen);
 }
 
-void BLI_path_split_dir_part(const char *string, char *dir, const size_t dirlen)
+void BLI_path_split_dir_part(const char *filepath, char *dir, const size_t dirlen)
 {
 #ifdef DEBUG_STRSIZE
   memset(dir, 0xff, sizeof(*dir) * dirlen);
 #endif
-  const size_t lslash = path_split_dir_file_offset(string);
+  const size_t lslash = path_split_dir_file_offset(filepath);
   if (lslash) { /* +1 to include the slash and the last char. */
-    BLI_strncpy(dir, string, MIN2(dirlen, lslash + 1));
+    BLI_strncpy(dir, filepath, MIN2(dirlen, lslash + 1));
   }
   else {
     dir[0] = '\0';
   }
 }
 
-void BLI_path_split_file_part(const char *string, char *file, const size_t filelen)
+void BLI_path_split_file_part(const char *filepath, char *file, const size_t filelen)
 {
 #ifdef DEBUG_STRSIZE
   memset(file, 0xff, sizeof(*file) * filelen);
 #endif
-  const size_t lslash = path_split_dir_file_offset(string);
-  BLI_strncpy(file, string + lslash, filelen);
+  const size_t lslash = path_split_dir_file_offset(filepath);
+  BLI_strncpy(file, filepath + lslash, filelen);
 }
 
 const char *BLI_path_extension_or_end(const char *filepath)

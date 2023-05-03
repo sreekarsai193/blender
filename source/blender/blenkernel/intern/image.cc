@@ -1174,6 +1174,7 @@ static ImBuf *add_ibuf_for_tile(Image *ima, ImageTile *tile)
   }
 
   STRNCPY(ibuf->filepath, ima->filepath);
+  BLI_path_abs(ibuf->filepath, ID_BLEND_PATH_FROM_GLOBAL(&ima->id));
 
   /* Mark the tile itself as having been generated. */
   tile->gen_flag |= IMA_GEN_TILE;
@@ -5430,6 +5431,7 @@ bool BKE_image_has_loaded_ibuf(Image *image)
 
 ImBuf *BKE_image_get_ibuf_with_name(Image *image, const char *filepath)
 {
+  BLI_assert(!BLI_path_is_rel(filepath));
   ImBuf *ibuf = nullptr;
 
   BLI_mutex_lock(static_cast<ThreadMutex *>(image->runtime.cache_mutex));
