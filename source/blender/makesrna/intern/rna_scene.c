@@ -1939,10 +1939,9 @@ static void object_simplify_update(Object *ob)
   ob->id.tag &= ~LIB_TAG_DOIT;
 
   for (md = ob->modifiers.first; md; md = md->next) {
-    if (ELEM(md->type,
-             eModifierType_Subsurf,
-             eModifierType_Multires,
-             eModifierType_ParticleSystem)) {
+    if (ELEM(
+            md->type, eModifierType_Subsurf, eModifierType_Multires, eModifierType_ParticleSystem))
+    {
       DEG_id_tag_update(&ob->id, ID_RECALC_GEOMETRY);
     }
   }
@@ -2768,7 +2767,8 @@ static void rna_FFmpegSettings_codec_update(Main *UNUSED(bmain),
             AV_CODEC_ID_H264,
             AV_CODEC_ID_MPEG4,
             AV_CODEC_ID_VP9,
-            AV_CODEC_ID_DNXHD)) {
+            AV_CODEC_ID_DNXHD))
+  {
     /* Constant Rate Factor (CRF) setting is only available for H264,
      * MPEG4 and WEBM/VP9 codecs. So changing encoder quality mode to
      * CBR as CRF is not supported.
@@ -3236,7 +3236,13 @@ static void rna_def_tool_settings(BlenderRNA *brna)
   RNA_def_property_translation_context(prop, BLT_I18NCONTEXT_ID_CURVE_LEGACY);
   RNA_def_property_update(prop, NC_SCENE | ND_TOOLSETTINGS, NULL); /* header redraw */
 
-  prop = RNA_def_property(srna, "proportional_size", PROP_FLOAT, PROP_DISTANCE);
+  prop = RNA_def_property(srna, "proportional_size", PROP_FLOAT, PROP_NONE);
+  RNA_def_property_float_sdna(prop, NULL, "proportional_size");
+  RNA_def_property_ui_text(
+      prop, "Proportional Size", "Display size for proportional editing circle");
+  RNA_def_property_range(prop, 0.00001, 5000.0);
+
+  prop = RNA_def_property(srna, "proportional_distance", PROP_FLOAT, PROP_DISTANCE);
   RNA_def_property_float_sdna(prop, NULL, "proportional_size");
   RNA_def_property_ui_text(
       prop, "Proportional Size", "Display size for proportional editing circle");

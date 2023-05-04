@@ -66,7 +66,7 @@ class ImplicitSharingInfo : NonCopyable, NonMovable {
     BLI_assert(weak_users_ == 0);
   }
 
-  /** Whether the resource can be modified inplace because there is only one owner. */
+  /** Whether the resource can be modified in place because there is only one owner. */
   bool is_mutable() const
   {
     return strong_users_.load(std::memory_order_relaxed) == 1;
@@ -191,6 +191,14 @@ class ImplicitSharingMixin : public ImplicitSharingInfo {
   }
 
   virtual void delete_self() = 0;
+};
+
+/**
+ * Utility that contains sharing information and the data that is shared.
+ */
+struct ImplicitSharingInfoAndData {
+  const ImplicitSharingInfo *sharing_info = nullptr;
+  const void *data = nullptr;
 };
 
 namespace implicit_sharing {

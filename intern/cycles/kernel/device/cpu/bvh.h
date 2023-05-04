@@ -289,7 +289,8 @@ ccl_device_forceinline void kernel_embree_filter_intersection_func_impl(
   const Ray *cray = ctx->ray;
 
   if (kernel_embree_is_self_intersection(
-          kg, hit, cray, reinterpret_cast<intptr_t>(args->geometryUserPtr))) {
+          kg, hit, cray, reinterpret_cast<intptr_t>(args->geometryUserPtr)))
+  {
     *args->valid = 0;
     return;
   }
@@ -597,7 +598,8 @@ ccl_device void kernel_embree_filter_func_backface_cull(const RTCFilterFunctionN
 
   /* Always ignore back-facing intersections. */
   if (dot(make_float3(ray->dir_x, ray->dir_y, ray->dir_z),
-          make_float3(hit->Ng_x, hit->Ng_y, hit->Ng_z)) > 0.0f) {
+          make_float3(hit->Ng_x, hit->Ng_y, hit->Ng_z)) > 0.0f)
+  {
     *args->valid = 0;
     return;
   }
@@ -607,7 +609,8 @@ ccl_device void kernel_embree_filter_func_backface_cull(const RTCFilterFunctionN
   const Ray *cray = ctx->ray;
 
   if (kernel_embree_is_self_intersection(
-          kg, hit, cray, reinterpret_cast<intptr_t>(args->geometryUserPtr))) {
+          kg, hit, cray, reinterpret_cast<intptr_t>(args->geometryUserPtr)))
+  {
     *args->valid = 0;
   }
 }
@@ -620,7 +623,8 @@ ccl_device void kernel_embree_filter_occluded_func_backface_cull(
 
   /* Always ignore back-facing intersections. */
   if (dot(make_float3(ray->dir_x, ray->dir_y, ray->dir_z),
-          make_float3(hit->Ng_x, hit->Ng_y, hit->Ng_z)) > 0.0f) {
+          make_float3(hit->Ng_x, hit->Ng_y, hit->Ng_z)) > 0.0f)
+  {
     *args->valid = 0;
     return;
   }

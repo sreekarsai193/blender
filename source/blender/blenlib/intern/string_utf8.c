@@ -17,6 +17,7 @@
 
 #include "BLI_utildefines.h"
 
+#include "BLI_string.h"      /* #BLI_string_debug_size. */
 #include "BLI_string_utf8.h" /* own include */
 #ifdef WIN32
 #  include "utfconv.h"
@@ -24,8 +25,6 @@
 #ifdef __GNUC__
 #  pragma GCC diagnostic error "-Wsign-conversion"
 #endif
-
-// #define DEBUG_STRSIZE
 
 /**
  * Array copied from GLIB's `gutf8.c`.
@@ -235,14 +234,10 @@ int BLI_str_utf8_invalid_strip(char *str, size_t length)
 
 char *BLI_strncpy_utf8(char *__restrict dst, const char *__restrict src, size_t maxncpy)
 {
-  char *r_dst = dst;
-
   BLI_assert(maxncpy != 0);
+  BLI_string_debug_size(dst, maxncpy);
 
-#ifdef DEBUG_STRSIZE
-  memset(dst, 0xff, sizeof(*dst) * maxncpy);
-#endif
-
+  char *r_dst = dst;
   /* NOTE: currently we don't attempt to deal with invalid utf8 chars. */
   BLI_STR_UTF8_CPY(dst, src, maxncpy);
 
@@ -251,14 +246,10 @@ char *BLI_strncpy_utf8(char *__restrict dst, const char *__restrict src, size_t 
 
 size_t BLI_strncpy_utf8_rlen(char *__restrict dst, const char *__restrict src, size_t maxncpy)
 {
-  char *r_dst = dst;
-
   BLI_assert(maxncpy != 0);
+  BLI_string_debug_size(dst, maxncpy);
 
-#ifdef DEBUG_STRSIZE
-  memset(dst, 0xff, sizeof(*dst) * maxncpy);
-#endif
-
+  char *r_dst = dst;
   /* NOTE: currently we don't attempt to deal with invalid utf8 chars. */
   BLI_STR_UTF8_CPY(dst, src, maxncpy);
 
@@ -275,10 +266,9 @@ size_t BLI_strncpy_wchar_as_utf8(char *__restrict dst,
                                  const size_t maxncpy)
 {
   BLI_assert(maxncpy != 0);
+  BLI_string_debug_size(dst, maxncpy);
+
   size_t len = 0;
-#ifdef DEBUG_STRSIZE
-  memset(dst, 0xff, sizeof(*dst) * maxncpy);
-#endif
   while (*src && len < maxncpy) {
     len += BLI_str_utf8_from_unicode((uint)*src++, dst + len, maxncpy - len);
   }
@@ -350,6 +340,7 @@ size_t BLI_strncpy_wchar_from_utf8(wchar_t *__restrict dst_w,
                                    const size_t maxncpy)
 {
 #ifdef WIN32
+  BLI_string_debug_size(dst_w, maxncpy);
   conv_utf_8_to_16(src_c, dst_w, maxncpy);
   /* NOTE: it would be more efficient to calculate the length as part of #conv_utf_8_to_16. */
   return wcslen(dst_w);
@@ -415,7 +406,8 @@ char32_t BLI_str_utf32_char_to_upper(const char32_t wc)
     if ((wc <= U'z' && wc >= U'a') || (wc <= U'\xF6' && wc >= U'\xE0') ||
         /* Correct but the first case is know, only check the second */
         // (wc <= U'\xFE' && wc >= U'\xF8')
-        (wc >= U'\xF8')) {
+        (wc >= U'\xF8'))
+    {
       return wc - 32;
     }
     return wc;
@@ -438,7 +430,8 @@ char32_t BLI_str_utf32_char_to_upper(const char32_t wc)
 
   /* There are only three remaining ranges that contain capitalization. */
   if (!(wc <= U'\x0292' && wc >= U'\x00FF') && !(wc <= U'\x04F9' && wc >= U'\x03AC') &&
-      !(wc <= U'\x1FE1' && wc >= U'\x1E01')) {
+      !(wc <= U'\x1FE1' && wc >= U'\x1E01'))
+  {
     return wc;
   }
 
@@ -543,7 +536,8 @@ char32_t BLI_str_utf32_char_to_lower(const char32_t wc)
 
   /* There are only three remaining ranges that contain capitalization. */
   if (!(wc <= U'\x0216' && wc >= U'\x00D8') && !(wc <= U'\x04F8' && wc >= U'\x0386') &&
-      !(wc <= U'\x1FE9' && wc >= U'\x1E00')) {
+      !(wc <= U'\x1FE9' && wc >= U'\x1E00'))
+  {
     return wc;
   }
 
@@ -799,6 +793,8 @@ size_t BLI_str_utf8_from_unicode_len(const uint c)
 size_t BLI_str_utf8_from_unicode(uint c, char *outbuf, const size_t outbuf_len)
 
 {
+  BLI_string_debug_size(outbuf, outbuf_len);
+
   /* If this gets modified, also update the copy in g_string_insert_unichar() */
   uint len = 0;
   uint first;
@@ -824,14 +820,11 @@ size_t BLI_str_utf8_as_utf32(char32_t *__restrict dst_w,
                              const char *__restrict src_c,
                              const size_t maxncpy)
 {
+  BLI_assert(maxncpy != 0);
+  BLI_string_debug_size(dst_w, maxncpy);
+
   const size_t maxlen = maxncpy - 1;
   size_t len = 0;
-
-  BLI_assert(maxncpy != 0);
-
-#ifdef DEBUG_STRSIZE
-  memset(dst_w, 0xff, sizeof(*dst_w) * maxncpy);
-#endif
 
   const size_t src_c_len = strlen(src_c);
   const char *src_c_end = src_c + src_c_len;
@@ -860,10 +853,9 @@ size_t BLI_str_utf32_as_utf8(char *__restrict dst,
                              const size_t maxncpy)
 {
   BLI_assert(maxncpy != 0);
+  BLI_string_debug_size(dst, maxncpy);
+
   size_t len = 0;
-#ifdef DEBUG_STRSIZE
-  memset(dst, 0xff, sizeof(*dst) * maxncpy);
-#endif
   while (*src && len < maxncpy) {
     len += BLI_str_utf8_from_unicode((uint)*src++, dst + len, maxncpy - len);
   }
@@ -962,7 +954,8 @@ size_t BLI_str_partition_ex_utf8(const char *str,
   for (char *sep = (char *)(from_right ? BLI_str_find_prev_char_utf8(end, str) : str);
        from_right ? (sep > str) : ((sep < end) && (*sep != '\0'));
        sep = (char *)(from_right ? (str != sep ? BLI_str_find_prev_char_utf8(sep, str) : NULL) :
-                                   str + index)) {
+                                   str + index))
+  {
     size_t index_ofs = 0;
     const uint c = BLI_str_utf8_as_unicode_step_or_error(sep, (size_t)(end - sep), &index_ofs);
     if (UNLIKELY(c == BLI_UTF8_ERR)) {

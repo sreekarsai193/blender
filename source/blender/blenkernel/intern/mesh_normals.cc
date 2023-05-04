@@ -479,7 +479,8 @@ void BKE_lnor_space_define(MLoopNorSpace *lnor_space,
   const float dtp_other = dot_v3v3(vec_other, lnor);
 
   if (UNLIKELY(fabsf(dtp_ref) >= LNOR_SPACE_TRIGO_THRESHOLD ||
-               fabsf(dtp_other) >= LNOR_SPACE_TRIGO_THRESHOLD)) {
+               fabsf(dtp_other) >= LNOR_SPACE_TRIGO_THRESHOLD))
+  {
     /* If vec_ref or vec_other are too much aligned with lnor, we can't build lnor space,
      * tag it as invalid and abort. */
     lnor_space->ref_alpha = lnor_space->ref_beta = 0.0f;
@@ -710,7 +711,7 @@ static void mesh_edges_sharp_tag(const OffsetIndices<int> polys,
         /* 'Empty' edge until now, set e2l[0] (and e2l[1] to INDEX_UNSET to tag it as unset). */
         e2l[0] = loop_index;
         /* We have to check this here too, else we might miss some flat faces!!! */
-        e2l[1] = (poly_is_smooth(poly_i)) ? INDEX_UNSET : INDEX_INVALID;
+        e2l[1] = poly_is_smooth(poly_i) ? INDEX_UNSET : INDEX_INVALID;
       }
       else if (e2l[1] == INDEX_UNSET) {
         const bool is_angle_sharp = (check_angle &&
@@ -723,7 +724,8 @@ static void mesh_edges_sharp_tag(const OffsetIndices<int> polys,
          * same vertex, or angle between both its polys' normals is above split_angle value.
          */
         if (!poly_is_smooth(poly_i) || (!sharp_edges.is_empty() && sharp_edges[edge_i]) ||
-            vert_i == corner_verts[e2l[0]] || is_angle_sharp) {
+            vert_i == corner_verts[e2l[0]] || is_angle_sharp)
+        {
           /* NOTE: we are sure that loop != 0 here ;). */
           e2l[1] = INDEX_INVALID;
 
@@ -812,7 +814,8 @@ static void loop_manifold_fan_around_vert_next(const Span<int> corner_verts,
   const int vert_fan_next = corner_verts[*r_mlfan_curr_index];
   const IndexRange poly_fan_next = polys[*r_mpfan_curr_index];
   if ((vert_fan_orig == vert_fan_next && vert_fan_orig == vert_pivot) ||
-      !ELEM(vert_fan_orig, vert_fan_next, vert_pivot)) {
+      !ELEM(vert_fan_orig, vert_fan_next, vert_pivot))
+  {
     /* We need the previous loop, but current one is our vertex's loop. */
     *r_mlfan_vert_index = *r_mlfan_curr_index;
     if (--(*r_mlfan_curr_index) < poly_fan_next.start()) {
@@ -846,7 +849,8 @@ static void lnor_space_for_single_fan(LoopSplitTaskDataCommon *common_data,
     const Span<int> corner_edges = common_data->corner_edges;
     const Span<short2> clnors_data = common_data->clnors_data;
 
-    float vec_curr[3], vec_prev[3];
+    float3 vec_curr;
+    float3 vec_prev;
     const int poly_index = loop_to_poly[ml_curr_index];
     const int ml_prev_index = mesh::poly_corner_prev(polys[poly_index], ml_curr_index);
 
@@ -903,11 +907,13 @@ static void split_loop_nor_fan_do(LoopSplitTaskDataCommon *common_data,
   /* `ml_curr_index` would be mlfan_prev if we needed that one. */
   const int2 &edge_orig = edges[corner_edges[ml_curr_index]];
 
-  float vec_curr[3], vec_prev[3], vec_org[3];
+  float3 vec_curr;
+  float3 vec_prev;
+  float3 vec_org;
   float3 lnor(0.0f);
 
   /* We validate clnors data on the fly - cheapest way to do! */
-  int clnors_avg[2] = {0, 0};
+  int2 clnors_avg(0);
   short2 *clnor_ref = nullptr;
   int clnors_count = 0;
   bool clnors_invalid = false;
@@ -958,7 +964,7 @@ static void split_loop_nor_fan_do(LoopSplitTaskDataCommon *common_data,
       /* Calculate angle between the two poly edges incident on this vertex. */
       const float fac = saacos(dot_v3v3(vec_curr, vec_prev));
       /* Accumulate */
-      madd_v3_v3fl(lnor, poly_normals[mpfan_curr_index], fac);
+      lnor += poly_normals[mpfan_curr_index] * fac;
 
       if (!clnors_data.is_empty()) {
         /* Accumulate all clnors, if they are not all equal we have to fix that! */
@@ -989,11 +995,10 @@ static void split_loop_nor_fan_do(LoopSplitTaskDataCommon *common_data,
     if (IS_EDGE_SHARP(edge_to_loops[corner_edges[mlfan_curr_index]]) || (edge == edge_orig)) {
       /* Current edge is sharp and we have finished with this fan of faces around this vert,
        * or this vert is smooth, and we have completed a full turn around it. */
-      // printf("FAN: Finished!\n");
       break;
     }
 
-    copy_v3_v3(vec_prev, vec_curr);
+    vec_prev = vec_curr;
 
     /* Find next loop of the smooth fan. */
     loop_manifold_fan_around_vert_next(corner_verts,
@@ -1006,46 +1011,45 @@ static void split_loop_nor_fan_do(LoopSplitTaskDataCommon *common_data,
                                        &mpfan_curr_index);
   }
 
-  {
-    float lnor_len = normalize_v3(lnor);
+  float length;
+  lnor = math::normalize_and_get_length(lnor, length);
 
-    /* If we are generating lnor spacearr, we can now define the one for this fan,
-     * and optionally compute final lnor from custom data too!
-     */
-    if (lnors_spacearr) {
-      if (UNLIKELY(lnor_len == 0.0f)) {
-        /* Use vertex normal as fallback! */
-        copy_v3_v3(lnor, loop_normals[mlfan_vert_index]);
-        lnor_len = 1.0f;
-      }
+  /* If we are generating lnor spacearr, we can now define the one for this fan,
+   * and optionally compute final lnor from custom data too!
+   */
+  if (lnors_spacearr) {
+    if (UNLIKELY(length == 0.0f)) {
+      /* Use vertex normal as fallback! */
+      lnor = loop_normals[mlfan_vert_index];
+      length = 1.0f;
+    }
 
-      BKE_lnor_space_define(lnor_space, lnor, vec_org, vec_curr, *edge_vectors);
-      edge_vectors->clear();
+    BKE_lnor_space_define(lnor_space, lnor, vec_org, vec_curr, *edge_vectors);
+    edge_vectors->clear();
 
-      if (!clnors_data.is_empty()) {
-        if (clnors_invalid) {
-          clnors_avg[0] /= clnors_count;
-          clnors_avg[1] /= clnors_count;
-          /* Fix/update all clnors of this fan with computed average value. */
-          if (G.debug & G_DEBUG) {
-            printf("Invalid clnors in this fan!\n");
-          }
-          clnors_data.fill_indices(processed_corners.as_span(),
-                                   short2(clnors_avg[0], clnors_avg[1]));
-          // print_v2("new clnors", clnors_avg);
+    if (!clnors_data.is_empty()) {
+      if (clnors_invalid) {
+        clnors_avg[0] /= clnors_count;
+        clnors_avg[1] /= clnors_count;
+        /* Fix/update all clnors of this fan with computed average value. */
+        if (G.debug & G_DEBUG) {
+          printf("Invalid clnors in this fan!\n");
         }
-        /* Extra bonus: since small-stack is local to this function,
-         * no more need to empty it at all cost! */
-
-        BKE_lnor_space_custom_data_to_normal(lnor_space, *clnor_ref, lnor);
+        clnors_data.fill_indices(processed_corners.as_span(),
+                                 short2(clnors_avg[0], clnors_avg[1]));
+        // print_v2("new clnors", clnors_avg);
       }
-    }
+      /* Extra bonus: since small-stack is local to this function,
+       * no more need to empty it at all cost! */
 
-    /* In case we get a zero normal here, just use vertex normal already set! */
-    if (LIKELY(lnor_len != 0.0f)) {
-      /* Copy back the final computed normal into all related loop-normals. */
-      loop_normals.fill_indices(processed_corners.as_span(), lnor);
+      BKE_lnor_space_custom_data_to_normal(lnor_space, *clnor_ref, lnor);
     }
+  }
+
+  /* In case we get a zero normal here, just use vertex normal already set! */
+  if (LIKELY(length != 0.0f)) {
+    /* Copy back the final computed normal into all related loop-normals. */
+    loop_normals.fill_indices(processed_corners.as_span(), lnor);
   }
 }
 
@@ -1175,12 +1179,14 @@ static void loop_split_generator(LoopSplitTaskDataCommon *common_data,
                                             skip_loops,
                                             ml_curr_index,
                                             ml_prev_index,
-                                            poly_index))) {
+                                            poly_index)))
+      {
         // printf("SKIPPING!\n");
       }
       else {
         if (IS_EDGE_SHARP(edge_to_loops[corner_edges[ml_curr_index]]) &&
-            IS_EDGE_SHARP(edge_to_loops[corner_edges[ml_prev_index]])) {
+            IS_EDGE_SHARP(edge_to_loops[corner_edges[ml_prev_index]]))
+        {
           /* Simple case (both edges around that vertex are sharp in current polygon),
            * this corner just takes its poly normal. */
           r_single_corners.append(ml_curr_index);
@@ -1212,7 +1218,7 @@ void normals_calc_loop(const Span<float3> vert_positions,
                        const bool *sharp_faces,
                        bool use_split_normals,
                        float split_angle,
-                       short (*clnors_data)[2],
+                       short2 *clnors_data,
                        MLoopNorSpaceArray *r_lnors_spacearr,
                        MutableSpan<float3> r_loop_normals)
 {
@@ -1379,7 +1385,7 @@ static void mesh_normals_loop_custom_set(Span<float3> positions,
                                          const bool use_vertices,
                                          MutableSpan<float3> r_custom_loop_normals,
                                          MutableSpan<bool> sharp_edges,
-                                         short (*r_clnors_data)[2])
+                                         MutableSpan<short2> r_clnors_data)
 {
   /* We *may* make that poor #bke::mesh::normals_calc_loop() even more complex by making it
    * handling that feature too, would probably be more efficient in absolute. However, this
@@ -1395,8 +1401,6 @@ static void mesh_normals_loop_custom_set(Span<float3> positions,
   const bool use_split_normals = true;
   const float split_angle = float(M_PI);
 
-  Vector<short *> clnors_data;
-
   /* Compute current lnor spacearr. */
   normals_calc_loop(positions,
                     edges,
@@ -1410,7 +1414,7 @@ static void mesh_normals_loop_custom_set(Span<float3> positions,
                     sharp_faces,
                     use_split_normals,
                     split_angle,
-                    r_clnors_data,
+                    r_clnors_data.data(),
                     &lnors_spacearr,
                     loop_normals);
 
@@ -1536,10 +1540,12 @@ static void mesh_normals_loop_custom_set(Span<float3> positions,
                       sharp_faces,
                       use_split_normals,
                       split_angle,
-                      r_clnors_data,
+                      r_clnors_data.data(),
                       &lnors_spacearr,
                       loop_normals);
   }
+
+  Vector<int> processed_corners;
 
   /* And we just have to convert plain object-space custom normals to our
    * lnor space-encoded ones. */
@@ -1552,48 +1558,44 @@ static void mesh_normals_loop_custom_set(Span<float3> positions,
       }
       continue;
     }
+    if (!done_loops[i]) {
+      continue;
+    }
 
-    if (done_loops[i]) {
-      /* Note we accumulate and average all custom normals in current smooth fan,
-       * to avoid getting different clnors data (tiny differences in plain custom normals can
-       * give rather huge differences in computed 2D factors). */
-      LinkNode *loop_link = lnors_spacearr.lspacearr[i]->loops;
-      if (lnors_spacearr.lspacearr[i]->flags & MLNOR_SPACE_IS_SINGLE) {
-        BLI_assert(POINTER_AS_INT(loop_link) == i);
-        const int nidx = use_vertices ? corner_verts[i] : i;
+    /* Note we accumulate and average all custom normals in current smooth fan,
+     * to avoid getting different clnors data (tiny differences in plain custom normals can
+     * give rather huge differences in computed 2D factors). */
+    LinkNode *loop_link = lnors_spacearr.lspacearr[i]->loops;
+    if (lnors_spacearr.lspacearr[i]->flags & MLNOR_SPACE_IS_SINGLE) {
+      BLI_assert(POINTER_AS_INT(loop_link) == i);
+      const int nidx = use_vertices ? corner_verts[i] : i;
+      float *nor = r_custom_loop_normals[nidx];
+
+      BKE_lnor_space_custom_normal_to_data(lnors_spacearr.lspacearr[i], nor, r_clnors_data[i]);
+      done_loops[i].reset();
+    }
+    else {
+      int avg_nor_count = 0;
+      float3 avg_nor(0.0f);
+      while (loop_link) {
+        const int lidx = POINTER_AS_INT(loop_link->link);
+        const int nidx = use_vertices ? corner_verts[lidx] : lidx;
         float *nor = r_custom_loop_normals[nidx];
 
-        BKE_lnor_space_custom_normal_to_data(lnors_spacearr.lspacearr[i], nor, r_clnors_data[i]);
-        done_loops[i].reset();
+        avg_nor_count++;
+        add_v3_v3(avg_nor, nor);
+        processed_corners.append(lidx);
+
+        loop_link = loop_link->next;
+        done_loops[lidx].reset();
       }
-      else {
-        int avg_nor_count = 0;
-        float avg_nor[3];
-        short clnor_data_tmp[2];
 
-        zero_v3(avg_nor);
-        while (loop_link) {
-          const int lidx = POINTER_AS_INT(loop_link->link);
-          const int nidx = use_vertices ? corner_verts[lidx] : lidx;
-          float *nor = r_custom_loop_normals[nidx];
+      mul_v3_fl(avg_nor, 1.0f / float(avg_nor_count));
+      short2 clnor_data_tmp;
+      BKE_lnor_space_custom_normal_to_data(lnors_spacearr.lspacearr[i], avg_nor, clnor_data_tmp);
 
-          avg_nor_count++;
-          add_v3_v3(avg_nor, nor);
-          clnors_data.append(r_clnors_data[lidx]);
-
-          loop_link = loop_link->next;
-          done_loops[lidx].reset();
-        }
-
-        mul_v3_fl(avg_nor, 1.0f / float(avg_nor_count));
-        BKE_lnor_space_custom_normal_to_data(lnors_spacearr.lspacearr[i], avg_nor, clnor_data_tmp);
-
-        while (!clnors_data.is_empty()) {
-          short *clnor_data = clnors_data.pop_last();
-          clnor_data[0] = clnor_data_tmp[0];
-          clnor_data[1] = clnor_data_tmp[1];
-        }
-      }
+      r_clnors_data.fill_indices(processed_corners.as_span(), clnor_data_tmp);
+      processed_corners.clear();
     }
   }
 
@@ -1610,7 +1612,7 @@ void normals_loop_custom_set(const Span<float3> vert_positions,
                              const bool *sharp_faces,
                              MutableSpan<bool> sharp_edges,
                              MutableSpan<float3> r_custom_loop_normals,
-                             short (*r_clnors_data)[2])
+                             MutableSpan<short2> r_clnors_data)
 {
   mesh_normals_loop_custom_set(vert_positions,
                                edges,
@@ -1636,7 +1638,7 @@ void normals_loop_custom_set_from_verts(const Span<float3> vert_positions,
                                         const bool *sharp_faces,
                                         MutableSpan<bool> sharp_edges,
                                         MutableSpan<float3> r_custom_vert_normals,
-                                        short (*r_clnors_data)[2])
+                                        MutableSpan<short2> r_clnors_data)
 {
   mesh_normals_loop_custom_set(vert_positions,
                                edges,
@@ -1654,17 +1656,14 @@ void normals_loop_custom_set_from_verts(const Span<float3> vert_positions,
 
 static void mesh_set_custom_normals(Mesh *mesh, float (*r_custom_nors)[3], const bool use_vertices)
 {
-  short(*clnors)[2];
-  const int numloops = mesh->totloop;
-
-  clnors = (short(*)[2])CustomData_get_layer_for_write(
-      &mesh->ldata, CD_CUSTOMLOOPNORMAL, mesh->totloop);
+  short2 *clnors = static_cast<short2 *>(
+      CustomData_get_layer_for_write(&mesh->ldata, CD_CUSTOMLOOPNORMAL, mesh->totloop));
   if (clnors != nullptr) {
-    memset(clnors, 0, sizeof(*clnors) * size_t(numloops));
+    memset(clnors, 0, sizeof(*clnors) * mesh->totloop);
   }
   else {
-    clnors = (short(*)[2])CustomData_add_layer(
-        &mesh->ldata, CD_CUSTOMLOOPNORMAL, CD_SET_DEFAULT, numloops);
+    clnors = static_cast<short2 *>(
+        CustomData_add_layer(&mesh->ldata, CD_CUSTOMLOOPNORMAL, CD_SET_DEFAULT, mesh->totloop));
   }
   MutableAttributeAccessor attributes = mesh->attributes_for_write();
   SpanAttributeWriter<bool> sharp_edges = attributes.lookup_or_add_for_write_span<bool>(
@@ -1684,7 +1683,7 @@ static void mesh_set_custom_normals(Mesh *mesh, float (*r_custom_nors)[3], const
       use_vertices,
       {reinterpret_cast<float3 *>(r_custom_nors), use_vertices ? mesh->totvert : mesh->totloop},
       sharp_edges.span,
-      clnors);
+      {clnors, mesh->totloop});
 
   sharp_edges.finish();
 }
