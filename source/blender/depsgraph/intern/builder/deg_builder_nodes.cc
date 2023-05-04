@@ -1167,7 +1167,8 @@ void DepsgraphNodeBuilder::build_light_linking_collection(Collection *collection
    * needs to be done in all places where the collection is built (is not something that can be
    * easily solved from just adding the light linking functionality). */
   if (!has_operation_node(
-          &collection->id, NodeType::PARAMETERS, OperationCode::LIGHT_LINKING_UPDATE)) {
+          &collection->id, NodeType::PARAMETERS, OperationCode::LIGHT_LINKING_UPDATE))
+  {
     add_operation_node(&collection->id, NodeType::PARAMETERS, OperationCode::LIGHT_LINKING_UPDATE);
   }
 }
