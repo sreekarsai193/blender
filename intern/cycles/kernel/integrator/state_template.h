@@ -135,3 +135,11 @@ KERNEL_STRUCT_MEMBER(guiding, float, sample_volume_guiding_rand, KERNEL_FEATURE_
 /* The probability to use surface guiding (i.e., diffuse sampling prob * guiding prob). */
 KERNEL_STRUCT_MEMBER(guiding, float, volume_guiding_sampling_prob, KERNEL_FEATURE_PATH_GUIDING)
 KERNEL_STRUCT_END(guiding)
+
+/******************************* Shadow linking *******************************/
+
+KERNEL_STRUCT_BEGIN(shadow_link)
+/* Copy of primitive and object from the last main path intersection. */
+KERNEL_STRUCT_MEMBER(shadow_link, int, last_isect_prim, KERNEL_FEATURE_SHADOW_LINKING)
+KERNEL_STRUCT_MEMBER(shadow_link, int, last_isect_object, KERNEL_FEATURE_SHADOW_LINKING)
+KERNEL_STRUCT_END(shadow_link)

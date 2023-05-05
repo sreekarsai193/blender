@@ -34,6 +34,9 @@ ccl_device bool integrate_intersect_shadow_opaque(KernelGlobals kg,
   Intersection isect;
   const bool opaque_hit = scene_intersect(kg, ray, visibility & opaque_mask, &isect);
 
+  /* Only record the number of hits if nothing was hit, so that the shadow shading kernel does not
+   * consider any intersections. There is no need to write anything to the state if the hit is
+   * opaque because in this case the path is terminated. */
   if (!opaque_hit) {
     INTEGRATOR_STATE_WRITE(state, shadow_path, num_hits) = 0;
   }

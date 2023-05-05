@@ -244,14 +244,16 @@ ccl_device_noinline bool light_sample(KernelGlobals kg,
 
 /* Intersect ray with individual light. */
 
-ccl_device bool lights_intersect(KernelGlobals kg,
-                                 IntegratorState state,
-                                 ccl_private const Ray *ccl_restrict ray,
-                                 ccl_private Intersection *ccl_restrict isect,
-                                 const int last_prim,
-                                 const int last_object,
-                                 const int last_type,
-                                 const uint32_t path_flag)
+template<bool is_main_path>
+ccl_device bool lights_intersect_impl(KernelGlobals kg,
+                                      ccl_private const Ray *ccl_restrict ray,
+                                      ccl_private Intersection *ccl_restrict isect,
+                                      const int last_prim,
+                                      const int last_object,
+                                      const int last_type,
+                                      const uint32_t path_flag,
+                                      const uint8_t path_mnee,
+                                      const int receiver_forward)
 {
   for (int lamp = 0; lamp < kernel_data.integrator.num_lights; lamp++) {
     const ccl_global KernelLight *klight = &kernel_data_fetch(lights, lamp);
@@ -269,9 +271,7 @@ ccl_device bool lights_intersect(KernelGlobals kg,
 #ifdef __MNEE__
       /* This path should have been resolved with mnee, it will
        * generate a firefly for small lights since it is improbable. */
-      if ((INTEGRATOR_STATE(state, path, mnee) & PATH_MNEE_CULL_LIGHT_CONNECTION) &&
-          klight->use_caustics)
-      {
+      if ((path_mnee & PATH_MNEE_CULL_LIGHT_CONNECTION) && klight->use_caustics) {
         continue;
       }
 #endif
@@ -283,10 +283,31 @@ ccl_device bool lights_intersect(KernelGlobals kg,
       }
     }
 
+#ifdef __SHADOW_LINKING__
+    /* For the main path exclude shadow-linked lights if intersecting with an indirect light ray.
+     * Those lights are handled via dedicated light intersect and shade kernels.
+     * For the shadow path used for the dedicated light shading ignore all non-shadow-linked
+     * lights. */
+    if (kernel_data.kernel_features & KERNEL_FEATURE_SHADOW_LINKING) {
+      if (is_main_path) {
+        const bool is_indirect_ray = !(path_flag & PATH_RAY_CAMERA);
+        if (is_indirect_ray && kernel_data_fetch(lights, lamp).shadow_set_membership) {
+          continue;
+        }
+      }
+      else if (!kernel_data_fetch(lights, lamp).shadow_set_membership) {
+        continue;
+      }
+    }
+
+#endif
+
+#ifdef __LIGHT_LINKING__
     /* Light linking. */
-    if (!light_link_light_match(kg, light_link_receiver_forward(kg, state), lamp)) {
+    if (!light_link_light_match(kg, receiver_forward, lamp)) {
       continue;
     }
+#endif
 
     LightType type = (LightType)klight->type;
     float t = 0.0f, u = 0.0f, v = 0.0f;
@@ -323,6 +344,34 @@ ccl_device bool lights_intersect(KernelGlobals kg,
   }
 
   return isect->prim != PRIM_NONE;
+}
+
+ccl_device bool lights_intersect(KernelGlobals kg,
+                                 IntegratorState state,
+                                 ccl_private const Ray *ccl_restrict ray,
+                                 ccl_private Intersection *ccl_restrict isect,
+                                 const int last_prim,
+                                 const int last_object,
+                                 const int last_type,
+                                 const uint32_t path_flag)
+{
+  const uint8_t path_mnee = INTEGRATOR_STATE(state, path, mnee);
+  const int receiver_forward = light_link_receiver_forward(kg, state);
+
+  return lights_intersect_impl<true>(
+      kg, ray, isect, last_prim, last_object, last_type, path_flag, path_mnee, receiver_forward);
+}
+
+ccl_device bool lights_intersect_shadow_linked(KernelGlobals kg,
+                                               ccl_private const Ray *ccl_restrict ray,
+                                               ccl_private Intersection *ccl_restrict isect,
+                                               const int last_prim,
+                                               const int last_object,
+                                               const int last_type,
+                                               const uint32_t path_flag)
+{
+  return lights_intersect_impl<false>(
+      kg, ray, isect, last_prim, last_object, last_type, path_flag, PATH_MNEE_NONE, OBJECT_NONE);
 }
 
 /* Setup light sample from intersection. */

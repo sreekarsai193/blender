@@ -1137,12 +1137,6 @@ void LightManager::device_update_lights(Device *device, DeviceScene *dscene, Sce
       klights[light_index].spot.spot_smooth = spot_smooth;
     }
 
-    /* Disable MIS if the light participates in the shadow linking, as it is not supported. */
-    /* TODO(sergey): Support MIS with shadow linking. */
-    if (light->shadow_set_membership) {
-      shader_id &= ~SHADER_USE_MIS;
-    }
-
     klights[light_index].shader_id = shader_id;
 
     klights[light_index].max_bounces = max_bounces;

@@ -10,6 +10,7 @@
 #include "kernel/integrator/guiding.h"
 #include "kernel/integrator/intersect_closest.h"
 #include "kernel/integrator/path_state.h"
+#include "kernel/integrator/shadow_linking.h"
 #include "kernel/integrator/volume_shader.h"
 #include "kernel/integrator/volume_stack.h"
 
@@ -1213,27 +1214,32 @@ ccl_device void integrator_shade_volume(KernelGlobals kg,
     volume_stack_clean(kg, state);
   }
 
-  VolumeIntegrateEvent event = volume_integrate(kg, state, &ray, render_buffer);
-
-  if (event == VOLUME_PATH_SCATTERED) {
-    /* Queue intersect_closest kernel. */
-    integrator_path_next(kg,
-                         state,
-                         DEVICE_KERNEL_INTEGRATOR_SHADE_VOLUME,
-                         DEVICE_KERNEL_INTEGRATOR_INTERSECT_CLOSEST);
-    return;
-  }
-  else if (event == VOLUME_PATH_MISSED) {
+  const VolumeIntegrateEvent event = volume_integrate(kg, state, &ray, render_buffer);
+  if (event == VOLUME_PATH_MISSED) {
     /* End path. */
     integrator_path_terminate(kg, state, DEVICE_KERNEL_INTEGRATOR_SHADE_VOLUME);
     return;
   }
-  else {
+
+  if (event == VOLUME_PATH_ATTENUATED) {
     /* Continue to background, light or surface. */
     integrator_intersect_next_kernel_after_volume<DEVICE_KERNEL_INTEGRATOR_SHADE_VOLUME>(
         kg, state, &isect, render_buffer);
     return;
   }
+
+#  ifdef __SHADOW_LINKING__
+  if (shadow_linking_schedule_intersection_kernel<DEVICE_KERNEL_INTEGRATOR_SHADE_VOLUME>(kg,
+                                                                                         state)) {
+    return;
+  }
+#  endif /* __SHADOW_LINKING__ */
+
+  /* Queue intersect_closest kernel. */
+  integrator_path_next(kg,
+                       state,
+                       DEVICE_KERNEL_INTEGRATOR_SHADE_VOLUME,
+                       DEVICE_KERNEL_INTEGRATOR_INTERSECT_CLOSEST);
 #endif /* __VOLUME__ */
 }
 
