@@ -63,7 +63,7 @@ ccl_device_forceinline void integrator_state_read_shadow_ray(ConstIntegratorShad
 ccl_device_forceinline void integrator_state_write_shadow_ray_self(
     KernelGlobals kg, IntegratorShadowState state, ccl_private const Ray *ccl_restrict ray)
 {
-  if (kernel_data.kernel_features & KERNEL_FEATURE_LIGHT_LINKING) {
+  if (kernel_data.kernel_features & KERNEL_FEATURE_SHADOW_LINKING) {
     INTEGRATOR_STATE_WRITE(state, shadow_ray, self_light) = ray->self.light;
   }
 
@@ -80,7 +80,7 @@ ccl_device_forceinline void integrator_state_write_shadow_ray_self(
 ccl_device_forceinline void integrator_state_read_shadow_ray_self(
     KernelGlobals kg, ConstIntegratorShadowState state, ccl_private Ray *ccl_restrict ray)
 {
-  if (kernel_data.kernel_features & KERNEL_FEATURE_LIGHT_LINKING) {
+  if (kernel_data.kernel_features & KERNEL_FEATURE_SHADOW_LINKING) {
     ray->self.light = INTEGRATOR_STATE(state, shadow_ray, self_light);
   }
 
