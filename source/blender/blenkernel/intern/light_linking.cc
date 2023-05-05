@@ -49,7 +49,8 @@ Collection *BKE_light_linking_collection_get(Object *object, const LightLinkingT
   return *collection_ptr;
 }
 
-std::string get_default_collection_name(const Object *object, const LightLinkingType link_type)
+static std::string get_default_collection_name(const Object *object,
+                                               const LightLinkingType link_type)
 {
   const char *format;
 
