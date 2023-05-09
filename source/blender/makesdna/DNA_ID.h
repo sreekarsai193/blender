@@ -337,6 +337,12 @@ enum {
    * resync process.
    */
   LIBOVERRIDE_TAG_RESYNC_ISOLATED_FROM_ROOT = 1 << 2,
+  /**
+   * This override was detected as needing resync outside of the resync process (it is a 'really
+   * need resync' case, not a 'need resync for hierarchy reasons' one). Temporarily used during
+   * resync process.
+   */
+  LIBOVERRIDE_TAG_NEED_RESYNC_ORIGINAL = 1 << 3,
 };
 
 /* Main container for all overriding data info of a data-block. */
@@ -563,18 +569,23 @@ typedef struct LibraryWeakReference {
   char _pad[2];
 } LibraryWeakReference;
 
-/* for PreviewImage->flag */
+/* PreviewImage.flag */
 enum ePreviewImage_Flag {
   PRV_CHANGED = (1 << 0),
-  PRV_USER_EDITED = (1 << 1), /* if user-edited, do not auto-update this anymore! */
-  PRV_RENDERING = (1 << 2),   /* Rendering was invoked. Cleared on file read. */
+  /** If user-edited, do not auto-update this anymore! */
+  PRV_USER_EDITED = (1 << 1),
+  /* Rendering was invoked. Cleared on file read. */
+  PRV_RENDERING = (1 << 2),
 };
 
-/* for PreviewImage->tag */
+/* PreviewImage.tag */
 enum {
-  PRV_TAG_DEFFERED = (1 << 0),           /* Actual loading of preview is deferred. */
-  PRV_TAG_DEFFERED_RENDERING = (1 << 1), /* Deferred preview is being loaded. */
-  PRV_TAG_DEFFERED_DELETE = (1 << 2),    /* Deferred preview should be deleted asap. */
+  /** Actual loading of preview is deferred. */
+  PRV_TAG_DEFFERED = (1 << 0),
+  /** Deferred preview is being loaded. */
+  PRV_TAG_DEFFERED_RENDERING = (1 << 1),
+  /** Deferred preview should be deleted asap. */
+  PRV_TAG_DEFFERED_DELETE = (1 << 2),
 };
 
 typedef struct PreviewImage {
@@ -793,6 +804,9 @@ enum {
   LIB_TAG_LIBOVERRIDE_AUTOREFRESH = 1 << 7,
   /**
    * ID is a library override that needs re-sync to its linked reference.
+   *
+   * \note Also used by readfile code when creating a missing ID placeholder if it is detected as
+   * being a linked liboverride ID.
    *
    * RESET_NEVER
    */
