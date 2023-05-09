@@ -499,6 +499,7 @@ typedef struct SculptAttributeParams {
    */
   int permanent : 1;   /* Cannot be combined with simple_array. */
   int stroke_only : 1; /* Release layer at end of struct */
+  bool read_only : 1;
 } SculptAttributeParams;
 
 typedef struct SculptAttribute {
@@ -780,11 +781,18 @@ SculptAttribute *BKE_sculpt_attribute_ensure(struct Object *ob,
                                              const char *name,
                                              const SculptAttributeParams *params);
 
-/* Returns nullptr if attribute does not exist. */
+/* Returns nullptr if attribute does not exist. params may be nullptr. */
 SculptAttribute *BKE_sculpt_attribute_get(struct Object *ob,
                                           eAttrDomain domain,
                                           eCustomDataType proptype,
-                                          const char *name);
+                                          const char *name,
+                                          const SculptAttributeParams *params);
+
+/* Release this attribute handle (does not destroying the attribute itself).
+ * Any pointers inside SculptSession.attrs that point to attr will be
+ * null'd.
+ */
+void BKE_sculpt_attribute_release(struct Object *ob, SculptAttribute *attr);
 
 bool BKE_sculpt_attribute_exists(struct Object *ob,
                                  eAttrDomain domain,

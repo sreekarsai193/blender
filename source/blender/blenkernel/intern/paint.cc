@@ -1652,11 +1652,11 @@ static void sculpt_update_persistent_base(Object *ob)
   SculptSession *ss = ob->sculpt;
 
   ss->attrs.persistent_co = BKE_sculpt_attribute_get(
-      ob, ATTR_DOMAIN_POINT, CD_PROP_FLOAT3, SCULPT_ATTRIBUTE_NAME(persistent_co));
+      ob, ATTR_DOMAIN_POINT, CD_PROP_FLOAT3, SCULPT_ATTRIBUTE_NAME(persistent_co), nullptr);
   ss->attrs.persistent_no = BKE_sculpt_attribute_get(
-      ob, ATTR_DOMAIN_POINT, CD_PROP_FLOAT3, SCULPT_ATTRIBUTE_NAME(persistent_no));
+      ob, ATTR_DOMAIN_POINT, CD_PROP_FLOAT3, SCULPT_ATTRIBUTE_NAME(persistent_no), nullptr);
   ss->attrs.persistent_disp = BKE_sculpt_attribute_get(
-      ob, ATTR_DOMAIN_POINT, CD_PROP_FLOAT, SCULPT_ATTRIBUTE_NAME(persistent_disp));
+      ob, ATTR_DOMAIN_POINT, CD_PROP_FLOAT, SCULPT_ATTRIBUTE_NAME(persistent_disp), nullptr);
 }
 
 static void sculpt_update_object(
@@ -2574,7 +2574,9 @@ static bool sculpt_attr_update(Object *ob, SculptAttribute *attr)
         attr->bmesh_cd_offset = cdata->layers[layer_index].offset;
       }
       else {
-        attr->data = cdata->layers[layer_index].data;
+        attr->data = attr->params.read_only ?
+                         cdata->layers[layer_index].data :
+                         CustomData_get_layer_for_write(cdata, attr->proptype, elem_num);
       }
     }
   }
@@ -2650,20 +2652,13 @@ static SculptAttribute *sculpt_alloc_attr(SculptSession *ss)
 SculptAttribute *BKE_sculpt_attribute_get(struct Object *ob,
                                           eAttrDomain domain,
                                           eCustomDataType proptype,
-                                          const char *name)
+                                          const char *name,
+                                          const SculptAttributeParams *params)
 {
   SculptSession *ss = ob->sculpt;
 
   /* See if attribute is cached in ss->temp_attributes. */
   SculptAttribute *attr = sculpt_get_cached_layer(ss, domain, proptype, name);
-
-  if (attr) {
-    if (sculpt_attr_update(ob, attr)) {
-      sculpt_attribute_update_refs(ob);
-    }
-
-    return attr;
-  }
 
   /* Does attribute exist in CustomData layout? */
   CustomData *cdata = sculpt_get_cdata(ob, domain);
@@ -2687,7 +2682,14 @@ SculptAttribute *BKE_sculpt_attribute_get(struct Object *ob,
 
       attr = sculpt_alloc_attr(ss);
 
-      attr->used = true;
+      if (params) {
+        attr->params = *params;
+      }
+      else {
+        attr->params = {};
+      }
+
+      attr->params.permanent = !(cdata->layers[index].flag & CD_FLAG_TEMPORARY);
       attr->domain = domain;
       attr->proptype = proptype;
       attr->data = cdata->layers[index].data;
@@ -2697,8 +2699,15 @@ SculptAttribute *BKE_sculpt_attribute_get(struct Object *ob,
       attr->elem_size = CustomData_get_elem_size(attr->layer);
 
       STRNCPY_UTF8(attr->name, name);
-      return attr;
     }
+  }
+
+  if (attr) {
+    if (sculpt_attr_update(ob, attr)) {
+      sculpt_attribute_update_refs(ob);
+    }
+
+    return attr;
   }
 
   return nullptr;
@@ -2713,7 +2722,7 @@ static SculptAttribute *sculpt_attribute_ensure_ex(Object *ob,
                                                    bool flat_array_for_bmesh)
 {
   SculptSession *ss = ob->sculpt;
-  SculptAttribute *attr = BKE_sculpt_attribute_get(ob, domain, proptype, name);
+  SculptAttribute *attr = BKE_sculpt_attribute_get(ob, domain, proptype, name, params);
 
   if (attr) {
     sculpt_attr_update(ob, attr);
@@ -2837,12 +2846,9 @@ void BKE_sculpt_attribute_destroy_temporary_all(Object *ob)
   }
 }
 
-bool BKE_sculpt_attribute_destroy(Object *ob, SculptAttribute *attr)
+void BKE_sculpt_attribute_release(struct Object *ob, SculptAttribute *attr)
 {
   SculptSession *ss = ob->sculpt;
-  eAttrDomain domain = attr->domain;
-
-  BLI_assert(attr->used);
 
   /* Remove from convenience pointer struct. */
   SculptAttribute **ptrs = (SculptAttribute **)&ss->attrs;
@@ -2854,7 +2860,18 @@ bool BKE_sculpt_attribute_destroy(Object *ob, SculptAttribute *attr)
     }
   }
 
-  /* Remove from internal temp_attributes array. */
+  attr->used = false;
+  attr->data = nullptr;
+}
+
+bool BKE_sculpt_attribute_destroy(Object *ob, SculptAttribute *attr)
+{
+  SculptSession *ss = ob->sculpt;
+  eAttrDomain domain = attr->domain;
+
+  BLI_assert(attr->used);
+
+  /* Remove any duplicates from internal temp_attributes array. */
   for (int i = 0; i < SCULPT_MAX_ATTRIBUTES; i++) {
     SculptAttribute *attr2 = ss->temp_attributes + i;
 
@@ -2901,12 +2918,12 @@ bool BKE_sculpt_attribute_destroy(Object *ob, SculptAttribute *attr)
     if (layer_i != 0) {
       CustomData_free_layer(cdata, attr->proptype, totelem, layer_i);
     }
-
-    sculpt_attribute_update_refs(ob);
   }
 
-  attr->data = nullptr;
-  attr->used = false;
+  BKE_sculpt_attribute_release(ob, attr);
+
+  /* Make sure the remaining SculptAttributes are valid. */
+  sculpt_attribute_update_refs(ob);
 
   return true;
 }
