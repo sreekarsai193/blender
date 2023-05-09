@@ -656,6 +656,19 @@ ccl_device bool get_left_probability(KernelGlobals kg,
   return true;
 }
 
+ccl_device int light_tree_root_node_index(KernelGlobals kg, const int object_receiver)
+{
+  if (kernel_data.kernel_features & KERNEL_FEATURE_LIGHT_LINKING) {
+    const uint receiver_light_set =
+        (object_receiver != OBJECT_NONE) ?
+            kernel_data_fetch(objects, object_receiver).receiver_light_set :
+            0;
+    return kernel_data.light_link_sets[receiver_light_set].light_tree_root;
+  }
+
+  return 0;
+}
+
 template<bool in_volume_segment>
 ccl_device_noinline bool light_tree_sample(KernelGlobals kg,
                                            float randn,
@@ -679,8 +692,8 @@ ccl_device_noinline bool light_tree_sample(KernelGlobals kg,
   float pdf_leaf = 1.0f;
   float pdf_selection = 1.0f;
   int selected_emitter = -1;
-  int object = 0;
-  int node_index = 0; /* Root node. */
+  int object_emitter = 0;
+  int node_index = light_tree_root_node_index(kg, object_receiver);
 
   float3 local_P = P;
 
@@ -698,7 +711,7 @@ ccl_device_noinline bool light_tree_sample(KernelGlobals kg,
       }
       else {
         /* Continue with the picked mesh light. */
-        object = kernel_data_fetch(light_tree_emitters, selected_emitter).mesh.object_id;
+        object_emitter = kernel_data_fetch(light_tree_emitters, selected_emitter).mesh.object_id;
         continue;
       }
     }
@@ -737,26 +750,31 @@ ccl_device_noinline bool light_tree_sample(KernelGlobals kg,
                                          bounce,
                                          path_flag,
                                          selected_emitter,
-                                         object,
+                                         object_emitter,
                                          pdf_selection,
                                          ls);
 }
 
 /* We need to be able to find the probability of selecting a given light for MIS. */
-ccl_device float light_tree_pdf(
-    KernelGlobals kg, float3 P, float3 N, const int path_flag, const int object, const uint target)
+ccl_device float light_tree_pdf(KernelGlobals kg,
+                                float3 P,
+                                float3 N,
+                                const int path_flag,
+                                const int object_emitter,
+                                const uint index_emitter,
+                                const int object_receiver)
 {
   const bool has_transmission = (path_flag & PATH_RAY_MIS_HAD_TRANSMISSION);
 
   ccl_global const KernelLightTreeEmitter *kemitter = &kernel_data_fetch(light_tree_emitters,
-                                                                         target);
+                                                                         index_emitter);
   int root_index;
   uint bit_trail, target_emitter;
 
   if (is_triangle(kemitter)) {
     /* If the target is an emissive triangle, first traverse the top level tree to find the mesh
      * light emitter, then traverse the subtree. */
-    target_emitter = kernel_data_fetch(object_to_tree, object);
+    target_emitter = kernel_data_fetch(object_to_tree, object_emitter);
     ccl_global const KernelLightTreeEmitter *kmesh = &kernel_data_fetch(light_tree_emitters,
                                                                         target_emitter);
     root_index = kmesh->mesh.node_id;
@@ -770,11 +788,11 @@ ccl_device float light_tree_pdf(
   else {
     root_index = 0;
     bit_trail = kemitter->bit_trail;
-    target_emitter = target;
+    target_emitter = index_emitter;
   }
 
   float pdf = 1.0f;
-  int node_index = 0;
+  int node_index = light_tree_root_node_index(kg, object_receiver);
 
   /* Traverse the light tree until we reach the target leaf node. */
   while (true) {
@@ -813,11 +831,11 @@ ccl_device float light_tree_pdf(
       if (root_index) {
         /* Arrived at the mesh light. Continue with the subtree. */
         float unused;
-        light_tree_to_local_space<false>(kg, object, P, N, unused);
+        light_tree_to_local_space<false>(kg, object_emitter, P, N, unused);
 
         node_index = root_index;
         root_index = 0;
-        target_emitter = target;
+        target_emitter = index_emitter;
         bit_trail = kemitter->bit_trail;
         continue;
       }
@@ -838,13 +856,14 @@ ccl_device float light_tree_pdf(
     }
 
     const bool go_left = (bit_trail & 1) == 0;
-    bit_trail >>= 1;
-    pdf *= go_left ? left_prob : (1.0f - left_prob);
     node_index = go_left ? left_index : right_index;
+    pdf *= go_left ? left_prob : (1.0f - left_prob);
 
     if (pdf == 0) {
       return 0.0f;
     }
+
+    bit_trail >>= kernel_data_fetch(light_tree_nodes, node_index).bit_shift;
   }
 }
 

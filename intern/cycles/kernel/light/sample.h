@@ -465,7 +465,8 @@ ccl_device_inline float light_sample_mis_weight_forward_surface(KernelGlobals kg
     uint prim_offset = kernel_data_fetch(object_prim_offset, sd->object);
     uint triangle = kernel_data_fetch(triangle_to_tree, sd->prim - prim_offset + lookup_offset);
 
-    pdf *= light_tree_pdf(kg, ray_P, N, path_flag, sd->object, triangle);
+    pdf *= light_tree_pdf(
+        kg, ray_P, N, path_flag, sd->object, triangle, light_link_receiver_forward(kg, state));
   }
   else
 #endif
@@ -489,7 +490,13 @@ ccl_device_inline float light_sample_mis_weight_forward_lamp(KernelGlobals kg,
 #ifdef __LIGHT_TREE__
   if (kernel_data.integrator.use_light_tree) {
     const float3 N = INTEGRATOR_STATE(state, path, mis_origin_n);
-    pdf *= light_tree_pdf(kg, P, N, path_flag, 0, kernel_data_fetch(light_to_tree, ls->lamp));
+    pdf *= light_tree_pdf(kg,
+                          P,
+                          N,
+                          path_flag,
+                          0,
+                          kernel_data_fetch(light_to_tree, ls->lamp),
+                          light_link_receiver_forward(kg, state));
   }
   else
 #endif
@@ -524,7 +531,8 @@ ccl_device_inline float light_sample_mis_weight_forward_background(KernelGlobals
   if (kernel_data.integrator.use_light_tree) {
     const float3 N = INTEGRATOR_STATE(state, path, mis_origin_n);
     uint light = kernel_data_fetch(light_to_tree, kernel_data.background.light_index);
-    pdf *= light_tree_pdf(kg, ray_P, N, path_flag, 0, light);
+    pdf *= light_tree_pdf(
+        kg, ray_P, N, path_flag, 0, light, light_link_receiver_forward(kg, state));
   }
   else
 #endif

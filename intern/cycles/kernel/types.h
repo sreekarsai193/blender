@@ -1216,6 +1216,10 @@ typedef struct KernelBake {
 } KernelBake;
 static_assert_align(KernelBake, 16);
 
+typedef struct KernelLightLinkSet {
+  uint light_tree_root;
+} KernelLightLinkSet;
+
 typedef struct KernelData {
   /* Features and limits. */
   uint kernel_features;
@@ -1227,6 +1231,7 @@ typedef struct KernelData {
   KernelCamera cam;
   KernelBake bake;
   KernelTables tables;
+  KernelLightLinkSet light_link_sets[LIGHT_LINK_SET_MAX];
 
   /* Potentially specialized data members. */
 #define KERNEL_STRUCT_BEGIN(name, parent) name parent;
@@ -1428,6 +1433,12 @@ typedef struct KernelLightTreeNode {
 
   /* Bit trail. */
   uint bit_trail;
+
+  /* Bit shift for bit trail, to skip nodes for specialized trees. */
+  uint8_t bit_shift;
+
+  /* Padding. */
+  uint8_t pad[15];
 } KernelLightTreeNode;
 static_assert_align(KernelLightTreeNode, 16);
 

@@ -463,6 +463,7 @@ static void light_tree_node_copy_to_device(KernelLightTreeNode &knode,
   knode.bcone.theta_e = node.measure.bcone.theta_e;
 
   knode.bit_trail = node.bit_trail;
+  knode.bit_shift = 1;
   knode.type = static_cast<LightTreeNodeType>(node.type);
 
   if (node.is_leaf() || node.is_distant()) {
@@ -616,6 +617,133 @@ static int light_tree_flatten(LightTreeFlatten &flatten,
   return node_index;
 }
 
+static void light_tree_emitters_copy_and_flatten(LightTreeFlatten &flatten,
+                                                 const LightTreeNode *node,
+                                                 KernelLightTreeNode *knodes,
+                                                 KernelLightTreeEmitter *kemitters,
+                                                 int &next_node_index)
+{
+  /* Convert only emitters to device representation. */
+  if (node->is_leaf() || node->is_distant()) {
+    light_tree_leaf_emitters_copy_and_flatten(flatten, *node, knodes, kemitters, next_node_index);
+  }
+  else {
+    assert(node->is_inner());
+
+    light_tree_emitters_copy_and_flatten(flatten,
+                                         node->get_inner().children[LightTree::left].get(),
+                                         knodes,
+                                         kemitters,
+                                         next_node_index);
+    light_tree_emitters_copy_and_flatten(flatten,
+                                         node->get_inner().children[LightTree::right].get(),
+                                         knodes,
+                                         kemitters,
+                                         next_node_index);
+  }
+}
+
+static std::pair<int, LightTreeMeasure> light_tree_specialize_nodes_flatten(
+    const LightTreeFlatten &flatten,
+    LightTreeNode *node,
+    const uint64_t light_link_mask,
+    const int depth,
+    vector<KernelLightTreeNode> &knodes,
+    int &next_node_index)
+{
+  assert(!node->is_instance());
+
+  /* Convert inner nodes to device representation, specialized for light linking. */
+  int node_index, child_index = -1;
+
+  LightTreeNode new_node(LightTreeMeasure::empty, node->bit_trail);
+
+  if (depth == 0 && !(node->light_link.set_membership & light_link_mask)) {
+    /* Ensure there is always a root node. */
+    node_index = next_node_index++;
+    new_node.make_leaf(-1, 0);
+  }
+  else if (node->light_link.shareable && node->light_link.shared_node_index != -1) {
+    /* Share subtree already built for another light link set. */
+    return std::make_pair(node->light_link.shared_node_index, node->measure);
+  }
+  else if (node->is_leaf() || node->is_distant()) {
+    /* Specialize leaf node. */
+    node_index = next_node_index++;
+    int first_emitter = -1;
+    int num_emitters = 0;
+
+    for (int i = 0; i < node->get_leaf().num_emitters; i++) {
+      const LightTreeEmitter &emitter = flatten.emitters[node->get_leaf().first_emitter_index + i];
+      if (emitter.light_set_membership & light_link_mask) {
+        /* Assumes emitters are consecutive due to LighTree::sort_leaf. */
+        if (first_emitter == -1) {
+          first_emitter = node->get_leaf().first_emitter_index + i;
+        }
+        num_emitters++;
+        new_node.measure.add(emitter.measure);
+      }
+    }
+
+    assert(first_emitter != -1);
+    new_node.make_leaf(first_emitter, num_emitters);
+  }
+  else {
+    assert(node->is_inner());
+    assert(new_node.is_inner());
+
+    /* Specialize inner node. */
+    LightTreeNode *left_node = node->get_inner().children[LightTree::left].get();
+    LightTreeNode *right_node = node->get_inner().children[LightTree::right].get();
+
+    /* Skip nodes that have only one child. We have a single bit trail for each
+     * primitive, the bit shift is incremented to skip the bit for this node. */
+    LightTreeNode *only_node = nullptr;
+    if (!(left_node->light_link.set_membership & light_link_mask)) {
+      only_node = right_node;
+    }
+    else if (!(right_node->light_link.set_membership & light_link_mask)) {
+      only_node = left_node;
+    }
+    if (only_node) {
+      const auto [only_index, only_measure] = light_tree_specialize_nodes_flatten(
+          flatten, only_node, light_link_mask, depth + 1, knodes, next_node_index);
+
+      assert(only_index != -1);
+      knodes[only_index].bit_shift++;
+      return std::make_pair(only_index, only_measure);
+    }
+
+    /* Create inner node. */
+    node_index = next_node_index++;
+
+    const auto [left_index, left_measure] = light_tree_specialize_nodes_flatten(
+        flatten, left_node, light_link_mask, depth + 1, knodes, next_node_index);
+    const auto [right_index, right_measure] = light_tree_specialize_nodes_flatten(
+        flatten, right_node, light_link_mask, depth + 1, knodes, next_node_index);
+
+    new_node.measure = left_measure;
+    new_node.measure.add(right_measure);
+
+    /* Nodes are stored in depth first order so that the left child node
+     * immediately follows the parent, and only the right child index needs
+     * to be stored. */
+    child_index = right_index;
+  }
+
+  /* Convert to kernel node. */
+  if (knodes.size() <= node_index) {
+    knodes.resize(node_index + 1);
+  }
+  light_tree_node_copy_to_device(knodes[node_index], new_node, child_index);
+
+  if (node->light_link.shareable) {
+    node->light_link.shared_node_index = node_index;
+  }
+
+  return std::make_pair(node_index, new_node.measure);
+}
+
 void LightManager::device_update_tree(Device *,
                                       DeviceScene *dscene,
                                       Scene *scene,
@@ -649,22 +777,66 @@ void LightManager::device_update_tree(Device *,
   flatten.mesh_array = dscene->object_to_tree.alloc(scene->objects.size());
   flatten.triangle_array = dscene->triangle_to_tree.alloc(light_tree.num_triangles);
 
-  /* Allocate emitters and nodes. */
+  /* Allocate emitters */
   const size_t num_emitters = light_tree.num_emitters();
   KernelLightTreeEmitter *kemitters = dscene->light_tree_emitters.alloc(num_emitters);
-  KernelLightTreeNode *knodes = dscene->light_tree_nodes.alloc(light_tree.num_nodes);
 
   /* Update integrator state. */
   kintegrator->use_direct_light = num_emitters > 0;
 
-  /* Copy nodes and emitters. */
-  if (root) {
-    int next_node_index = 0;
-    light_tree_flatten(flatten, root, knodes, kemitters, next_node_index);
-  }
+  /* Test if light linking is used. */
+  const bool use_light_linking = root && root->light_link.set_membership != 0;
+  KernelLightLinkSet *klight_link_sets = dscene->data.light_link_sets;
+  memset(klight_link_sets, 0, sizeof(dscene->data.light_link_sets));
 
   VLOG_INFO << "Use light tree with " << num_emitters << " emitters and " << light_tree.num_nodes
             << " nodes.";
+
+  if (!use_light_linking) {
+    /* Regular light tree without linking. */
+    KernelLightTreeNode *knodes = dscene->light_tree_nodes.alloc(light_tree.num_nodes);
+
+    if (root) {
+      int next_node_index = 0;
+      light_tree_flatten(flatten, root, knodes, kemitters, next_node_index);
+    }
+  }
+  else {
+    int next_node_index = 0;
+
+    vector<KernelLightTreeNode> light_link_nodes;
+
+    /* Write primitives, and any subtrees for instances. */
+    if (root) {
+      /* Reserve enough size of all instance subtrees, then shrink back to
+       * actual number of nodes used. */
+      light_link_nodes.resize(light_tree.num_nodes);
+      light_tree_emitters_copy_and_flatten(
+          flatten, root, light_link_nodes.data(), kemitters, next_node_index);
+      light_link_nodes.resize(next_node_index);
+    }
+
+    /* Specialized light trees for linking. */
+    for (uint64_t tree_index = 0; tree_index < LIGHT_LINK_SET_MAX; tree_index++) {
+      const uint64_t tree_mask = uint64_t(1) << tree_index;
+      if (!(light_tree.light_link_receiver_used & tree_mask)) {
+        continue;
+      }
+
+      klight_link_sets[tree_index].light_tree_root = next_node_index;
+      if (root) {
+        light_tree_specialize_nodes_flatten(
+            flatten, root, tree_mask, 0, light_link_nodes, next_node_index);
+      }
+    }
+
+    /* Allocate and copy nodes into device array. */
+    KernelLightTreeNode *knodes = dscene->light_tree_nodes.alloc(light_link_nodes.size());
+    memcpy(knodes, light_link_nodes.data(), light_link_nodes.size() * sizeof(*knodes));
+
+    VLOG_INFO << "Specialized light tree for light linking, with "
+              << light_link_nodes.size() - light_tree.num_nodes << " additional nodes.";
+  }
 
   /* Copy arrays to device. */
   dscene->light_tree_nodes.copy_to_device();
