@@ -1424,7 +1424,9 @@ typedef struct KernelLightTreeNode {
       int first_emitter; /* The index of the first emitter. */
     } leaf;
     struct {
-      int right_child; /* The index of the right child. */
+      /* Indices of the children. */
+      int left_child;
+      int right_child;
     } inner;
     struct {
       int reference; /* A reference to the node with the subtree. */
@@ -1438,7 +1440,7 @@ typedef struct KernelLightTreeNode {
   uint8_t bit_shift;
 
   /* Padding. */
-  uint8_t pad[15];
+  uint8_t pad[11];
 } KernelLightTreeNode;
 static_assert_align(KernelLightTreeNode, 16);
 

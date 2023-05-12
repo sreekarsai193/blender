@@ -583,7 +583,7 @@ ccl_device int light_tree_cluster_select_emitter(KernelGlobals kg,
     else {
       selected_index = -1;
       for (int i = 0; i < knode->num_emitters; i++) {
-        int current_index = knode->inner.right_child + i;
+        int current_index = knode->leaf.first_emitter + i;
         sample_resevoir(current_index,
                         float(has_importance & 1),
                         selected_index,
@@ -716,9 +716,8 @@ ccl_device_noinline bool light_tree_sample(KernelGlobals kg,
       }
     }
 
-    /* At an interior node, the left child is directly after the parent, while the right child is
-     * stored as the child index. */
-    const int left_index = node_index + 1;
+    /* Inner node. */
+    const int left_index = knode->inner.left_child;
     const int right_index = knode->inner.right_child;
 
     float left_prob;
@@ -844,8 +843,8 @@ ccl_device float light_tree_pdf(KernelGlobals kg,
       }
     }
 
-    /* Interior node. */
-    const int left_index = node_index + 1;
+    /* Inner node. */
+    const int left_index = knode->inner.left_child;
     const int right_index = knode->inner.right_child;
 
     float left_prob;

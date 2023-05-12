@@ -450,7 +450,8 @@ struct LightTreeFlatten {
 
 static void light_tree_node_copy_to_device(KernelLightTreeNode &knode,
                                            const LightTreeNode &node,
-                                           const int child_index)
+                                           const int left_child,
+                                           const int right_child)
 {
   /* Convert node to kernel representation. */
   knode.energy = node.measure.energy;
@@ -472,7 +473,8 @@ static void light_tree_node_copy_to_device(KernelLightTreeNode &knode,
   }
   else if (node.is_inner()) {
     knode.num_emitters = -1;
-    knode.inner.right_child = child_index;
+    knode.inner.left_child = left_child;
+    knode.inner.right_child = right_child;
   }
 }
 
@@ -587,21 +589,18 @@ static int light_tree_flatten(LightTreeFlatten &flatten,
 {
   /* Convert both inner nodes and primitives to device representation. */
   const int node_index = next_node_index++;
-  int child_index = -1;
+  int left_child = -1, right_child = -1;
 
   if (node->is_leaf() || node->is_distant()) {
     light_tree_leaf_emitters_copy_and_flatten(flatten, *node, knodes, kemitters, next_node_index);
   }
   else if (node->is_inner()) {
-    /* Nodes are stored in depth first order so that the left child node
-     * immediately follows the parent, and only the right child index needs
-     * to be stored. */
-    light_tree_flatten(flatten,
-                       node->get_inner().children[LightTree::left].get(),
-                       knodes,
-                       kemitters,
-                       next_node_index);
-    child_index = light_tree_flatten(flatten,
+    left_child = light_tree_flatten(flatten,
+                                    node->get_inner().children[LightTree::left].get(),
+                                    knodes,
+                                    kemitters,
+                                    next_node_index);
+    right_child = light_tree_flatten(flatten,
                                      node->get_inner().children[LightTree::right].get(),
                                      knodes,
                                      kemitters,
@@ -612,7 +611,7 @@ static int light_tree_flatten(LightTreeFlatten &flatten,
     assert(node->is_instance());
   }
 
-  light_tree_node_copy_to_device(knodes[node_index], *node, child_index);
+  light_tree_node_copy_to_device(knodes[node_index], *node, left_child, right_child);
 
   return node_index;
 }
@@ -654,7 +653,7 @@ static std::pair<int, LightTreeMeasure> light_tree_specialize_nodes_flatten(
   assert(!node->is_instance());
 
   /* Convert inner nodes to device representation, specialized for light linking. */
-  int node_index, child_index = -1;
+  int node_index, left_child = -1, right_child = -1;
 
   LightTreeNode new_node(LightTreeMeasure::empty, node->bit_trail);
 
@@ -725,17 +724,15 @@ static std::pair<int, LightTreeMeasure> light_tree_specialize_nodes_flatten(
     new_node.measure = left_measure;
     new_node.measure.add(right_measure);
 
-    /* Nodes are stored in depth first order so that the left child node
-     * immediately follows the parent, and only the right child index needs
-     * to be stored. */
-    child_index = right_index;
+    left_child = left_index;
+    right_child = right_index;
   }
 
   /* Convert to kernel node. */
   if (knodes.size() <= node_index) {
     knodes.resize(node_index + 1);
   }
-  light_tree_node_copy_to_device(knodes[node_index], new_node, child_index);
+  light_tree_node_copy_to_device(knodes[node_index], new_node, left_child, right_child);
 
   if (node->light_link.shareable) {
     node->light_link.shared_node_index = node_index;
@@ -823,10 +820,11 @@ void LightManager::device_update_tree(Device *,
         continue;
       }
 
-      klight_link_sets[tree_index].light_tree_root = next_node_index;
       if (root) {
-        light_tree_specialize_nodes_flatten(
-            flatten, root, tree_mask, 0, light_link_nodes, next_node_index);
+        klight_link_sets[tree_index].light_tree_root =
+            light_tree_specialize_nodes_flatten(
+                flatten, root, tree_mask, 0, light_link_nodes, next_node_index)
+                .first;
       }
     }
 
