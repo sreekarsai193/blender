@@ -51,8 +51,6 @@ ccl_device void shadow_linking_setup_ray_from_intersection(
     ccl_private Ray *ccl_restrict ray,
     ccl_private const Intersection *ccl_restrict isect)
 {
-  kernel_assert(isect->type == PRIMITIVE_LAMP);
-
   /* The ray->tmin follows the value configured at the surface bounce.
    * it is the same for the continued main path and for this shadow ray. There is no need to push
    * it forward here. */
@@ -65,13 +63,112 @@ ccl_device void shadow_linking_setup_ray_from_intersection(
   ray->self.object = INTEGRATOR_STATE(state, shadow_link, last_isect_object);
   ray->self.prim = INTEGRATOR_STATE(state, shadow_link, last_isect_prim);
 
-  // TODO: Support mesh lights.
-  ray->self.light_object = OBJECT_NONE;
-  ray->self.light_prim = PRIM_NONE;
-  ray->self.light = isect->prim;
+  if (isect->type == PRIMITIVE_LAMP) {
+    ray->self.light_object = OBJECT_NONE;
+    ray->self.light_prim = PRIM_NONE;
+    ray->self.light = isect->prim;
+  }
+  else {
+    ray->self.light_object = isect->object;
+    ray->self.light_prim = isect->prim;
+    ray->self.light = LAMP_NONE;
+  }
 }
 
-ccl_device void shadow_linking_shade(KernelGlobals kg, IntegratorState state)
+ccl_device bool shadow_linking_shade_light(KernelGlobals kg,
+                                           IntegratorState state,
+                                           ccl_private Ray &ccl_restrict ray,
+                                           ccl_private Intersection &ccl_restrict isect,
+                                           ccl_private ShaderData *emission_sd,
+                                           ccl_private Spectrum &ccl_restrict bsdf_spectrum,
+                                           ccl_private int &ccl_restrict light_group)
+{
+  LightSample ls ccl_optional_struct_init;
+  const bool use_light_sample = shadow_linking_light_sample_from_intersection(kg, isect, ray, &ls);
+  if (!use_light_sample) {
+    /* No light to be sampled, so no direct light contribution either. */
+    return false;
+  }
+
+  const Spectrum light_eval = light_sample_shader_eval(kg, state, emission_sd, &ls, ray.time);
+  if (is_zero(light_eval)) {
+    return false;
+  }
+
+  const uint32_t path_flag = INTEGRATOR_STATE(state, path, flag);
+  if (!is_light_shader_visible_to_path(ls.shader, path_flag)) {
+    return false;
+  }
+
+  /* MIS weighting. */
+  float mis_weight = 1.0f;
+  if (!(path_flag & PATH_RAY_MIS_SKIP)) {
+    mis_weight = shadow_linking_light_sample_mis_weight(kg, state, path_flag, &ls, ray.P);
+  }
+
+  bsdf_spectrum = light_eval * mis_weight *
+                  INTEGRATOR_STATE(state, shadow_link, dedicated_light_weight);
+
+  // TODO(: De-duplicate with the shade_surface.
+  // Possibly by ensuring ls->group is always assigned properly.
+  light_group = ls.type != LIGHT_BACKGROUND ? ls.group : kernel_data.background.lightgroup;
+
+  return true;
+}
+
+ccl_device bool shadow_linking_shade_surface_emission(KernelGlobals kg,
+                                                      IntegratorState state,
+                                                      ccl_private Ray &ccl_restrict ray,
+                                                      ccl_private Intersection &ccl_restrict isect,
+                                                      ccl_private ShaderData *emission_sd,
+                                                      ccl_global float *ccl_restrict render_buffer,
+                                                      ccl_private Spectrum &ccl_restrict
+                                                          bsdf_spectrum,
+                                                      ccl_private int &ccl_restrict light_group)
+{
+  const uint32_t path_flag = INTEGRATOR_STATE(state, path, flag);
+
+  integrate_surface_shader_setup(kg, state, emission_sd);
+
+#  ifdef __VOLUME__
+  if (emission_sd->flag & SD_HAS_ONLY_VOLUME) {
+    return false;
+  }
+#  endif
+
+  surface_shader_eval<KERNEL_FEATURE_NODE_MASK_SURFACE>(
+      kg, state, emission_sd, render_buffer, path_flag);
+  surface_shader_prepare_closures(kg, state, emission_sd, path_flag);
+
+  if ((emission_sd->flag & SD_EMISSION) == 0) {
+    return false;
+  }
+
+  const Spectrum L = surface_shader_emission(emission_sd);
+  float mis_weight = 1.0f;
+
+  const bool has_mis = !(path_flag & PATH_RAY_MIS_SKIP) &&
+                       (emission_sd->flag &
+                        ((emission_sd->flag & SD_BACKFACING) ? SD_MIS_BACK : SD_MIS_FRONT));
+
+#  ifdef __HAIR__
+  if (has_mis && (emission_sd->type & PRIMITIVE_TRIANGLE))
+#  else
+  if (has_mis)
+#  endif
+  {
+    mis_weight = light_sample_mis_weight_forward_surface(kg, state, path_flag, emission_sd);
+  }
+
+  bsdf_spectrum = L * mis_weight * INTEGRATOR_STATE(state, shadow_link, dedicated_light_weight);
+  light_group = object_lightgroup(kg, emission_sd->object);
+
+  return true;
+}
+
+ccl_device void shadow_linking_shade(KernelGlobals kg,
+                                     IntegratorState state,
+                                     ccl_global float *ccl_restrict render_buffer)
 {
   /* Read intersection from integrator state into local memory. */
   Intersection isect ccl_optional_struct_init;
@@ -81,39 +178,31 @@ ccl_device void shadow_linking_shade(KernelGlobals kg, IntegratorState state)
   Ray ray ccl_optional_struct_init;
   integrator_state_read_ray(state, &ray);
 
-  LightSample ls ccl_optional_struct_init;
-  const bool use_light_sample = shadow_linking_light_sample_from_intersection(kg, isect, ray, &ls);
-  if (!use_light_sample) {
-    /* No light to be sampled, so no direct light contribution either. */
-    return;
-  }
-
   ShaderDataCausticsStorage emission_sd_storage;
   ccl_private ShaderData *emission_sd = AS_SHADER_DATA(&emission_sd_storage);
-  const Spectrum light_eval = light_sample_shader_eval(kg, state, emission_sd, &ls, ray.time);
-  if (is_zero(light_eval)) {
-    return;
-  }
 
-  const uint32_t path_flag = INTEGRATOR_STATE(state, path, flag);
-  if (!is_light_shader_visible_to_path(ls.shader, path_flag)) {
-    return;
-  }
+  Spectrum bsdf_spectrum;
+  int light_group = LIGHTGROUP_NONE;
 
-  /* MIS weighting. */
-  float mis_weight = 1.0f;
-  if (!(path_flag & PATH_RAY_MIS_SKIP)) {
-    mis_weight = shadow_linking_light_sample_mis_weight(kg, state, path_flag, &ls, ray.P);
+  if (isect.type == PRIMITIVE_LAMP) {
+    if (!shadow_linking_shade_light(
+            kg, state, ray, isect, emission_sd, bsdf_spectrum, light_group)) {
+      return;
+    }
   }
-
-  const Spectrum bsdf_spectrum = light_eval * mis_weight *
-                                 INTEGRATOR_STATE(state, shadow_link, dedicated_light_weight);
+  else {
+    if (!shadow_linking_shade_surface_emission(
+            kg, state, ray, isect, emission_sd, render_buffer, bsdf_spectrum, light_group))
+    {
+      return;
+    }
+  }
 
   shadow_linking_setup_ray_from_intersection(state, &ray, &isect);
 
   /* Branch off shadow kernel. */
   IntegratorShadowState shadow_state = integrate_direct_light_shadow_init_common(
-      kg, state, &ls, &ray, bsdf_spectrum, 0);
+      kg, state, &ray, bsdf_spectrum, 0, light_group);
 
   /* No need to update the volume stack as the surface bounce already performed enter-exit check.
    */
@@ -138,12 +227,12 @@ ccl_device void shadow_linking_shade(KernelGlobals kg, IntegratorState state)
 
 ccl_device void integrator_shade_dedicated_light(KernelGlobals kg,
                                                  IntegratorState state,
-                                                 ccl_global float *ccl_restrict /*render_buffer*/)
+                                                 ccl_global float *ccl_restrict render_buffer)
 {
   PROFILING_INIT(kg, PROFILING_SHADE_DEDICATED_LIGHT);
 
 #ifdef __SHADOW_LINKING__
-  shadow_linking_shade(kg, state);
+  shadow_linking_shade(kg, state, render_buffer);
 
   /* Restore self-intersection check primitives in the main state before returning to the
    * intersect_closest() state. */

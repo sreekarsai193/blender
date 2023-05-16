@@ -483,6 +483,7 @@ ccl_device_forceinline bool mnee_newton_solver(KernelGlobals kg,
         if (!hit)
           break;
 
+        // TODO: Is the fetch needed here? The shade_surface simply reads isect->object.
         int hit_object = (projection_isect.object == OBJECT_NONE) ?
                              kernel_data_fetch(prim_object, projection_isect.prim) :
                              projection_isect.object;

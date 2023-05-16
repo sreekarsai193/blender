@@ -245,6 +245,8 @@ ccl_device_noinline bool light_sample(KernelGlobals kg,
 
 /* Intersect ray with individual light. */
 
+/* Returns the total number of hits (the input num_hits plus the number of the new intersections).
+ */
 template<bool is_main_path>
 ccl_device_forceinline int lights_intersect_impl(KernelGlobals kg,
                                                  ccl_private const Ray *ccl_restrict ray,
@@ -255,13 +257,12 @@ ccl_device_forceinline int lights_intersect_impl(KernelGlobals kg,
                                                  const uint32_t path_flag,
                                                  const uint8_t path_mnee,
                                                  const int receiver_forward,
-                                                 ccl_private uint *lcg_state)
+                                                 ccl_private uint *lcg_state,
+                                                 int num_hits)
 {
 #ifdef __SHADOW_LINKING__
   const bool is_indirect_ray = !(path_flag & PATH_RAY_CAMERA);
 #endif
-
-  int num_hits = 0;
 
   for (int lamp = 0; lamp < kernel_data.integrator.num_lights; lamp++) {
     const ccl_global KernelLight *klight = &kernel_data_fetch(lights, lamp);
@@ -405,13 +406,17 @@ ccl_device bool lights_intersect(KernelGlobals kg,
                               path_flag,
                               path_mnee,
                               receiver_forward,
-                              nullptr);
+                              nullptr,
+                              0);
 
   return isect->prim != PRIM_NONE;
 }
 
 /* Lights intersection for the shadow linking.
- * Intersects spot, point, area, and distant lights. */
+ * Intersects spot, point, area, and distant lights.
+ *
+ * Returns the total number of hits (the input num_hits plus the number of the new intersections).
+ */
 ccl_device int lights_intersect_shadow_linked(KernelGlobals kg,
                                               ccl_private const Ray *ccl_restrict ray,
                                               ccl_private Intersection *ccl_restrict isect,
@@ -420,7 +425,8 @@ ccl_device int lights_intersect_shadow_linked(KernelGlobals kg,
                                               const int last_type,
                                               const uint32_t path_flag,
                                               const int receiver_forward,
-                                              ccl_private uint *lcg_state)
+                                              ccl_private uint *lcg_state,
+                                              const int num_hits)
 {
   return lights_intersect_impl<false>(kg,
                                       ray,
@@ -431,7 +437,8 @@ ccl_device int lights_intersect_shadow_linked(KernelGlobals kg,
                                       path_flag,
                                       PATH_MNEE_NONE,
                                       receiver_forward,
-                                      lcg_state);
+                                      lcg_state,
+                                      num_hits);
 }
 
 /* Setup light sample from intersection. */

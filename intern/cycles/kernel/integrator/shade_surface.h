@@ -109,12 +109,25 @@ ccl_device_forceinline void integrate_surface_emission(KernelGlobals kg,
                                                        ccl_global float *ccl_restrict
                                                            render_buffer)
 {
-  /* Light linking. */
+#ifdef __LIGHT_LINKING__
   if (!light_link_object_match(kg, light_link_receiver_forward(kg, state), sd->object)) {
     return;
   }
+#endif
 
   const uint32_t path_flag = INTEGRATOR_STATE(state, path, flag);
+
+#ifdef __SHADOW_LINKING__
+  /* Indirect emission of shadow-linked emissive surfaces is done via shadow rays to dedicated
+   * light sources. */
+  if (kernel_data.kernel_features & KERNEL_FEATURE_SHADOW_LINKING) {
+    if (!(path_flag & PATH_RAY_CAMERA) &&
+        kernel_data_fetch(objects, sd->object).shadow_set_membership != LIGHT_LINK_MASK_ALL)
+    {
+      return;
+    }
+  }
+#endif
 
   /* Evaluate emissive closure. */
   Spectrum L = surface_shader_emission(sd);
@@ -143,9 +156,9 @@ ccl_device_forceinline void integrate_surface_emission(KernelGlobals kg,
 ccl_device_inline IntegratorShadowState
 integrate_direct_light_shadow_init_common(KernelGlobals kg,
                                           IntegratorState state,
-                                          ccl_private const LightSample *ls,
                                           ccl_private const Ray *ccl_restrict ray,
                                           const Spectrum bsdf_spectrum,
+                                          const int light_group,
                                           const int mnee_vertex_count)
 {
 
@@ -203,10 +216,7 @@ integrate_direct_light_shadow_init_common(KernelGlobals kg,
   }
 
   /* Write Lightgroup, +1 as lightgroup is int but we need to encode into a uint8_t. */
-  INTEGRATOR_STATE_WRITE(
-      shadow_state, shadow_path, lightgroup) = (ls->type != LIGHT_BACKGROUND) ?
-                                                   ls->group + 1 :
-                                                   kernel_data.background.lightgroup + 1;
+  INTEGRATOR_STATE_WRITE(shadow_state, shadow_path, lightgroup) = light_group;
 
 #ifdef __PATH_GUIDING__
   INTEGRATOR_STATE_WRITE(shadow_state, shadow_path, unlit_throughput) = unlit_throughput;
@@ -330,8 +340,13 @@ ccl_device_forceinline void integrate_surface_direct_light(KernelGlobals kg,
   }
 
   /* Branch off shadow kernel. */
+
+  // TODO(: De-duplicate with the shade_Dedicated_light.
+  // Possibly by ensuring ls->group is always assigned properly.
+  const int light_group = ls.type != LIGHT_BACKGROUND ? ls.group :
+                                                        kernel_data.background.lightgroup;
   IntegratorShadowState shadow_state = integrate_direct_light_shadow_init_common(
-      kg, state, &ls, &ray, bsdf_eval_sum(&bsdf_eval), mnee_vertex_count);
+      kg, state, &ray, bsdf_eval_sum(&bsdf_eval), mnee_vertex_count, light_group);
 
   if (is_transmission) {
 #ifdef __VOLUME__

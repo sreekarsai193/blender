@@ -14,19 +14,80 @@ CCL_NAMESPACE_BEGIN
 
 #ifdef __SHADOW_LINKING__
 
+#  define SHADOW_LINK_MAX_INTERSECTION_COUNT 1024
+
+/* Intersect mesh objects.
+ *
+ * Returns the total number of emissive surfaces hit, and the intersection contains a random
+ * intersected emitter to which the dedicated shadow ray is to eb traced.
+ *
+ * NOTE: Sets the ray tmax to the maximum intersection distance (past which no lights are to be
+ * considered for shadow linking). */
+ccl_device int shadow_linking_pick_mesh_intersection(KernelGlobals kg,
+                                                     IntegratorState state,
+                                                     ccl_private Ray *ccl_restrict ray,
+                                                     ccl_private Intersection *ccl_restrict
+                                                         linked_isect,
+                                                     ccl_private uint *lcg_state,
+                                                     int num_hits)
+{
+  /* The tmin will be offset, so store its current value and restore later on, allowing a separate
+   * light intersection loop starting from the actual ray origin. */
+  const float old_tmin = ray->tmin;
+
+  const uint visibility = path_state_ray_visibility(state);
+
+  for (int i = 0; i < SHADOW_LINK_MAX_INTERSECTION_COUNT; i++) {
+    Intersection current_isect ccl_optional_struct_init;
+    current_isect.object = OBJECT_NONE;
+    current_isect.prim = PRIM_NONE;
+
+    const bool hit = scene_intersect(kg, ray, visibility, &current_isect);
+    if (!hit) {
+      break;
+    }
+
+    const uint64_t set_membership =
+        kernel_data_fetch(objects, current_isect.object).shadow_set_membership;
+    if (set_membership != LIGHT_LINK_MASK_ALL) {
+      ++num_hits;
+
+      if ((linked_isect->prim == PRIM_NONE) && (lcg_step_float(lcg_state) < 1.0f / num_hits)) {
+        *linked_isect = current_isect;
+      }
+    }
+
+    const uint blocker_set = kernel_data_fetch(objects, current_isect.object).blocker_shadow_set;
+    if (blocker_set == 0) {
+      /* Contribution from the lights past the default blocker is accumulated using the main path.
+       */
+      ray->tmax = current_isect.t;
+      break;
+    }
+
+    /* Move the ray forward. */
+    ray->tmin = intersection_t_offset(current_isect.t);
+  }
+
+  ray->tmin = old_tmin;
+
+  return num_hits;
+}
+
 /* Pick a light for tracing a shadow ray for the shadow linking.
  * Picks a random light which is intersected by the given ray, and stores the intersection result.
- * If no lights were hit false is returned. */
+ * If no lights were hit false is returned.
+ *
+ * NOTE: Sets the ray tmax to the maximum intersection distance (past which no lights are to be
+ * considered for shadow linking). */
 ccl_device bool shadow_linking_pick_light_intersection(KernelGlobals kg,
                                                        IntegratorState state,
-                                                       ccl_private const Ray *ccl_restrict ray,
+                                                       ccl_private Ray *ccl_restrict ray,
                                                        ccl_private Intersection *ccl_restrict
-                                                           isect)
+                                                           linked_isect)
 {
   uint32_t path_flag = INTEGRATOR_STATE(state, path, flag);
 
-  const int last_prim = INTEGRATOR_STATE(state, isect, prim);
-  const int last_object = INTEGRATOR_STATE(state, isect, object);
   const int last_type = INTEGRATOR_STATE(state, isect, type);
 
   uint lcg_state = lcg_state_init(INTEGRATOR_STATE(state, path, rng_hash),
@@ -34,19 +95,32 @@ ccl_device bool shadow_linking_pick_light_intersection(KernelGlobals kg,
                                   INTEGRATOR_STATE(state, path, sample),
                                   0x68bc21eb);
 
-  /* The lights_intersect() has a "refining" behavior: it chooses intersection closer to the
-   * current intersection's distance. Hence initialize the fields which are accessed prior to
-   * recording an intersection. */
-  isect->t = FLT_MAX;
-  isect->prim = PRIM_NONE;
+  /* Indicate that no intersection has been picked yet. */
+  linked_isect->prim = PRIM_NONE;
 
-  // TODO: Support mesh emitters.
+  int num_hits = 0;
 
-  // TODO: Only if ray is not fully occluded.
+  // TODO: Only if there are emissive meshes in the scene?
 
+  // TODO: Only if the ray hits any light? As in, check that there is a light first, before
+  // tracing potentially expensive ray.
+
+  num_hits = shadow_linking_pick_mesh_intersection(
+      kg, state, ray, linked_isect, &lcg_state, num_hits);
+
+  // TODO: Only intersections up to the ray->tmax. Intersecting all will increase noise in cases
+  // when the light is behind knowingly opaque object.
   const int receiver_forward = light_link_receiver_forward(kg, state);
-  const int num_hits = lights_intersect_shadow_linked(
-      kg, ray, isect, last_prim, last_object, last_type, path_flag, receiver_forward, &lcg_state);
+  num_hits = lights_intersect_shadow_linked(kg,
+                                            ray,
+                                            linked_isect,
+                                            ray->self.prim,
+                                            ray->self.object,
+                                            last_type,
+                                            path_flag,
+                                            receiver_forward,
+                                            &lcg_state,
+                                            num_hits);
 
   if (num_hits == 0) {
     return false;
@@ -71,6 +145,12 @@ ccl_device bool shadow_linking_intersect(KernelGlobals kg, IntegratorState state
   /* Read ray from integrator state into local memory. */
   Ray ray ccl_optional_struct_init;
   integrator_state_read_ray(state, &ray);
+
+  ray.self.prim = INTEGRATOR_STATE(state, isect, prim);
+  ray.self.object = INTEGRATOR_STATE(state, isect, object);
+  ray.self.light_object = OBJECT_NONE;
+  ray.self.light_prim = PRIM_NONE;
+  ray.self.light = LAMP_NONE;
 
   Intersection isect ccl_optional_struct_init;
   if (!shadow_linking_pick_light_intersection(kg, state, &ray, &isect)) {
