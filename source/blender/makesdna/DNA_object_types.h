@@ -255,8 +255,8 @@ typedef struct LightLinkingRuntime {
    * linking.
    * A light set is a combination of emitters used by one or more receiver objects.
    *
-   * If there is no light linking in the scene, this is assigned zero. If the emitter does
-   * not specify light linking, it is a member of all light sets.
+   * If there is no light linking in the scene or if the emitter does not specify light linking all
+   * bits are set.
    *
    * NOTE: There can only be 64 light sets in a scene. */
   uint64_t light_set_membership;
@@ -265,20 +265,22 @@ typedef struct LightLinkingRuntime {
    * linking.
    * A light set is a combination of emitters from which a blocked object does not cast a shadow.
    *
-   * If there is no shadow linking in the scene, this is assigned zero. If the emitter does
-   * not specify light linking, it is a member of all light sets.
+   * If there is no shadow linking in the scene or if the emitter does not specify shadow linking
+   * all bits are set.
    *
    * NOTE: There can only be 64 light sets in a scene. */
   uint64_t shadow_set_membership;
 
   /* For receiver objects: the index of the light set from which this object receives light.
    *
-   * If there is no light linking in the scene, this is assigned zero. */
+   * If there is no light linking in the scene or the receiver is not linked to any light this is
+   * assigned zero. */
   uint8_t receiver_light_set;
 
   /* For blocker objects: the index of the light set from which this object casts shadow from.
    *
-   * If there is no light shadow in the scene, this is assigned zero. */
+   *If there is no shadow shadow in the scene or the blocker is not linked to any emitter this is
+   *assigned zero. */
   uint8_t blocker_shadow_set;
 
   uint8_t _pad[6];

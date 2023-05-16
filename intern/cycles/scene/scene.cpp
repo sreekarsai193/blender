@@ -491,10 +491,10 @@ void Scene::update_kernel_features()
     else if (geom->is_pointcloud()) {
       kernel_features |= KERNEL_FEATURE_POINTCLOUD;
     }
-    if (object->get_light_set_membership()) {
+    if (object->get_receiver_light_set()) {
       kernel_features |= KERNEL_FEATURE_LIGHT_LINKING;
     }
-    if (object->get_shadow_set_membership()) {
+    if (object->get_blocker_shadow_set()) {
       kernel_features |= KERNEL_FEATURE_SHADOW_LINKING;
     }
   }
@@ -502,12 +502,6 @@ void Scene::update_kernel_features()
   foreach (Light *light, lights) {
     if (light->get_use_caustics()) {
       has_caustics_light = true;
-    }
-    if (light->get_light_set_membership()) {
-      kernel_features |= KERNEL_FEATURE_LIGHT_LINKING;
-    }
-    if (light->get_shadow_set_membership()) {
-      kernel_features |= KERNEL_FEATURE_SHADOW_LINKING;
     }
   }
 

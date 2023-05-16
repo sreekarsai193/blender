@@ -454,10 +454,10 @@ void Cache::eval_runtime_data(Object &object_eval) const
     /* No light linking used in the scene. */
 
     light_linking.runtime.receiver_light_set = 0;
-    light_linking.runtime.light_set_membership = 0;
+    light_linking.runtime.light_set_membership = EmitterSetMembership::SET_MEMBERSHIP_ALL;
 
     light_linking.runtime.blocker_shadow_set = 0;
-    light_linking.runtime.shadow_set_membership = 0;
+    light_linking.runtime.shadow_set_membership = EmitterSetMembership::SET_MEMBERSHIP_ALL;
 
     return;
   }

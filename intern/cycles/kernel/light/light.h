@@ -298,11 +298,13 @@ ccl_device_forceinline int lights_intersect_impl(KernelGlobals kg,
      * lights. */
     if (kernel_data.kernel_features & KERNEL_FEATURE_SHADOW_LINKING) {
       if (is_main_path) {
-        if (is_indirect_ray && kernel_data_fetch(lights, lamp).shadow_set_membership) {
+        if (is_indirect_ray &&
+            kernel_data_fetch(lights, lamp).shadow_set_membership != LIGHT_LINK_MASK_ALL)
+        {
           continue;
         }
       }
-      else if (!kernel_data_fetch(lights, lamp).shadow_set_membership) {
+      else if (kernel_data_fetch(lights, lamp).shadow_set_membership == LIGHT_LINK_MASK_ALL) {
         continue;
       }
     }

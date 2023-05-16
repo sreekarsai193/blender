@@ -782,7 +782,7 @@ void LightManager::device_update_tree(Device *,
   kintegrator->use_direct_light = num_emitters > 0;
 
   /* Test if light linking is used. */
-  const bool use_light_linking = root && root->light_link.set_membership != 0;
+  const bool use_light_linking = root && (light_tree.light_link_receiver_used != 1);
   KernelLightLinkSet *klight_link_sets = dscene->data.light_link_sets;
   memset(klight_link_sets, 0, sizeof(dscene->data.light_link_sets));
 
