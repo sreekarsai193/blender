@@ -73,7 +73,8 @@ ccl_device void shadow_linking_shade(KernelGlobals kg, IntegratorState state)
     mis_weight = light_sample_mis_weight_forward_lamp(kg, state, path_flag, &ls, ray.P);
   }
 
-  const Spectrum bsdf_spectrum = light_eval * mis_weight;
+  const Spectrum bsdf_spectrum = light_eval * mis_weight *
+                                 INTEGRATOR_STATE(state, shadow_link, dedicated_light_weight);
 
   shadow_linking_setup_ray_from_intersection(state, &ray, &isect);
 

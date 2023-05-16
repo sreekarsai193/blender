@@ -8,6 +8,7 @@
 #include "kernel/integrator/shade_surface.h"
 #include "kernel/integrator/shadow_linking.h"
 #include "kernel/light/light.h"
+#include "kernel/sample/lcg.h"
 
 CCL_NAMESPACE_BEGIN
 
@@ -28,6 +29,11 @@ ccl_device bool shadow_linking_pick_light_intersection(KernelGlobals kg,
   const int last_object = INTEGRATOR_STATE(state, isect, object);
   const int last_type = INTEGRATOR_STATE(state, isect, type);
 
+  uint lcg_state = lcg_state_init(INTEGRATOR_STATE(state, path, rng_hash),
+                                  INTEGRATOR_STATE(state, path, rng_offset),
+                                  INTEGRATOR_STATE(state, path, sample),
+                                  0x68bc21eb);
+
   /* The lights_intersect() has a "refining" behavior: it chooses intersection closer to the
    * current intersection's distance. Hence initialize the fields which are accessed prior to
    * recording an intersection. */
@@ -36,21 +42,19 @@ ccl_device bool shadow_linking_pick_light_intersection(KernelGlobals kg,
 
   // TODO: Support mesh emitters.
 
-  // TODO: Support multiple light sources.
-
   // TODO: Distant lights.
 
   // TODO: Only if ray is not fully occluded.
 
-  // TODO: What of the actual shadow ray hits the same light through a semi-transparent surface?
-
   const int receiver_forward = light_link_receiver_forward(kg, state);
+  const int num_hits = lights_intersect_shadow_linked(
+      kg, ray, isect, last_prim, last_object, last_type, path_flag, receiver_forward, &lcg_state);
 
-  if (!lights_intersect_shadow_linked(
-          kg, ray, isect, last_prim, last_object, last_type, path_flag, receiver_forward))
-  {
+  if (num_hits == 0) {
     return false;
   }
+
+  INTEGRATOR_STATE_WRITE(state, shadow_link, dedicated_light_weight) = num_hits;
 
   return true;
 }
@@ -82,7 +86,7 @@ ccl_device bool shadow_linking_intersect(KernelGlobals kg, IntegratorState state
   shadow_linking_store_last_primitives(state);
 
   /* Write intersection result into global integrator state memory, so that the
-   * shade_dedicated_light kernel can use it for calculation of the light sample, */
+   * shade_dedicated_light kernel can use it for calculation of the light sample. */
   integrator_state_write_isect(state, &isect);
 
   integrator_path_next(kg,

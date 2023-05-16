@@ -139,6 +139,7 @@ KERNEL_STRUCT_END(guiding)
 /******************************* Shadow linking *******************************/
 
 KERNEL_STRUCT_BEGIN(shadow_link)
+KERNEL_STRUCT_MEMBER(shadow_link, float, dedicated_light_weight, KERNEL_FEATURE_SHADOW_LINKING)
 /* Copy of primitive and object from the last main path intersection. */
 KERNEL_STRUCT_MEMBER(shadow_link, int, last_isect_prim, KERNEL_FEATURE_SHADOW_LINKING)
 KERNEL_STRUCT_MEMBER(shadow_link, int, last_isect_object, KERNEL_FEATURE_SHADOW_LINKING)
