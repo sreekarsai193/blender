@@ -335,6 +335,14 @@ ccl_device_forceinline int lights_intersect_impl(KernelGlobals kg,
         continue;
       }
     }
+    else if (type == LIGHT_DISTANT) {
+      if (is_main_path) {
+        continue;
+      }
+      if (!distant_light_intersect(klight, ray, &t, &u, &v)) {
+        continue;
+      }
+    }
     else {
       continue;
     }
@@ -374,6 +382,8 @@ ccl_device_forceinline int lights_intersect_impl(KernelGlobals kg,
   return num_hits;
 }
 
+/* Lights intersection for the main path.
+ * Intersects spot, point, and area lights. */
 ccl_device bool lights_intersect(KernelGlobals kg,
                                  IntegratorState state,
                                  ccl_private const Ray *ccl_restrict ray,
@@ -400,6 +410,8 @@ ccl_device bool lights_intersect(KernelGlobals kg,
   return isect->prim != PRIM_NONE;
 }
 
+/* Lights intersection for the shadow linking.
+ * Intersects spot, point, area, and distant lights. */
 ccl_device int lights_intersect_shadow_linked(KernelGlobals kg,
                                               ccl_private const Ray *ccl_restrict ray,
                                               ccl_private Intersection *ccl_restrict isect,

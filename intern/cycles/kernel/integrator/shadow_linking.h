@@ -20,10 +20,10 @@ ccl_device_forceinline bool shadow_linking_scene_need_shadow_ray(KernelGlobals k
     return false;
   }
 
-  if (!kernel_data.integrator.use_light_mis) {
-    /* No need to cast extra shadow linking path if there are no lights with MIS in the scene. */
-    return false;
-  }
+  /* The distant lights might be using shadow linking, and they are not counted as
+   * kernel_data.integrator.use_light_mis.
+   * So there is a potential to avoid extra rays from being traced, but it requires more granular
+   * flags set in the integrator. */
 
   return true;
 }

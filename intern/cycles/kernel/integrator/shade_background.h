@@ -138,10 +138,17 @@ ccl_device_inline void integrate_distant_lights(KernelGlobals kg,
         continue;
       }
 #endif
-      /* Light linking. */
+
+#ifdef __LIGHT_LINKING__
       if (!light_link_light_match(kg, light_link_receiver_forward(kg, state), lamp)) {
         continue;
       }
+#endif
+#ifdef __SHADOW_LINKING__
+      if (kernel_data_fetch(lights, lamp).shadow_set_membership != LIGHT_LINK_MASK_ALL) {
+        continue;
+      }
+#endif
 
 #ifdef __MNEE__
       if (INTEGRATOR_STATE(state, path, mnee) & PATH_MNEE_CULL_LIGHT_CONNECTION) {

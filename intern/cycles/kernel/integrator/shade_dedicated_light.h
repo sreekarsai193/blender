@@ -5,10 +5,43 @@
 
 #include "kernel/integrator/path_state.h"
 #include "kernel/integrator/shade_surface.h"
+#include "kernel/light/distant.h"
+#include "kernel/light/light.h"
 
 CCL_NAMESPACE_BEGIN
 
 #ifdef __SHADOW_LINKING__
+
+ccl_device_inline bool shadow_linking_light_sample_from_intersection(
+    KernelGlobals kg,
+    ccl_private const Intersection &ccl_restrict isect,
+    ccl_private const Ray &ccl_restrict ray,
+    ccl_private LightSample *ccl_restrict ls)
+{
+  const int lamp = isect.prim;
+
+  const ccl_global KernelLight *klight = &kernel_data_fetch(lights, lamp);
+  const LightType type = LightType(klight->type);
+
+  if (type == LIGHT_DISTANT) {
+    return distant_light_sample_from_intersection(kg, ray.D, lamp, ls);
+  }
+
+  return light_sample_from_intersection(kg, &isect, ray.P, ray.D, ls);
+}
+
+ccl_device_inline float shadow_linking_light_sample_mis_weight(KernelGlobals kg,
+                                                               IntegratorState state,
+                                                               const uint32_t path_flag,
+                                                               const ccl_private LightSample *ls,
+                                                               const float3 P)
+{
+  if (ls->type == LIGHT_DISTANT) {
+    return light_sample_mis_weight_forward_distant(kg, state, path_flag, ls);
+  }
+
+  return light_sample_mis_weight_forward_lamp(kg, state, path_flag, ls, P);
+}
 
 /* Setup ray for the shadow path.
  * Expects that the current state of the ray is the one calculated by the surface bounce, and the
@@ -49,7 +82,7 @@ ccl_device void shadow_linking_shade(KernelGlobals kg, IntegratorState state)
   integrator_state_read_ray(state, &ray);
 
   LightSample ls ccl_optional_struct_init;
-  const bool use_light_sample = light_sample_from_intersection(kg, &isect, ray.P, ray.D, &ls);
+  const bool use_light_sample = shadow_linking_light_sample_from_intersection(kg, isect, ray, &ls);
   if (!use_light_sample) {
     /* No light to be sampled, so no direct light contribution either. */
     return;
@@ -70,7 +103,7 @@ ccl_device void shadow_linking_shade(KernelGlobals kg, IntegratorState state)
   /* MIS weighting. */
   float mis_weight = 1.0f;
   if (!(path_flag & PATH_RAY_MIS_SKIP)) {
-    mis_weight = light_sample_mis_weight_forward_lamp(kg, state, path_flag, &ls, ray.P);
+    mis_weight = shadow_linking_light_sample_mis_weight(kg, state, path_flag, &ls, ray.P);
   }
 
   const Spectrum bsdf_spectrum = light_eval * mis_weight *

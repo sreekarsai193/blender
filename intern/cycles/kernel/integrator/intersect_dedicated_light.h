@@ -42,8 +42,6 @@ ccl_device bool shadow_linking_pick_light_intersection(KernelGlobals kg,
 
   // TODO: Support mesh emitters.
 
-  // TODO: Distant lights.
-
   // TODO: Only if ray is not fully occluded.
 
   const int receiver_forward = light_link_receiver_forward(kg, state);
