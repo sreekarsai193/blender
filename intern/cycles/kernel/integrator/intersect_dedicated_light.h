@@ -44,8 +44,11 @@ ccl_device bool shadow_linking_pick_light_intersection(KernelGlobals kg,
 
   // TODO: What of the actual shadow ray hits the same light through a semi-transparent surface?
 
+  const int receiver_forward = light_link_receiver_forward(kg, state);
+
   if (!lights_intersect_shadow_linked(
-          kg, ray, isect, last_prim, last_object, last_type, path_flag)) {
+          kg, ray, isect, last_prim, last_object, last_type, path_flag, receiver_forward))
+  {
     return false;
   }
 

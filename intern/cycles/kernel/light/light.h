@@ -368,10 +368,18 @@ ccl_device bool lights_intersect_shadow_linked(KernelGlobals kg,
                                                const int last_prim,
                                                const int last_object,
                                                const int last_type,
-                                               const uint32_t path_flag)
+                                               const uint32_t path_flag,
+                                               const int receiver_forward)
 {
-  return lights_intersect_impl<false>(
-      kg, ray, isect, last_prim, last_object, last_type, path_flag, PATH_MNEE_NONE, OBJECT_NONE);
+  return lights_intersect_impl<false>(kg,
+                                      ray,
+                                      isect,
+                                      last_prim,
+                                      last_object,
+                                      last_type,
+                                      path_flag,
+                                      PATH_MNEE_NONE,
+                                      receiver_forward);
 }
 
 /* Setup light sample from intersection. */
