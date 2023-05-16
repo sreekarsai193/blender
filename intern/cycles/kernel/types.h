@@ -1436,8 +1436,8 @@ typedef struct KernelLightTreeNode {
   /* Bit trail. */
   uint bit_trail;
 
-  /* Bit shift for bit trail, to skip nodes for specialized trees. */
-  uint8_t bit_shift;
+  /* Bits to skip in the bit trail, to skip nodes in for specialized trees. */
+  uint8_t bit_skip;
 
   /* Padding. */
   uint8_t pad[11];

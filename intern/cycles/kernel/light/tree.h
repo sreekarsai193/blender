@@ -854,15 +854,16 @@ ccl_device float light_tree_pdf(KernelGlobals kg,
       return 0.0f;
     }
 
+    bit_trail >>= kernel_data_fetch(light_tree_nodes, node_index).bit_skip;
     const bool go_left = (bit_trail & 1) == 0;
+    bit_trail >>= 1;
+
     node_index = go_left ? left_index : right_index;
     pdf *= go_left ? left_prob : (1.0f - left_prob);
 
     if (pdf == 0) {
       return 0.0f;
     }
-
-    bit_trail >>= kernel_data_fetch(light_tree_nodes, node_index).bit_shift;
   }
 }
 

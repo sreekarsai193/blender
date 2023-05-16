@@ -464,7 +464,7 @@ static void light_tree_node_copy_to_device(KernelLightTreeNode &knode,
   knode.bcone.theta_e = node.measure.bcone.theta_e;
 
   knode.bit_trail = node.bit_trail;
-  knode.bit_shift = 1;
+  knode.bit_skip = 0;
   knode.type = static_cast<LightTreeNodeType>(node.type);
 
   if (node.is_leaf() || node.is_distant()) {
@@ -696,7 +696,8 @@ static std::pair<int, LightTreeMeasure> light_tree_specialize_nodes_flatten(
     LightTreeNode *right_node = node->get_inner().children[LightTree::right].get();
 
     /* Skip nodes that have only one child. We have a single bit trail for each
-     * primitive, the bit shift is incremented to skip the bit for this node. */
+     * primitive, bit_skip is incremented in the child node to skip the bit for
+     * this parent node. */
     LightTreeNode *only_node = nullptr;
     if (!(left_node->light_link.set_membership & light_link_mask)) {
       only_node = right_node;
@@ -709,7 +710,7 @@ static std::pair<int, LightTreeMeasure> light_tree_specialize_nodes_flatten(
           flatten, only_node, light_link_mask, depth + 1, knodes, next_node_index);
 
       assert(only_index != -1);
-      knodes[only_index].bit_shift++;
+      knodes[only_index].bit_skip++;
       return std::make_pair(only_index, only_measure);
     }
 
