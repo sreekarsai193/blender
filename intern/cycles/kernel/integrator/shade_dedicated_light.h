@@ -110,13 +110,13 @@ ccl_device void integrator_shade_dedicated_light(KernelGlobals kg,
 
 #ifdef __SHADOW_LINKING__
   shadow_linking_shade(kg, state);
-#else
-  kernel_assert(!"integrator_intersect_dedicated_light is not supposed to be scheduled");
-#endif
 
   /* Restore self-intersection check primitives in the main state before returning to the
    * intersect_closest() state. */
   shadow_linking_restore_last_primitives(state);
+#else
+  kernel_assert(!"integrator_intersect_dedicated_light is not supposed to be scheduled");
+#endif
 
   integrator_shade_surface_next_kernel<DEVICE_KERNEL_INTEGRATOR_SHADE_DEDICATED_LIGHT>(kg, state);
 }
