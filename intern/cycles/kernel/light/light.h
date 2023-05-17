@@ -337,7 +337,7 @@ ccl_device_forceinline int lights_intersect_impl(KernelGlobals kg,
       }
     }
     else if (type == LIGHT_DISTANT) {
-      if (is_main_path) {
+      if (is_main_path || ray->tmax != FLT_MAX) {
         continue;
       }
       if (!distant_light_intersect(klight, ray, &t, &u, &v)) {

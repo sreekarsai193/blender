@@ -108,8 +108,6 @@ ccl_device bool shadow_linking_pick_light_intersection(KernelGlobals kg,
   num_hits = shadow_linking_pick_mesh_intersection(
       kg, state, ray, linked_isect, &lcg_state, num_hits);
 
-  // TODO: Only intersections up to the ray->tmax. Intersecting all will increase noise in cases
-  // when the light is behind knowingly opaque object.
   const int receiver_forward = light_link_receiver_forward(kg, state);
   num_hits = lights_intersect_shadow_linked(kg,
                                             ray,
