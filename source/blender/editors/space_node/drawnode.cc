@@ -20,7 +20,7 @@
 #include "BKE_curve.h"
 #include "BKE_image.h"
 #include "BKE_main.h"
-#include "BKE_node.h"
+#include "BKE_node.hh"
 #include "BKE_node_runtime.hh"
 #include "BKE_node_tree_update.h"
 #include "BKE_scene.h"
@@ -331,7 +331,7 @@ static void node_buts_image_user(uiLayout *layout,
 
     char numstr[32];
     const int framenr = BKE_image_user_frame_get(iuser, scene->r.cfra, nullptr);
-    BLI_snprintf(numstr, sizeof(numstr), IFACE_("Frame: %d"), framenr);
+    SNPRINTF(numstr, IFACE_("Frame: %d"), framenr);
     uiItemL(layout, numstr, ICON_NONE);
   }
 
@@ -1149,6 +1149,9 @@ void ED_node_init_butfuncs()
   /* Fallback types for undefined tree, nodes, sockets
    * Defined in blenkernel, but not registered in type hashes.
    */
+
+  using blender::bke::NodeSocketTypeUndefined;
+  using blender::bke::NodeTypeUndefined;
 
   NodeTypeUndefined.draw_buttons = nullptr;
   NodeTypeUndefined.draw_buttons_ex = nullptr;

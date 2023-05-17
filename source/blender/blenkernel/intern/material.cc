@@ -57,7 +57,7 @@
 #include "BKE_main.h"
 #include "BKE_material.h"
 #include "BKE_mesh.hh"
-#include "BKE_node.h"
+#include "BKE_node.hh"
 #include "BKE_node_runtime.hh"
 #include "BKE_object.h"
 #include "BKE_scene.h"
@@ -759,6 +759,10 @@ Material *BKE_object_material_get_eval(Object *ob, short act)
 int BKE_object_material_count_eval(Object *ob)
 {
   BLI_assert(DEG_is_evaluated_object(ob));
+  if (ob->type == OB_EMPTY) {
+    return 0;
+  }
+  BLI_assert(ob->data != nullptr);
   ID *id = get_evaluated_object_data_with_materials(ob);
   const short *len_p = BKE_id_material_len_p(id);
   return len_p ? *len_p : 0;
@@ -1556,7 +1560,7 @@ void BKE_texpaint_slot_refresh_cache(Scene *scene, Material *ma, const struct Ob
       ma->texpaintslot = static_cast<TexPaintSlot *>(
           MEM_callocN(sizeof(TexPaintSlot) * count, "texpaint_slots"));
 
-      bNode *active_node = nodeGetActivePaintCanvas(ma->nodetree);
+      bNode *active_node = blender::bke::nodeGetActivePaintCanvas(ma->nodetree);
 
       fill_texpaint_slots_recursive(ma->nodetree, active_node, ob, ma, count, slot_filter);
 
@@ -1928,7 +1932,7 @@ void BKE_material_copybuf_copy(Main *bmain, Material *ma)
   matcopybuf = blender::dna::shallow_copy(*ma);
 
   if (ma->nodetree != nullptr) {
-    matcopybuf.nodetree = ntreeCopyTree_ex(ma->nodetree, bmain, false);
+    matcopybuf.nodetree = blender::bke::ntreeCopyTree_ex(ma->nodetree, bmain, false);
   }
 
   matcopybuf.preview = nullptr;
@@ -1958,7 +1962,7 @@ void BKE_material_copybuf_paste(Main *bmain, Material *ma)
   (ma->id) = id;
 
   if (matcopybuf.nodetree != nullptr) {
-    ma->nodetree = ntreeCopyTree_ex(matcopybuf.nodetree, bmain, false);
+    ma->nodetree = blender::bke::ntreeCopyTree_ex(matcopybuf.nodetree, bmain, false);
   }
 }
 
@@ -1997,7 +2001,7 @@ static void material_default_surface_init(Material *ma)
 {
   strcpy(ma->id.name, "MADefault Surface");
 
-  bNodeTree *ntree = ntreeAddTreeEmbedded(
+  bNodeTree *ntree = blender::bke::ntreeAddTreeEmbedded(
       nullptr, &ma->id, "Shader Nodetree", ntreeType_Shader->idname);
   ma->use_nodes = true;
 
@@ -2025,7 +2029,7 @@ static void material_default_volume_init(Material *ma)
 {
   strcpy(ma->id.name, "MADefault Volume");
 
-  bNodeTree *ntree = ntreeAddTreeEmbedded(
+  bNodeTree *ntree = blender::bke::ntreeAddTreeEmbedded(
       nullptr, &ma->id, "Shader Nodetree", ntreeType_Shader->idname);
   ma->use_nodes = true;
 
@@ -2050,7 +2054,7 @@ static void material_default_holdout_init(Material *ma)
 {
   strcpy(ma->id.name, "MADefault Holdout");
 
-  bNodeTree *ntree = ntreeAddTreeEmbedded(
+  bNodeTree *ntree = blender::bke::ntreeAddTreeEmbedded(
       nullptr, &ma->id, "Shader Nodetree", ntreeType_Shader->idname);
   ma->use_nodes = true;
 

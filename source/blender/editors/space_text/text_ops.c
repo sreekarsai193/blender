@@ -15,6 +15,7 @@
 #include "BLI_blenlib.h"
 #include "BLI_math.h"
 #include "BLI_math_base.h"
+#include "BLI_string_cursor_utf8.h"
 
 #include "BLT_translation.h"
 
@@ -607,7 +608,7 @@ static void txt_write_file(Main *bmain, Text *text, ReportList *reports)
   BLI_stat_t st;
   char filepath[FILE_MAX];
 
-  BLI_strncpy(filepath, text->filepath, FILE_MAX);
+  STRNCPY(filepath, text->filepath);
   BLI_path_abs(filepath, BKE_main_blendfile_path(bmain));
 
   /* Check if file write permission is ok. */
@@ -648,7 +649,7 @@ static void txt_write_file(Main *bmain, Text *text, ReportList *reports)
                 RPT_WARNING,
                 "Unable to stat '%s': %s",
                 filepath,
-                errno ? strerror(errno) : TIP_("unknown error stating file"));
+                errno ? strerror(errno) : TIP_("unknown error statting file"));
   }
 
   text->flags &= ~TXT_ISDIRTY;
@@ -1577,11 +1578,9 @@ void TEXT_OT_select_line(wmOperatorType *ot)
 static int text_select_word_exec(bContext *C, wmOperator *UNUSED(op))
 {
   Text *text = CTX_data_edit_text(C);
-  /* don't advance cursor before stepping */
-  const bool use_init_step = false;
 
-  txt_jump_left(text, false, use_init_step);
-  txt_jump_right(text, true, use_init_step);
+  BLI_str_cursor_step_bounds_utf8(
+      text->curl->line, text->curl->len, text->selc, &text->curc, &text->selc);
 
   text_update_cursor_moved(C);
   text_select_update_primary_clipboard(text);
@@ -3769,7 +3768,7 @@ static int text_find_set_selected_exec(bContext *C, wmOperator *op)
   char *tmp;
 
   tmp = txt_sel_to_buf(text, NULL);
-  BLI_strncpy(st->findstr, tmp, ST_MAX_FIND_STR);
+  STRNCPY(st->findstr, tmp);
   MEM_freeN(tmp);
 
   if (!st->findstr[0]) {
@@ -3804,7 +3803,7 @@ static int text_replace_set_selected_exec(bContext *C, wmOperator *UNUSED(op))
   char *tmp;
 
   tmp = txt_sel_to_buf(text, NULL);
-  BLI_strncpy(st->replacestr, tmp, ST_MAX_FIND_STR);
+  STRNCPY(st->replacestr, tmp);
   MEM_freeN(tmp);
 
   return OPERATOR_FINISHED;
