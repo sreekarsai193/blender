@@ -1040,8 +1040,8 @@ static void object_blend_read_lib(BlendLibReader *reader, ID *id)
     BLO_read_id_address(reader, id, &ob->rigidbody_constraint->ob2);
   }
 
-  BLO_read_id_address(reader, ob->id.lib, &ob->light_linking.receiver_collection);
-  BLO_read_id_address(reader, ob->id.lib, &ob->light_linking.blocker_collection);
+  BLO_read_id_address(reader, id, &ob->light_linking.receiver_collection);
+  BLO_read_id_address(reader, id, &ob->light_linking.blocker_collection);
 }
 
 /* XXX deprecated - old animation system */
