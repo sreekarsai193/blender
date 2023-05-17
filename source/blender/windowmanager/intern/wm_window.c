@@ -388,7 +388,8 @@ void wm_quit_with_optional_confirmation_prompt(bContext *C, wmWindow *win)
 
   if (U.uiflag & USER_SAVE_PROMPT) {
     if (wm_file_or_session_data_has_unsaved_changes(CTX_data_main(C), CTX_wm_manager(C)) &&
-        !G.background) {
+        !G.background)
+    {
       wm_window_raise(win);
       wm_confirm_quit(C);
     }
@@ -472,12 +473,11 @@ void wm_window_title(wmWindowManager *wm, wmWindow *win)
     const char *blendfile_path = BKE_main_blendfile_path_from_global();
     if (blendfile_path[0] != '\0') {
       char str[sizeof(((Main *)NULL)->filepath) + 24];
-      BLI_snprintf(str,
-                   sizeof(str),
-                   "Blender%s [%s%s]",
-                   wm->file_saved ? "" : "*",
-                   blendfile_path,
-                   G_MAIN->recovered ? " (Recovered)" : "");
+      SNPRINTF(str,
+               "Blender%s [%s%s]",
+               wm->file_saved ? "" : "*",
+               blendfile_path,
+               G_MAIN->recovered ? " (Recovered)" : "");
       GHOST_SetTitle(win->ghostwin, str);
     }
     else {
@@ -2079,11 +2079,18 @@ void WM_clipboard_text_set(const char *buf, bool selection)
 
 bool WM_clipboard_image_available(void)
 {
+  if (G.background) {
+    return false;
+  }
   return (bool)GHOST_hasClipboardImage();
 }
 
 ImBuf *WM_clipboard_image_get(void)
 {
+  if (G.background) {
+    return NULL;
+  }
+
   int width, height;
 
   uint *rgba = GHOST_getClipboardImage(&width, &height);
@@ -2099,6 +2106,10 @@ ImBuf *WM_clipboard_image_get(void)
 
 bool WM_clipboard_image_set(ImBuf *ibuf)
 {
+  if (G.background) {
+    return false;
+  }
+
   bool free_byte_buffer = false;
   if (ibuf->rect == NULL) {
     /* Add a byte buffer if it does not have one. */
@@ -2619,6 +2630,8 @@ void *WM_opengl_context_create(void)
   BLI_assert(GPU_framebuffer_active_get() == GPU_framebuffer_back_get());
 
   GHOST_GLSettings glSettings = {0};
+  const eGPUBackendType gpu_backend = GPU_backend_type_selection_get();
+  glSettings.context_type = wm_ghost_drawing_context_type(gpu_backend);
   if (G.debug & G_DEBUG_GPU) {
     glSettings.flags |= GHOST_glDebugContext;
   }

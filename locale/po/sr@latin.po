@@ -1,9 +1,9 @@
 
 msgid ""
 msgstr ""
-"Project-Id-Version: Blender 3.6.0 Alpha (b'dfa42c614fb4')\n"
+"Project-Id-Version: Blender 3.6.0 Alpha (b'51c2a0f81606')\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-04-17 09:43:08\n"
+"POT-Creation-Date: 2023-05-15 09:19:43\n"
 "PO-Revision-Date: 2012-09-07 22:32+0100\n"
 "Last-Translator: Nikola Radovanovic <cobisimo@gmail.com>\n"
 "Language-Team: Nikola Radovanovic\n"
@@ -1717,10 +1717,6 @@ msgstr "Krutost savijanja grupe temena"
 
 msgid "Vertex group for fine control over bending stiffness"
 msgstr "Koristi grupu temena za preciznu kontrolu krutosti savijanja"
-
-
-msgid "Mass Vertex Group"
-msgstr "Masa grupe temena"
 
 
 msgid "Vertex Group for pinning of vertices"
@@ -4125,10 +4121,6 @@ msgid "Falloff Power"
 msgstr "Snaga opadanja"
 
 
-msgid "Fall-Off"
-msgstr "Opadanje"
-
-
 msgid "Cone"
 msgstr "Kupa"
 
@@ -5440,6 +5432,10 @@ msgstr "Oduzimanje boje"
 
 msgid "Mask Texture Overlay Alpha"
 msgstr "Maskiraj providnost preklapanja teksture"
+
+
+msgid "Comb"
+msgstr "Češalj"
 
 
 msgid "Fill Threshold"
@@ -12631,16 +12627,8 @@ msgid "Add Empty Keying Set"
 msgstr "Dodaj praznu zbirku ključeva"
 
 
-msgid "Export Keying Set to a python script"
-msgstr "Izvezi zbirku ključeva u python skriptu"
-
-
 msgid "Filter folders"
 msgstr "Filtriraj direktorijume"
-
-
-msgid "Filter python"
-msgstr "Filtriraj python"
 
 
 msgid "Filter text"
@@ -12980,10 +12968,6 @@ msgstr "Filtriraj slike"
 
 msgid "Filter movie files"
 msgstr "Filtriraj filmove"
-
-
-msgid "Filter python files"
-msgstr "Filtriraj python datoteke"
 
 
 msgid "Filter sound files"
@@ -14466,6 +14450,14 @@ msgid "Open new directory"
 msgstr "Otvori novi direktorijum"
 
 
+msgid "Show"
+msgstr "Prikaži"
+
+
+msgid "Play"
+msgstr "Pokreni"
+
+
 msgctxt "Operator"
 msgid "Increment Number in Filename"
 msgstr "Uvećaj broj naziva datoteke"
@@ -14509,11 +14501,6 @@ msgstr "Sledeći direktorijum"
 
 msgid "Move to next folder"
 msgstr "Premesti na sledeći direktorijum"
-
-
-msgctxt "Operator"
-msgid "Parent File"
-msgstr "Roditeljska datoteka"
 
 
 msgid "Move to parent directory"
@@ -14667,6 +14654,10 @@ msgstr "Otvori font"
 
 msgid "Select all text"
 msgstr "Izaberi sav tekst"
+
+
+msgid "Select word under cursor"
+msgstr "Izaberi reč pod kursorom"
 
 
 msgctxt "Operator"
@@ -15064,6 +15055,15 @@ msgstr "Izaberi grupu temena"
 
 msgid "Select all the vertices assigned to the active vertex group"
 msgstr "Označava sva temena povezana sa aktivnom UV mapom"
+
+
+msgctxt "Operator"
+msgid "Weight Paint Sample Weight"
+msgstr "Bojenje čvorova "
+
+
+msgid "Use the mouse to sample a weight in the 3D view"
+msgstr "Način prikaza/senčenja objekata u 3D pogledu"
 
 
 msgctxt "Operator"
@@ -17859,10 +17859,6 @@ msgid "Hide vertices"
 msgstr "3 temena"
 
 
-msgid "Show"
-msgstr "Prikaži"
-
-
 msgid "Show vertices"
 msgstr "Prikaži temena"
 
@@ -17973,15 +17969,6 @@ msgstr "Bojenje uticaja"
 msgctxt "Operator"
 msgid "Weight Paint Mode"
 msgstr "Režim bojenja težine"
-
-
-msgctxt "Operator"
-msgid "Weight Paint Sample Weight"
-msgstr "Bojenje čvorova "
-
-
-msgid "Use the mouse to sample a weight in the 3D view"
-msgstr "Način prikaza/senčenja objekata u 3D pogledu"
 
 
 msgctxt "Operator"
@@ -18134,10 +18121,6 @@ msgstr "Prethodni ključni kadar"
 msgctxt "Operator"
 msgid "Clear Pose Constraints"
 msgstr "Izbriši ograničenja poze"
-
-
-msgid "Clear all the constraints for the selected bones"
-msgstr "Briše sva ograničenja izabranih kostiju"
 
 
 msgid "Copy constraints to other selected bones"
@@ -18975,15 +18958,6 @@ msgid "Deinterlace all selected movie sources"
 msgstr "Rasplati sve izabrane filmove"
 
 
-msgctxt "Operator"
-msgid "Erase Strips"
-msgstr "Izbriši trake"
-
-
-msgid "Erase selected strips from the sequencer"
-msgstr "Izbriši izabrane trake iz sekvencera"
-
-
 msgid "Duplicate the selected strips"
 msgstr "Dupliraj izabrane trake"
 
@@ -19511,10 +19485,6 @@ msgstr "Izaberi liniju"
 
 msgid "Select text by line"
 msgstr "Izaberi tekst po liniji"
-
-
-msgid "Select word under cursor"
-msgstr "Izaberi reč pod kursorom"
 
 
 msgctxt "Operator"
@@ -20504,10 +20474,6 @@ msgid "Run once and exit"
 msgstr "Pokreni jednom i izađi"
 
 
-msgid "Play"
-msgstr "Pokreni"
-
-
 msgid "Random Order"
 msgstr "Nasumični redosled"
 
@@ -21084,10 +21050,6 @@ msgid "Audio"
 msgstr "Audio"
 
 
-msgid "FFMPEG Presets"
-msgstr "FFMPEG postavke"
-
-
 msgid "Note"
 msgstr "Beleška"
 
@@ -21140,6 +21102,34 @@ msgid "Pose Library"
 msgstr "Zbirka poza"
 
 
+msgid "Comb hairs"
+msgstr "Očešljaj kosu"
+
+
+msgid "Smooth hairs"
+msgstr "Umekšaj kosu"
+
+
+msgid "Add hairs"
+msgstr "Dodaj kosu"
+
+
+msgid "Make hairs longer or shorter"
+msgstr "Produži ili skrati kosu"
+
+
+msgid "Make hairs stand up"
+msgstr "Izdigni kosu"
+
+
+msgid "Cut hairs"
+msgstr "Iseci kosu"
+
+
+msgid "Weight hair particles"
+msgstr "Težina dlaka kose"
+
+
 msgctxt "Operator"
 msgid "Erase"
 msgstr "Obriši"
@@ -21158,6 +21148,11 @@ msgstr "Krug"
 msgctxt "Operator"
 msgid "Thickness"
 msgstr "Debljina"
+
+
+msgctxt "Operator"
+msgid "Slide"
+msgstr "Klizaj"
 
 
 msgid "Pose Options"
@@ -21302,38 +21297,6 @@ msgstr "Savet"
 
 msgid "Tip select mode"
 msgstr "Izbor vrhova"
-
-
-msgid "Comb"
-msgstr "Češalj"
-
-
-msgid "Comb hairs"
-msgstr "Očešljaj kosu"
-
-
-msgid "Smooth hairs"
-msgstr "Umekšaj kosu"
-
-
-msgid "Add hairs"
-msgstr "Dodaj kosu"
-
-
-msgid "Make hairs longer or shorter"
-msgstr "Produži ili skrati kosu"
-
-
-msgid "Make hairs stand up"
-msgstr "Izdigni kosu"
-
-
-msgid "Cut hairs"
-msgstr "Iseci kosu"
-
-
-msgid "Weight hair particles"
-msgstr "Težina dlaka kose"
 
 
 msgid "Auto Velocity"
@@ -23220,6 +23183,10 @@ msgid "Goal Vertex Group"
 msgstr "Ciljna grupa temena"
 
 
+msgid "Mass Vertex Group"
+msgstr "Masa grupe temena"
+
+
 msgctxt "MovieClip"
 msgid "Track"
 msgstr "Staza"
@@ -23352,10 +23319,6 @@ msgstr "Utišaj video"
 msgctxt "MovieClip"
 msgid "Graph"
 msgstr "Grafikon"
-
-
-msgid "Interactive python console"
-msgstr "Interaktivna python konzola"
 
 
 msgid "Command history"
@@ -25523,11 +25486,6 @@ msgstr "Nastavi"
 
 
 msgctxt "Operator"
-msgid "Slide"
-msgstr "Klizaj"
-
-
-msgctxt "Operator"
 msgid "Back"
 msgstr "Od pozadi"
 
@@ -27553,10 +27511,6 @@ msgstr "Bez aktivne sekvence!"
 
 msgid "unknown error writing file"
 msgstr "Nepoznata grešaka prilikom upisa datoteke"
-
-
-msgid "unknown error stating file"
-msgstr "Nepoznata grešaka prilikom čitanja informacija o datoteci"
 
 
 msgid "No Recent Files"

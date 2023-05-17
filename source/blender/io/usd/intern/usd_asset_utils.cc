@@ -64,10 +64,10 @@ static std::string get_asset_base_name(const char *src_path)
                  src_path);
       return src_path;
     }
-    BLI_split_file_part(split.second.c_str(), base_name, sizeof(base_name));
+    BLI_path_split_file_part(split.second.c_str(), base_name, sizeof(base_name));
   }
   else {
-    BLI_split_file_part(src_path, base_name, sizeof(base_name));
+    BLI_path_split_file_part(src_path, base_name, sizeof(base_name));
   }
 
   return base_name;
@@ -82,7 +82,7 @@ static std::string copy_asset_to_directory(const char *src_path,
 
   char dest_file_path[FILE_MAX];
   BLI_path_join(dest_file_path, sizeof(dest_file_path), dest_dir_path, base_name.c_str());
-  BLI_path_normalize(NULL, dest_file_path);
+  BLI_path_normalize(dest_file_path);
 
   if (name_collision_mode == USD_TEX_NAME_COLLISION_USE_EXISTING && BLI_is_file(dest_file_path)) {
     return dest_file_path;
@@ -278,7 +278,8 @@ std::string import_asset(const char *src,
     }
   }
 
-  BLI_path_normalize(basepath, dest_dir_path);
+  BLI_path_abs(dest_dir_path, basepath);
+  BLI_path_normalize(dest_dir_path);
 
   if (!BLI_dir_create_recursive(dest_dir_path)) {
     WM_reportf(

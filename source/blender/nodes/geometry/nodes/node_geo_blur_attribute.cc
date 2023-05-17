@@ -29,19 +29,19 @@ namespace blender::nodes::node_geo_blur_attribute_cc {
 
 static void node_declare(NodeDeclarationBuilder &b)
 {
-  b.add_input<decl::Float>(N_("Value"), "Value_Float")
+  b.add_input<decl::Float>("Value", "Value_Float")
       .supports_field()
       .hide_value()
       .is_default_link_socket();
-  b.add_input<decl::Int>(N_("Value"), "Value_Int")
+  b.add_input<decl::Int>("Value", "Value_Int")
       .supports_field()
       .hide_value()
       .is_default_link_socket();
-  b.add_input<decl::Vector>(N_("Value"), "Value_Vector")
+  b.add_input<decl::Vector>("Value", "Value_Vector")
       .supports_field()
       .hide_value()
       .is_default_link_socket();
-  b.add_input<decl::Color>(N_("Value"), "Value_Color")
+  b.add_input<decl::Color>("Value", "Value_Color")
       .supports_field()
       .hide_value()
       .is_default_link_socket();
@@ -49,25 +49,21 @@ static void node_declare(NodeDeclarationBuilder &b)
   b.add_input<decl::Int>("Iterations")
       .default_value(1)
       .min(0)
-      .description(N_("How many times to blur the values for all elements"));
+      .description("How many times to blur the values for all elements");
   b.add_input<decl::Float>("Weight")
       .default_value(1.0f)
       .subtype(PROP_FACTOR)
       .min(0.0f)
       .max(1.0f)
       .supports_field()
-      .description(N_("Relative mix weight of neighboring elements"));
+      .description("Relative mix weight of neighboring elements");
 
-  b.add_output<decl::Float>(N_("Value"), "Value_Float")
+  b.add_output<decl::Float>("Value", "Value_Float").field_source_reference_all().dependent_field();
+  b.add_output<decl::Int>("Value", "Value_Int").field_source_reference_all().dependent_field();
+  b.add_output<decl::Vector>("Value", "Value_Vector")
       .field_source_reference_all()
       .dependent_field();
-  b.add_output<decl::Int>(N_("Value"), "Value_Int").field_source_reference_all().dependent_field();
-  b.add_output<decl::Vector>(N_("Value"), "Value_Vector")
-      .field_source_reference_all()
-      .dependent_field();
-  b.add_output<decl::Color>(N_("Value"), "Value_Color")
-      .field_source_reference_all()
-      .dependent_field();
+  b.add_output<decl::Color>("Value", "Value_Color").field_source_reference_all().dependent_field();
 }
 
 static void node_layout(uiLayout *layout, bContext * /*C*/, PointerRNA *ptr)
@@ -119,20 +115,20 @@ static void node_update(bNodeTree *ntree, bNode *node)
   bNodeSocket *socket_value_vector = socket_value_int32->next;
   bNodeSocket *socket_value_color4f = socket_value_vector->next;
 
-  nodeSetSocketAvailability(ntree, socket_value_float, data_type == CD_PROP_FLOAT);
-  nodeSetSocketAvailability(ntree, socket_value_int32, data_type == CD_PROP_INT32);
-  nodeSetSocketAvailability(ntree, socket_value_vector, data_type == CD_PROP_FLOAT3);
-  nodeSetSocketAvailability(ntree, socket_value_color4f, data_type == CD_PROP_COLOR);
+  bke::nodeSetSocketAvailability(ntree, socket_value_float, data_type == CD_PROP_FLOAT);
+  bke::nodeSetSocketAvailability(ntree, socket_value_int32, data_type == CD_PROP_INT32);
+  bke::nodeSetSocketAvailability(ntree, socket_value_vector, data_type == CD_PROP_FLOAT3);
+  bke::nodeSetSocketAvailability(ntree, socket_value_color4f, data_type == CD_PROP_COLOR);
 
   bNodeSocket *out_socket_value_float = (bNodeSocket *)node->outputs.first;
   bNodeSocket *out_socket_value_int32 = out_socket_value_float->next;
   bNodeSocket *out_socket_value_vector = out_socket_value_int32->next;
   bNodeSocket *out_socket_value_color4f = out_socket_value_vector->next;
 
-  nodeSetSocketAvailability(ntree, out_socket_value_float, data_type == CD_PROP_FLOAT);
-  nodeSetSocketAvailability(ntree, out_socket_value_int32, data_type == CD_PROP_INT32);
-  nodeSetSocketAvailability(ntree, out_socket_value_vector, data_type == CD_PROP_FLOAT3);
-  nodeSetSocketAvailability(ntree, out_socket_value_color4f, data_type == CD_PROP_COLOR);
+  bke::nodeSetSocketAvailability(ntree, out_socket_value_float, data_type == CD_PROP_FLOAT);
+  bke::nodeSetSocketAvailability(ntree, out_socket_value_int32, data_type == CD_PROP_INT32);
+  bke::nodeSetSocketAvailability(ntree, out_socket_value_vector, data_type == CD_PROP_FLOAT3);
+  bke::nodeSetSocketAvailability(ntree, out_socket_value_color4f, data_type == CD_PROP_COLOR);
 }
 
 static Array<Vector<int>> build_vert_to_vert_by_edge_map(const Span<int2> edges,
@@ -259,7 +255,7 @@ static Span<T> blur_on_mesh_exec(const Span<float> neighbor_weights,
 
   for ([[maybe_unused]] const int64_t iteration : IndexRange(iterations)) {
     std::swap(src, dst);
-    attribute_math::DefaultMixer<T> mixer{dst, IndexMask(0)};
+    bke::attribute_math::DefaultMixer<T> mixer{dst, IndexMask(0)};
     threading::parallel_for(dst.index_range(), 1024, [&](const IndexRange range) {
       for (const int64_t index : range) {
         const Span<int> neighbors = neighbors_map[index];
@@ -288,7 +284,7 @@ static GSpan blur_on_mesh(const Mesh &mesh,
     return buffer_a;
   }
   GSpan result_buffer;
-  attribute_math::convert_to_static_type(buffer_a.type(), [&](auto dummy) {
+  bke::attribute_math::convert_to_static_type(buffer_a.type(), [&](auto dummy) {
     using T = decltype(dummy);
     if constexpr (!std::is_same_v<T, bool>) {
       result_buffer = blur_on_mesh_exec<T>(
@@ -313,7 +309,7 @@ static Span<T> blur_on_curve_exec(const bke::CurvesGeometry &curves,
 
   for ([[maybe_unused]] const int iteration : IndexRange(iterations)) {
     std::swap(src, dst);
-    attribute_math::DefaultMixer<T> mixer{dst, IndexMask(0)};
+    bke::attribute_math::DefaultMixer<T> mixer{dst, IndexMask(0)};
     threading::parallel_for(curves.curves_range(), 256, [&](const IndexRange range) {
       for (const int curve_i : range) {
         const IndexRange points = points_by_curve[curve_i];
@@ -363,7 +359,7 @@ static GSpan blur_on_curves(const bke::CurvesGeometry &curves,
                             const GMutableSpan buffer_b)
 {
   GSpan result_buffer;
-  attribute_math::convert_to_static_type(buffer_a.type(), [&](auto dummy) {
+  bke::attribute_math::convert_to_static_type(buffer_a.type(), [&](auto dummy) {
     using T = decltype(dummy);
     if constexpr (!std::is_same_v<T, bool>) {
       result_buffer = blur_on_curve_exec<T>(
@@ -456,7 +452,8 @@ class BlurAttributeFieldInput final : public bke::GeometryFieldInput {
   bool is_equal_to(const fn::FieldNode &other) const override
   {
     if (const BlurAttributeFieldInput *other_blur = dynamic_cast<const BlurAttributeFieldInput *>(
-            &other)) {
+            &other))
+    {
       return weight_field_ == other_blur->weight_field_ &&
              value_field_ == other_blur->value_field_ && iterations_ == other_blur->iterations_;
     }
@@ -493,7 +490,7 @@ static void node_geo_exec(GeoNodeExecParams params)
   const int iterations = params.extract_input<int>("Iterations");
   Field<float> weight_field = params.extract_input<Field<float>>("Weight");
 
-  attribute_math::convert_to_static_type(data_type, [&](auto dummy) {
+  bke::attribute_math::convert_to_static_type(data_type, [&](auto dummy) {
     using T = decltype(dummy);
     static const std::string identifier = "Value_" + identifier_suffix(data_type);
     Field<T> value_field = params.extract_input<Field<T>>(identifier);

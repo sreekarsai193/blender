@@ -15,9 +15,9 @@ namespace blender::nodes::node_geo_flip_faces_cc {
 
 static void node_declare(NodeDeclarationBuilder &b)
 {
-  b.add_input<decl::Geometry>(N_("Mesh")).supported_type(GEO_COMPONENT_TYPE_MESH);
-  b.add_input<decl::Bool>(N_("Selection")).default_value(true).hide_value().field_on_all();
-  b.add_output<decl::Geometry>(N_("Mesh")).propagate_all();
+  b.add_input<decl::Geometry>("Mesh").supported_type(GEO_COMPONENT_TYPE_MESH);
+  b.add_input<decl::Bool>("Selection").default_value(true).hide_value().field_on_all();
+  b.add_output<decl::Geometry>("Mesh").propagate_all();
 }
 
 static void mesh_flip_faces(Mesh &mesh, const Field<bool> &selection_field)
@@ -25,7 +25,7 @@ static void mesh_flip_faces(Mesh &mesh, const Field<bool> &selection_field)
   if (mesh.totpoly == 0) {
     return;
   }
-  bke::MeshFieldContext field_context{mesh, ATTR_DOMAIN_FACE};
+  const bke::MeshFieldContext field_context{mesh, ATTR_DOMAIN_FACE};
   fn::FieldEvaluator evaluator{field_context, mesh.totpoly};
   evaluator.add(selection_field);
   evaluator.evaluate();

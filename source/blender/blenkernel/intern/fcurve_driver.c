@@ -16,6 +16,7 @@
 #include "BLI_expr_pylike_eval.h"
 #include "BLI_listbase.h"
 #include "BLI_math.h"
+#include "BLI_string_utf8.h"
 #include "BLI_string_utils.h"
 #include "BLI_threads.h"
 #include "BLI_utildefines.h"
@@ -177,7 +178,8 @@ static float dtar_get_prop_val(const AnimationEvalContext *anim_eval_context,
   int index = -1;
   float value = 0.0f;
   if (!RNA_path_resolve_property_full(
-          &property_ptr, dtar->rna_path, &value_ptr, &value_prop, &index)) {
+          &property_ptr, dtar->rna_path, &value_ptr, &value_prop, &index))
+  {
     /* Path couldn't be resolved. */
     if (G.debug & G_DEBUG) {
       CLOG_ERROR(&LOG,
@@ -704,7 +706,8 @@ void BKE_driver_target_matrix_to_rot_channels(
     }
   }
   else if (rotation_mode >= DTAR_ROTMODE_SWING_TWIST_X &&
-           rotation_mode <= DTAR_ROTMODE_SWING_TWIST_Z) {
+           rotation_mode <= DTAR_ROTMODE_SWING_TWIST_Z)
+  {
     int axis = rotation_mode - DTAR_ROTMODE_SWING_TWIST_X;
     float raw_quat[4], twist;
 
@@ -953,7 +956,7 @@ DriverVar *driver_add_new_variable(ChannelDriver *driver)
   BLI_addtail(&driver->variables, dvar);
 
   /* Give the variable a 'unique' name. */
-  strcpy(dvar->name, CTX_DATA_(BLT_I18NCONTEXT_ID_ACTION, "var"));
+  STRNCPY_UTF8(dvar->name, CTX_DATA_(BLT_I18NCONTEXT_ID_ACTION, "var"));
   BLI_uniquename(&driver->variables,
                  dvar,
                  CTX_DATA_(BLT_I18NCONTEXT_ID_ACTION, "var"),
@@ -1323,7 +1326,8 @@ static void evaluate_driver_python(PathResolvedRNA *anim_rna,
                                             driver,
                                             driver_orig,
                                             &driver->curval,
-                                            anim_eval_context->eval_time)) {
+                                            anim_eval_context->eval_time))
+  {
 #ifdef WITH_PYTHON
     /* This evaluates the expression using Python, and returns its result:
      * - on errors it reports, then returns 0.0f. */

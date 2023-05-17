@@ -10,8 +10,8 @@ namespace blender::nodes::node_geo_join_geometry_cc {
 
 static void node_declare(NodeDeclarationBuilder &b)
 {
-  b.add_input<decl::Geometry>(N_("Geometry")).multi_input();
-  b.add_output<decl::Geometry>(N_("Geometry")).propagate_all();
+  b.add_input<decl::Geometry>("Geometry").multi_input();
+  b.add_output<decl::Geometry>("Geometry").propagate_all();
 }
 
 template<typename Component>
@@ -84,7 +84,7 @@ static void join_attributes(Span<const GeometryComponent *> src_components,
   const Map<AttributeIDRef, AttributeMetaData> info = get_final_attribute_info(src_components,
                                                                                ignored_attributes);
 
-  for (const Map<AttributeIDRef, AttributeMetaData>::Item item : info.items()) {
+  for (const MapItem<AttributeIDRef, AttributeMetaData> item : info.items()) {
     const AttributeIDRef attribute_id = item.key;
     const AttributeMetaData &meta_data = item.value;
 

@@ -30,6 +30,7 @@
 #include "BLI_span.hh"
 #include "BLI_string.h"
 #include "BLI_string_ref.hh"
+#include "BLI_string_utf8.h"
 #include "BLI_string_utils.h"
 #include "BLI_utildefines.h"
 
@@ -2258,7 +2259,8 @@ static bool customdata_merge_internal(const CustomData *source,
       continue;
     }
     if ((max_current_type_layer_count != -1) &&
-        (current_type_layer_count >= max_current_type_layer_count)) {
+        (current_type_layer_count >= max_current_type_layer_count))
+    {
       /* Don't merge this layer because the maximum amount of layers of this type is reached. */
       continue;
     }
@@ -2358,20 +2360,29 @@ CustomData CustomData_shallow_copy_remove_non_bmesh_attributes(const CustomData 
 class CustomDataLayerImplicitSharing : public ImplicitSharingInfo {
  private:
   const void *data_;
-  const int totelem_;
+  int totelem_;
   const eCustomDataType type_;
 
  public:
   CustomDataLayerImplicitSharing(const void *data, const int totelem, const eCustomDataType type)
-      : ImplicitSharingInfo(1), data_(data), totelem_(totelem), type_(type)
+      : ImplicitSharingInfo(), data_(data), totelem_(totelem), type_(type)
   {
   }
 
  private:
   void delete_self_with_data() override
   {
-    free_layer_data(type_, data_, totelem_);
+    if (data_ != nullptr) {
+      free_layer_data(type_, data_, totelem_);
+    }
     MEM_delete(this);
+  }
+
+  void delete_data_only() override
+  {
+    free_layer_data(type_, data_, totelem_);
+    data_ = nullptr;
+    totelem_ = 0;
   }
 };
 
@@ -2395,7 +2406,10 @@ static void ensure_layer_data_is_mutable(CustomDataLayer &layer, const int totel
     /* Can not be shared without implicit-sharing data. */
     return;
   }
-  if (layer.sharing_info->is_shared()) {
+  if (layer.sharing_info->is_mutable()) {
+    layer.sharing_info->tag_ensured_mutable();
+  }
+  else {
     const eCustomDataType type = eCustomDataType(layer.type);
     const void *old_data = layer.data;
     /* Copy the layer before removing the user because otherwise the data might be freed while
@@ -2942,7 +2956,7 @@ static CustomDataLayer *customData_add_layer__internal(
   }
 
   if (name) {
-    BLI_strncpy(new_layer.name, name, sizeof(new_layer.name));
+    STRNCPY(new_layer.name, name);
     CustomData_set_layer_unique_name(data, index);
   }
   else {
@@ -3656,7 +3670,7 @@ bool CustomData_set_layer_name(CustomData *data,
     return false;
   }
 
-  BLI_strncpy(data->layers[layer_index].name, name, sizeof(data->layers[layer_index].name));
+  STRNCPY(data->layers[layer_index].name, name);
 
   return true;
 }
@@ -3933,7 +3947,8 @@ void CustomData_bmesh_copy_data_exclude_by_type(const CustomData *source,
 
     /* if we found a matching layer, copy the data */
     if (dest->layers[dest_i].type == source->layers[src_i].type &&
-        STREQ(dest->layers[dest_i].name, source->layers[src_i].name)) {
+        STREQ(dest->layers[dest_i].name, source->layers[src_i].name))
+    {
       if (no_mask || ((CD_TYPE_AS_MASK(dest->layers[dest_i].type) & mask_exclude) == 0)) {
         const void *src_data = POINTER_OFFSET(src_block, source->layers[src_i].offset);
         void *dest_data = POINTER_OFFSET(*dest_block, dest->layers[dest_i].offset);
@@ -4006,7 +4021,8 @@ bool CustomData_layer_has_math(const CustomData *data, const int layer_n)
   const LayerTypeInfo *typeInfo = layerType_getInfo(eCustomDataType(data->layers[layer_n].type));
 
   if (typeInfo->equal && typeInfo->add && typeInfo->multiply && typeInfo->initminmax &&
-      typeInfo->dominmax) {
+      typeInfo->dominmax)
+  {
     return true;
   }
 
@@ -4373,7 +4389,8 @@ int CustomData_name_max_length_calc(const blender::StringRef name)
     return MAX_CUSTOMDATA_LAYER_NAME_NO_PREFIX;
   }
   for (const blender::StringRef prefix :
-       {"." UV_VERTSEL_NAME, UV_EDGESEL_NAME ".", UV_PINNED_NAME "."}) {
+       {"." UV_VERTSEL_NAME, UV_EDGESEL_NAME ".", UV_PINNED_NAME "."})
+  {
     if (name.startswith(prefix)) {
       return MAX_CUSTOMDATA_LAYER_NAME;
     }
@@ -4397,10 +4414,11 @@ void CustomData_set_layer_unique_name(CustomData *data, const int index)
   /* Set default name if none specified. Note we only call DATA_() when
    * needed to avoid overhead of locale lookups in the depsgraph. */
   if (nlayer->name[0] == '\0') {
-    STRNCPY(nlayer->name, DATA_(typeInfo->defaultname));
+    STRNCPY_UTF8(nlayer->name, DATA_(typeInfo->defaultname));
   }
 
-  BLI_uniquename_cb(customdata_unique_check, &data_arg, nullptr, '.', nlayer->name, max_length);
+  const char *defname = ""; /* Dummy argument, never used as `name` is never zero length. */
+  BLI_uniquename_cb(customdata_unique_check, &data_arg, defname, '.', nlayer->name, max_length);
 }
 
 void CustomData_validate_layer_name(const CustomData *data,
@@ -4420,10 +4438,10 @@ void CustomData_validate_layer_name(const CustomData *data,
      * deleted, so assign the active layer to name
      */
     index = CustomData_get_active_layer_index(data, type);
-    BLI_strncpy(outname, data->layers[index].name, MAX_CUSTOMDATA_LAYER_NAME);
+    BLI_strncpy_utf8(outname, data->layers[index].name, MAX_CUSTOMDATA_LAYER_NAME);
   }
   else {
-    BLI_strncpy(outname, name, MAX_CUSTOMDATA_LAYER_NAME);
+    BLI_strncpy_utf8(outname, name, MAX_CUSTOMDATA_LAYER_NAME);
   }
 }
 
@@ -4457,7 +4475,8 @@ bool CustomData_verify_versions(CustomData *data, const int index)
                    CD_FACEMAP,
                    CD_MTEXPOLY,
                    CD_SCULPT_FACE_SETS,
-                   CD_CREASE)) {
+                   CD_CREASE))
+    {
       keeplayer = false;
       CLOG_WARN(&LOG, ".blend file read: removing a data layer that should not have been written");
     }
@@ -4763,7 +4782,7 @@ void CustomData_external_add(CustomData *data,
     external = MEM_cnew<CustomDataExternal>(__func__);
     data->external = external;
   }
-  BLI_strncpy(external->filepath, filepath, sizeof(external->filepath));
+  STRNCPY(external->filepath, filepath);
 
   layer->flag |= CD_FLAG_EXTERNAL | CD_FLAG_IN_MEMORY;
 }
@@ -4816,8 +4835,8 @@ static void copy_bit_flag(void *dst, const void *src, const size_t data_size, co
 {
 #define COPY_BIT_FLAG(_type, _dst, _src, _f) \
   { \
-    const _type _val = *((_type *)(_src)) & ((_type)(_f)); \
-    *((_type *)(_dst)) &= ~((_type)(_f)); \
+    const _type _val = *((_type *)(_src)) & (_type)(_f); \
+    *((_type *)(_dst)) &= ~(_type)(_f); \
     *((_type *)(_dst)) |= _val; \
   } \
   (void)0
@@ -4957,7 +4976,8 @@ static void customdata_data_transfer_interp_generic(const CustomDataTransferLaye
                                (mix_mode == CDT_MIX_REPLACE_ABOVE_THRESHOLD &&
                                 check_bit_flag(data_dst, data_size, data_flag)) ||
                                (mix_mode == CDT_MIX_REPLACE_BELOW_THRESHOLD &&
-                                !check_bit_flag(data_dst, data_size, data_flag)))) {
+                                !check_bit_flag(data_dst, data_size, data_flag))))
+    {
       copy_bit_flag(data_dst, tmp_dst, data_size, data_flag);
     }
   }
@@ -5315,7 +5335,8 @@ void CustomData_blend_read(BlendDataReader *reader, CustomData *data, const int 
 void CustomData_debug_info_from_layers(const CustomData *data, const char *indent, DynStr *dynstr)
 {
   for (eCustomDataType type = eCustomDataType(0); type < CD_NUMTYPES;
-       type = eCustomDataType(type + 1)) {
+       type = eCustomDataType(type + 1))
+  {
     if (CustomData_has_layer(data, type)) {
       /* NOTE: doesn't account for multiple layers. */
       const char *name = CustomData_layertype_name(type);

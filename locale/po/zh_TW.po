@@ -1,9 +1,9 @@
 
 msgid ""
 msgstr ""
-"Project-Id-Version: Blender 3.6.0 Alpha (b'dfa42c614fb4')\n"
+"Project-Id-Version: Blender 3.6.0 Alpha (b'51c2a0f81606')\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-04-17 09:43:08\n"
+"POT-Creation-Date: 2023-05-15 09:19:43\n"
 "PO-Revision-Date: 2023-01-28 11:09+0800\n"
 "Last-Translator: Cheng-Chia Tseng <pswo10680@gmail.com>\n"
 "Language-Team: Chinese (Traditional) <http://weblate.slat.org/projects/blender/blender/zh_Hant/>\n"
@@ -4171,10 +4171,6 @@ msgid "Vertex group for fine control over bending stiffness"
 msgstr "抗彎剛度的精細控制頂點群組"
 
 
-msgid "Mass Vertex Group"
-msgstr "質量頂點群組"
-
-
 msgid "Vertex Group for pinning of vertices"
 msgstr "頂點釘住的頂點群組"
 
@@ -6396,10 +6392,6 @@ msgid "Map To"
 msgstr "映射至"
 
 
-msgid "The transformation type to affect of the constrained object"
-msgstr "約束的物體要影響的變換類型"
-
-
 msgid "Map To X From"
 msgstr "映射至 X 從"
 
@@ -6622,14 +6614,6 @@ msgstr "切割"
 
 msgid "Plane"
 msgstr "平面"
-
-
-msgid "Normal/View"
-msgstr "法線/視圖"
-
-
-msgid "Normal/Surface"
-msgstr "法線/曲面"
 
 
 msgid "View"
@@ -8969,16 +8953,8 @@ msgid "Maximum distance for the field to work"
 msgstr "場域有效作用的最大距離"
 
 
-msgid "Minimum distance for the field's fall-off"
-msgstr "場域衰落的最小距離"
-
-
 msgid "Falloff Power"
 msgstr "衰減能"
-
-
-msgid "Fall-Off"
-msgstr "衰減"
 
 
 msgid "Cone"
@@ -9133,10 +9109,6 @@ msgid "Minimum Radial Distance"
 msgstr "最小半徑距離"
 
 
-msgid "Minimum radial distance for the field's fall-off"
-msgstr "場域衰落的最小半徑距離"
-
-
 msgid "Rest Length"
 msgstr "重設長度"
 
@@ -9289,16 +9261,8 @@ msgid "Use Min"
 msgstr "使用最小"
 
 
-msgid "Use a minimum distance for the field's fall-off"
-msgstr "場域衰減要使用的最小距離"
-
-
 msgid "Multiple Springs"
 msgstr "多重彈力"
-
-
-msgid "Every point is effected by multiple springs"
-msgstr "每個點均受多重彈力影響"
 
 
 msgid "Use Coordinates"
@@ -9311,10 +9275,6 @@ msgstr "為紋理使用物體/全域座標系"
 
 msgid "Use a maximum radial distance for the field to work"
 msgstr "場域要作用的最大半徑距離"
-
-
-msgid "Use a minimum radial distance for the field's fall-off"
-msgstr "場域衰減要使用的最小半徑距離"
 
 
 msgid "Root Texture Coordinates"
@@ -10949,6 +10909,10 @@ msgid "Falloff Curve"
 msgstr "衰弱曲線"
 
 
+msgid "Custom falloff curve"
+msgstr "自訂衰減曲線"
+
+
 msgid "If not zero, the distance from the hook where influence ends"
 msgstr "如果不是零，則為與鉤的影響結束之位置起的距離"
 
@@ -11416,14 +11380,6 @@ msgid "Armature layer visibility"
 msgstr "骨架分層的可見性"
 
 
-msgid "Layer Proxy Protection"
-msgstr "層代理保護"
-
-
-msgid "Protected layers in Proxy Instances are restored to Proxy settings on file reload and undo"
-msgstr "代理實體中的受保護分層會在檔案重新載入與取消動作時還原為代理設定"
-
-
 msgid "Pose Position"
 msgstr "姿勢位置"
 
@@ -11602,6 +11558,14 @@ msgstr "遮罩紋理疊層 Alpha"
 
 msgid "Editable falloff curve"
 msgstr "可編輯的衰減曲線"
+
+
+msgid "Comb"
+msgstr "合成"
+
+
+msgid "Puff"
+msgstr "噴發"
 
 
 msgid "Paint most on faces pointing towards the view according to this angle"
@@ -12110,10 +12074,6 @@ msgstr "在網格的永恆分層雕塑"
 
 msgid "Use Plane Trim"
 msgstr "使用平面修剪"
-
-
-msgid "Enable Plane Trim"
-msgstr "啟用平面修剪"
 
 
 msgid "Jitter Pressure"
@@ -12644,18 +12604,6 @@ msgid "Follow"
 msgstr "跟隨"
 
 
-msgid "Make curve path children to rotate along the path"
-msgstr "讓曲線路徑子代沿路徑旋轉"
-
-
-msgid "Option for paths and curve-deform: apply the curve radius with path following it and deforming"
-msgstr "路徑與曲線變形的選項：套用跟隨曲線的路徑其曲線半徑，並變形"
-
-
-msgid "Option for curve-deform: make deformed child to stretch along entire path"
-msgstr "曲線變形的選項：讓變形的子代沿整條路徑伸展"
-
-
 msgid "Surface Curve"
 msgstr "曲面線"
 
@@ -12742,6 +12690,10 @@ msgstr "字型粗斜體"
 
 msgid "Font Italic"
 msgstr "字型斜體"
+
+
+msgid "Text Selected"
+msgstr "選取的文字"
 
 
 msgid "X Offset"
@@ -20922,10 +20874,6 @@ msgid "Hook modifier to modify the location of vertices"
 msgstr "修改頂點位置的鉤修改器"
 
 
-msgid "Custom falloff curve"
-msgstr "自訂衰減曲線"
-
-
 msgid "Laplacian Deform Modifier"
 msgstr "拉普拉斯變形修改器"
 
@@ -27061,16 +27009,8 @@ msgid "Export Keying Set..."
 msgstr "匯出鍵處理集..."
 
 
-msgid "Export Keying Set to a python script"
-msgstr "將鍵處理集匯出為 Python 指令稿"
-
-
 msgid "Filter folders"
 msgstr "過濾資料夾"
-
-
-msgid "Filter python"
-msgstr "過濾 Python"
 
 
 msgid "Filter text"
@@ -27577,10 +27517,6 @@ msgstr "過濾影像檔案"
 
 msgid "Filter movie files"
 msgstr "過濾視訊檔案"
-
-
-msgid "Filter python files"
-msgstr "過濾 Python 檔案"
 
 
 msgid "Filter sound files"
@@ -28884,10 +28820,6 @@ msgstr "上個單詞"
 msgctxt "Operator"
 msgid "Console Execute"
 msgstr "主控臺執行"
-
-
-msgid "Execute the current console line as a python expression"
-msgstr "將目前的主控臺列作為 Python 表述式執行"
 
 
 msgctxt "Operator"
@@ -30279,6 +30211,14 @@ msgid "Execute selected file"
 msgstr "執行所選檔案"
 
 
+msgid "Show"
+msgstr "顯示"
+
+
+msgid "Play"
+msgstr "播放"
+
+
 msgctxt "Operator"
 msgid "Increment Number in Filename"
 msgstr "在檔名中遞增編號"
@@ -30342,11 +30282,6 @@ msgstr "下個資料夾"
 
 msgid "Move to next folder"
 msgstr "移動到下個資料夾"
-
-
-msgctxt "Operator"
-msgid "Parent File"
-msgstr "親代檔案"
 
 
 msgid "Move to parent directory"
@@ -30694,6 +30629,10 @@ msgstr "從檔案載入新的字型"
 
 msgid "Select all text"
 msgstr "選取全部文字"
+
+
+msgid "Select word under cursor"
+msgstr "所選游標位置的單詞"
 
 
 msgctxt "Operator"
@@ -31227,6 +31166,15 @@ msgstr "選取頂點群組"
 
 msgid "Select all the vertices assigned to the active vertex group"
 msgstr "選取所有指派至作用中頂點群組的頂點"
+
+
+msgctxt "Operator"
+msgid "Weight Paint Sample Weight"
+msgstr "權重繪製取樣權重"
+
+
+msgid "Use the mouse to sample a weight in the 3D view"
+msgstr "使用滑鼠來取樣 3D 視圖中的權重"
 
 
 msgctxt "Operator"
@@ -35448,6 +35396,10 @@ msgid "Laplacian Deform Bind"
 msgstr "拉普拉斯變形綁定"
 
 
+msgid "Subset"
+msgstr "子集"
+
+
 msgid "Link objects to a collection"
 msgstr "將物體連結至選集"
 
@@ -36302,10 +36254,6 @@ msgid "Remove vertex group assignments which are not required"
 msgstr "移除不需要的頂點群組指派"
 
 
-msgid "Subset"
-msgstr "子集"
-
-
 msgid "Keep Single"
 msgstr "保留單個"
 
@@ -36916,10 +36864,6 @@ msgid "Hide vertices"
 msgstr "隱藏頂點"
 
 
-msgid "Show"
-msgstr "顯示"
-
-
 msgid "Show vertices"
 msgstr "顯示頂點"
 
@@ -37173,15 +37117,6 @@ msgstr "權重繪製模式"
 
 msgid "Toggle weight paint mode in 3D view"
 msgstr "切換 3D 視圖中的權重繪製模式"
-
-
-msgctxt "Operator"
-msgid "Weight Paint Sample Weight"
-msgstr "權重繪製取樣權重"
-
-
-msgid "Use the mouse to sample a weight in the 3D view"
-msgstr "使用滑鼠來取樣 3D 視圖中的權重"
 
 
 msgctxt "Operator"
@@ -37573,10 +37508,6 @@ msgstr "為作用中骨骼添加一項約束，並將目標設為 (如果可用�
 msgctxt "Operator"
 msgid "Clear Pose Constraints"
 msgstr "清除姿勢約束"
-
-
-msgid "Clear all the constraints for the selected bones"
-msgstr "清除所選骨骼的所有約束"
 
 
 msgctxt "Operator"
@@ -38029,10 +37960,6 @@ msgid "Export Key Configuration..."
 msgstr "匯出按鍵組態..."
 
 
-msgid "Export key configuration to a python script"
-msgstr "將按鍵組態匯出為 Python 指令稿"
-
-
 msgid "All Keymaps"
 msgstr "全部按鍵映射"
 
@@ -38040,10 +37967,6 @@ msgstr "全部按鍵映射"
 msgctxt "Operator"
 msgid "Import Key Configuration..."
 msgstr "匯入按鍵組態..."
-
-
-msgid "Import key configuration from a python script"
-msgstr "從 Phthon 指令稿匯入按鍵組態"
 
 
 msgid "Keep Original"
@@ -39247,10 +39170,6 @@ msgid "Hide Active Face Sets"
 msgstr "隱藏作用中面集"
 
 
-msgid "Invert Face Set Visibility"
-msgstr "面集可見性反轉"
-
-
 msgid "Grow Face Set"
 msgstr "擴張面集"
 
@@ -39628,15 +39547,6 @@ msgstr "影片去交錯"
 
 msgid "Deinterlace all selected movie sources"
 msgstr "對所有選取的影片來源進行去交錯處理"
-
-
-msgctxt "Operator"
-msgid "Erase Strips"
-msgstr "抹除片段"
-
-
-msgid "Erase selected strips from the sequencer"
-msgstr "從序段編輯器中抹除選取的片段"
 
 
 msgid "Duplicate the selected strips"
@@ -40560,10 +40470,6 @@ msgstr "連接列"
 
 msgid "Select text by line"
 msgstr "根據列選取文字"
-
-
-msgid "Select word under cursor"
-msgstr "所選游標位置的單詞"
 
 
 msgctxt "Operator"
@@ -42794,10 +42700,6 @@ msgid "Run once and exit"
 msgstr "執行一次並離開"
 
 
-msgid "Play"
-msgstr "播放"
-
-
 msgid "Random Order"
 msgstr "隨機順序"
 
@@ -42895,10 +42797,6 @@ msgstr "將作用中操作器設回其預設值"
 msgctxt "Operator"
 msgid "Operator Enum Pie"
 msgstr "操作器枚舉圓派"
-
-
-msgid "Operator name (in python as string)"
-msgstr "操作器名稱 (python 中為字串)"
 
 
 msgid "Property name (as a string)"
@@ -44048,10 +43946,6 @@ msgid "Video"
 msgstr "視訊"
 
 
-msgid "FFMPEG Presets"
-msgstr "FFMPEG 預置"
-
-
 msgid "Views"
 msgstr "視圖"
 
@@ -44228,6 +44122,34 @@ msgid "Stencil Mask"
 msgstr "遮罩蠟紙"
 
 
+msgid "Comb hairs"
+msgstr "合成毛髮"
+
+
+msgid "Smooth hairs"
+msgstr "平滑毛髮"
+
+
+msgid "Add hairs"
+msgstr "添加毛髮"
+
+
+msgid "Make hairs longer or shorter"
+msgstr "讓毛髮更長或更短"
+
+
+msgid "Make hairs stand up"
+msgstr "讓毛髮站立"
+
+
+msgid "Cut hairs"
+msgstr "切割毛髮"
+
+
+msgid "Weight hair particles"
+msgstr "權重毛髮粒子"
+
+
 msgctxt "Operator"
 msgid "Draw Face Sets"
 msgstr "繪製面集"
@@ -44266,6 +44188,11 @@ msgstr "插補"
 msgctxt "Operator"
 msgid "Thickness"
 msgstr "厚度"
+
+
+msgctxt "Operator"
+msgid "Slide"
+msgstr "滑動"
 
 
 msgid "Default tools for particle mode"
@@ -44458,42 +44385,6 @@ msgstr "末梢"
 
 msgid "Tip select mode"
 msgstr "末梢選取模式"
-
-
-msgid "Comb"
-msgstr "合成"
-
-
-msgid "Comb hairs"
-msgstr "合成毛髮"
-
-
-msgid "Smooth hairs"
-msgstr "平滑毛髮"
-
-
-msgid "Add hairs"
-msgstr "添加毛髮"
-
-
-msgid "Make hairs longer or shorter"
-msgstr "讓毛髮更長或更短"
-
-
-msgid "Puff"
-msgstr "噴發"
-
-
-msgid "Make hairs stand up"
-msgstr "讓毛髮站立"
-
-
-msgid "Cut hairs"
-msgstr "切割毛髮"
-
-
-msgid "Weight hair particles"
-msgstr "權重毛髮粒子"
 
 
 msgid "Auto Velocity"
@@ -45220,20 +45111,12 @@ msgid "Pose Matrix"
 msgstr "姿勢矩陣"
 
 
-msgid "Final 4x4 matrix after constraints and drivers are applied (object space)"
-msgstr "約束與驅動器套用之後的最終 4x4 矩陣 (物體空間)"
-
-
 msgid "Alternative access to location/scale/rotation relative to the parent and own rest bone"
 msgstr "相對於親代與擁有的靜止骨骼，其位置/縮放/旋轉之替代存取方法"
 
 
 msgid "Channel Matrix"
 msgstr "通道矩陣"
-
-
-msgid "4x4 matrix, before constraints"
-msgstr "4x4 矩陣，在約束之前"
 
 
 msgid "Parent of this pose bone"
@@ -49380,6 +49263,10 @@ msgid "Control point weight values"
 msgstr "控制點權重值"
 
 
+msgid "Mass Vertex Group"
+msgstr "質量頂點群組"
+
+
 msgid "Control point mass values"
 msgstr "控制點重量值"
 
@@ -49682,10 +49569,6 @@ msgstr "追蹤資料用的律表視圖"
 
 msgid "Space Console"
 msgstr "空間主控臺"
-
-
-msgid "Interactive python console"
-msgstr "互動式 Python 主控臺"
 
 
 msgid "Font size to use for displaying the text"
@@ -50558,10 +50441,6 @@ msgstr "搜尋到結尾時再次從檔案開頭搜尋"
 
 msgid "Live Edit"
 msgstr "即時編輯"
-
-
-msgid "Run python while editing"
-msgstr "當編輯時執行 Python"
 
 
 msgid "Search string is sensitive to uppercase and lowercase letters"
@@ -52284,10 +52163,6 @@ msgid "Shade Top"
 msgstr "著色上"
 
 
-msgid "Text Selected"
-msgstr "選取的文字"
-
-
 msgid "Theme Widget State Color"
 msgstr "主題小工具狀態色彩"
 
@@ -52388,13 +52263,13 @@ msgid "Which mesh elements selection works on"
 msgstr "在哪一個網格元素選取上工作"
 
 
+msgid "Display size for proportional editing circle"
+msgstr "顯示比例化編輯圓的大小"
+
+
 msgctxt "Curve"
 msgid "Proportional Editing Falloff"
 msgstr "比例化編輯衰落"
-
-
-msgid "Display size for proportional editing circle"
-msgstr "顯示比例化編輯圓的大小"
 
 
 msgid "UV Local View"
@@ -54184,10 +54059,6 @@ msgid "Extrapolate"
 msgstr "外推"
 
 
-msgid "Blender 2.6 doesn't support python constraints yet"
-msgstr "Blender 2.6 尚不支援 Python 約束"
-
-
 msgid "Pivot Offset"
 msgstr "樞紐點偏移"
 
@@ -54883,11 +54754,6 @@ msgstr "在所選標記之間"
 msgctxt "Operator"
 msgid "Extend"
 msgstr "擴展"
-
-
-msgctxt "Operator"
-msgid "Slide"
-msgstr "滑動"
 
 
 msgctxt "Operator"
@@ -56882,10 +56748,6 @@ msgstr "對於 DV-NTSC，算繪高度必須為 480 像素！"
 
 msgid "Render height has to be 576 pixels for DV-PAL!"
 msgstr "對於 DV-PAL，算繪高度必須為 576 像素！"
-
-
-msgid "FFMPEG only supports 48khz / stereo audio for DV!"
-msgstr "FFMPEG 對於 DV 僅支援 48khz / 立體聲音訊！"
 
 
 msgid "Error initializing video stream"
@@ -59258,26 +59120,6 @@ msgid "Node tree type %s undefined"
 msgstr "節點樹類型 %s 尚未定義"
 
 
-msgid " (String)"
-msgstr " (字串)"
-
-
-msgid " (Integer)"
-msgstr " (整數)"
-
-
-msgid " (Float)"
-msgstr " (浮點)"
-
-
-msgid " (Vector)"
-msgstr " (向量)"
-
-
-msgid " (Boolean)"
-msgstr " (布林)"
-
-
 msgid "Geometry:"
 msgstr "幾何:"
 
@@ -59481,10 +59323,6 @@ msgstr "重新建立檔案"
 
 msgid "unknown error writing file"
 msgstr "寫入檔案時發生未知錯誤"
-
-
-msgid "unknown error stating file"
-msgstr "取得檔案狀態時發生未知錯誤"
 
 
 msgid "Could not reopen file"

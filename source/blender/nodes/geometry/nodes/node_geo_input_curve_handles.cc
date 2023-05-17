@@ -8,13 +8,14 @@ namespace blender::nodes::node_geo_input_curve_handles_cc {
 
 static void node_declare(NodeDeclarationBuilder &b)
 {
-  b.add_input<decl::Bool>(N_("Relative"))
+  b.add_input<decl::Bool>("Relative")
       .default_value(false)
       .supports_field()
-      .description(N_("Output the handle positions relative to the corresponding control point "
-                      "instead of in the local space of the geometry"));
-  b.add_output<decl::Vector>(N_("Left")).field_source_reference_all();
-  b.add_output<decl::Vector>(N_("Right")).field_source_reference_all();
+      .description(
+          "Output the handle positions relative to the corresponding control point "
+          "instead of in the local space of the geometry");
+  b.add_output<decl::Vector>("Left").field_source_reference_all();
+  b.add_output<decl::Vector>("Right").field_source_reference_all();
 }
 
 class HandlePositionFieldInput final : public bke::CurvesFieldInput {
@@ -31,7 +32,7 @@ class HandlePositionFieldInput final : public bke::CurvesFieldInput {
                                  const eAttrDomain domain,
                                  const IndexMask mask) const final
   {
-    bke::CurvesFieldContext field_context{curves, ATTR_DOMAIN_POINT};
+    const bke::CurvesFieldContext field_context{curves, ATTR_DOMAIN_POINT};
     fn::FieldEvaluator evaluator(field_context, &mask);
     evaluator.add(relative_);
     evaluator.evaluate();
@@ -82,7 +83,8 @@ class HandlePositionFieldInput final : public bke::CurvesFieldInput {
   bool is_equal_to(const fn::FieldNode &other) const override
   {
     if (const HandlePositionFieldInput *other_handle =
-            dynamic_cast<const HandlePositionFieldInput *>(&other)) {
+            dynamic_cast<const HandlePositionFieldInput *>(&other))
+    {
       return relative_ == other_handle->relative_ && left_ == other_handle->left_;
     }
     return false;
@@ -113,7 +115,7 @@ void register_node_type_geo_input_curve_handles()
   static bNodeType ntype;
   geo_node_type_base(
       &ntype, GEO_NODE_INPUT_CURVE_HANDLES, "Curve Handle Positions", NODE_CLASS_INPUT);
-  node_type_size_preset(&ntype, NODE_SIZE_MIDDLE);
+  blender::bke::node_type_size_preset(&ntype, blender::bke::eNodeSizePreset::MIDDLE);
   ntype.geometry_node_execute = file_ns::node_geo_exec;
   ntype.declare = file_ns::node_declare;
   nodeRegisterType(&ntype);

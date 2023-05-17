@@ -5,13 +5,15 @@
 #include "BLI_array.hh"
 #include "BLI_color.hh"
 #include "BLI_cpp_type.hh"
+#include "BLI_generic_span.hh"
+#include "BLI_generic_virtual_array.hh"
 #include "BLI_math_color.hh"
 #include "BLI_math_vector.h"
 #include "BLI_math_vector.hh"
 
 #include "BKE_customdata.h"
 
-namespace blender::attribute_math {
+namespace blender::bke::attribute_math {
 
 /**
  * Utility function that simplifies calling a templated function based on a run-time data type.
@@ -587,4 +589,16 @@ template<typename T> using DefaultMixer = typename DefaultMixerStruct<T>::type;
 
 /** \} */
 
-}  // namespace blender::attribute_math
+/* -------------------------------------------------------------------- */
+/** \name Generic Array Utils Implementations
+ *
+ * Extra implementations of functions from #BLI_array_utils.hh for all attribute types,
+ * used to avoid templating the same logic for each type in many places.
+ * \{ */
+
+void gather(GSpan src, Span<int> map, GMutableSpan dst);
+void gather(const GVArray &src, Span<int> map, GMutableSpan dst);
+
+/** \} */
+
+}  // namespace blender::bke::attribute_math

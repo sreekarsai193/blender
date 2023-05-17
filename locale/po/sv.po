@@ -1,9 +1,9 @@
 
 msgid ""
 msgstr ""
-"Project-Id-Version: Blender 3.6.0 Alpha (b'dfa42c614fb4')\n"
+"Project-Id-Version: Blender 3.6.0 Alpha (b'51c2a0f81606')\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-04-17 09:43:08\n"
+"POT-Creation-Date: 2023-05-15 09:19:43\n"
 "PO-Revision-Date: \n"
 "Last-Translator: Arvid Rudling <arvid.r@gmail.com>\n"
 "Language-Team: \n"
@@ -1507,10 +1507,6 @@ msgid "Filter folders"
 msgstr "Filtrera mappar"
 
 
-msgid "Filter python"
-msgstr "Filtrera Python"
-
-
 msgid "Toggle selection status of all bones"
 msgstr "Växla markeringsstatus för alla ben"
 
@@ -1754,6 +1750,10 @@ msgid "Restrict Render Unselected"
 msgstr "Begränsa rendering till markering"
 
 
+msgid "Selected Only"
+msgstr "Bara Markerad"
+
+
 msgctxt "Operator"
 msgid "Multires Subdivide"
 msgstr "Dela upp i flera upplösningsnivåer"
@@ -1873,10 +1873,6 @@ msgstr "Spegel"
 msgctxt "Operator"
 msgid "Particle Edit Toggle"
 msgstr "Redigera partiklar på/av"
-
-
-msgid "Selected Only"
-msgstr "Bara Markerad"
 
 
 msgctxt "Operator"
@@ -2130,10 +2126,6 @@ msgstr "Viskositet"
 
 msgid "Shadows"
 msgstr "Skuggor"
-
-
-msgid "FFMPEG Presets"
-msgstr "FFMPEG-förinställningar"
 
 
 msgid "Playback"

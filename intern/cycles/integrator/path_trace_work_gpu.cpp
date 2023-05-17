@@ -22,7 +22,8 @@ static size_t estimate_single_state_size(const uint kernel_features)
 {
   size_t state_size = 0;
 
-#define KERNEL_STRUCT_BEGIN(name) for (int array_index = 0;; array_index++) {
+#define KERNEL_STRUCT_BEGIN(name) \
+  for (int array_index = 0;; array_index++) {
 #define KERNEL_STRUCT_MEMBER(parent_struct, type, name, feature) \
   state_size += (kernel_features & (feature)) ? sizeof(type) : 0;
 #define KERNEL_STRUCT_ARRAY_MEMBER(parent_struct, type, name, feature) \
@@ -96,7 +97,8 @@ void PathTraceWorkGPU::alloc_integrator_soa()
   const int requested_volume_stack_size = device_scene_->data.volume_stack_size;
   const uint kernel_features = device_scene_->data.kernel_features;
   if ((integrator_state_soa_kernel_features_ & kernel_features) == kernel_features &&
-      integrator_state_soa_volume_stack_size_ >= requested_volume_stack_size) {
+      integrator_state_soa_volume_stack_size_ >= requested_volume_stack_size)
+  {
     return;
   }
   integrator_state_soa_kernel_features_ = kernel_features;
@@ -121,7 +123,8 @@ void PathTraceWorkGPU::alloc_integrator_soa()
    * write the pointers into a struct that resides in constant memory.
    *
    * TODO: store float3 in separate XYZ arrays. */
-#define KERNEL_STRUCT_BEGIN(name) for (int array_index = 0;; array_index++) {
+#define KERNEL_STRUCT_BEGIN(name) \
+  for (int array_index = 0;; array_index++) {
 #define KERNEL_STRUCT_MEMBER(parent_struct, type, name, feature) \
   if ((kernel_features & (feature)) && (integrator_state_gpu_.parent_struct.name == nullptr)) { \
     device_only_memory<type> *array = new device_only_memory<type>(device_, \
@@ -132,7 +135,8 @@ void PathTraceWorkGPU::alloc_integrator_soa()
   }
 #define KERNEL_STRUCT_ARRAY_MEMBER(parent_struct, type, name, feature) \
   if ((kernel_features & (feature)) && \
-      (integrator_state_gpu_.parent_struct[array_index].name == nullptr)) { \
+      (integrator_state_gpu_.parent_struct[array_index].name == nullptr)) \
+  { \
     device_only_memory<type> *array = new device_only_memory<type>(device_, \
                                                                    "integrator_state_" #name); \
     array->alloc_to_device(max_num_paths_); \
@@ -381,11 +385,17 @@ void PathTraceWorkGPU::enqueue_reset()
 
   queue_->enqueue(DEVICE_KERNEL_INTEGRATOR_RESET, max_num_paths_, args);
   queue_->zero_to_device(integrator_queue_counter_);
-  queue_->zero_to_device(integrator_shader_sort_counter_);
-  if (device_scene_->data.kernel_features & KERNEL_FEATURE_NODE_RAYTRACE) {
+  if (integrator_shader_sort_counter_.size() != 0) {
+    queue_->zero_to_device(integrator_shader_sort_counter_);
+  }
+  if (device_scene_->data.kernel_features & KERNEL_FEATURE_NODE_RAYTRACE &&
+      integrator_shader_raytrace_sort_counter_.size() != 0)
+  {
     queue_->zero_to_device(integrator_shader_raytrace_sort_counter_);
   }
-  if (device_scene_->data.kernel_features & KERNEL_FEATURE_MNEE) {
+  if (device_scene_->data.kernel_features & KERNEL_FEATURE_MNEE &&
+      integrator_shader_mnee_sort_counter_.size() != 0)
+  {
     queue_->zero_to_device(integrator_shader_mnee_sort_counter_);
   }
 
@@ -611,7 +621,8 @@ void PathTraceWorkGPU::compact_main_paths(const int num_active_paths)
 
   const int min_compact_paths = 32;
   if (max_active_main_path_index_ == num_active_paths ||
-      max_active_main_path_index_ < min_compact_paths) {
+      max_active_main_path_index_ < min_compact_paths)
+  {
     return;
   }
 
@@ -647,7 +658,8 @@ void PathTraceWorkGPU::compact_shadow_paths()
   const float shadow_compact_ratio = 0.5f;
   const int min_compact_paths = 32;
   if (integrator_next_shadow_path_index_.data()[0] < num_active_paths * shadow_compact_ratio ||
-      integrator_next_shadow_path_index_.data()[0] < min_compact_paths) {
+      integrator_next_shadow_path_index_.data()[0] < min_compact_paths)
+  {
     return;
   }
 

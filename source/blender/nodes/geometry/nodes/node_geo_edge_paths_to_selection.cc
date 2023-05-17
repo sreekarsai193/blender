@@ -15,9 +15,9 @@ namespace blender::nodes::node_geo_edge_paths_to_selection_cc {
 
 static void node_declare(NodeDeclarationBuilder &b)
 {
-  b.add_input<decl::Bool>(N_("Start Vertices")).default_value(true).hide_value().supports_field();
-  b.add_input<decl::Int>(N_("Next Vertex Index")).default_value(-1).hide_value().supports_field();
-  b.add_output<decl::Bool>(N_("Selection")).field_source_reference_all();
+  b.add_input<decl::Bool>("Start Vertices").default_value(true).hide_value().supports_field();
+  b.add_input<decl::Int>("Next Vertex Index").default_value(-1).hide_value().supports_field();
+  b.add_output<decl::Bool>("Selection").field_source_reference_all();
 }
 
 static void edge_paths_to_selection(const Mesh &src_mesh,
@@ -47,7 +47,8 @@ static void edge_paths_to_selection(const Mesh &src_mesh,
   for (const int i : edges.index_range()) {
     const int2 &edge = edges[i];
     if ((selection[edge[0]] && selection[edge[1]]) &&
-        (edge[0] == next_indices[edge[1]] || edge[1] == next_indices[edge[0]])) {
+        (edge[0] == next_indices[edge[1]] || edge[1] == next_indices[edge[0]]))
+    {
       r_selection[i] = true;
     }
   }
@@ -71,7 +72,7 @@ class PathToEdgeSelectionFieldInput final : public bke::MeshFieldInput {
                                  const eAttrDomain domain,
                                  const IndexMask /*mask*/) const final
   {
-    bke::MeshFieldContext context{mesh, ATTR_DOMAIN_POINT};
+    const bke::MeshFieldContext context{mesh, ATTR_DOMAIN_POINT};
     fn::FieldEvaluator evaluator{context, mesh.totvert};
     evaluator.add(next_vertex_);
     evaluator.add(start_vertices_);
@@ -106,7 +107,8 @@ class PathToEdgeSelectionFieldInput final : public bke::MeshFieldInput {
   bool is_equal_to(const fn::FieldNode &other) const override
   {
     if (const PathToEdgeSelectionFieldInput *other_field =
-            dynamic_cast<const PathToEdgeSelectionFieldInput *>(&other)) {
+            dynamic_cast<const PathToEdgeSelectionFieldInput *>(&other))
+    {
       return other_field->start_vertices_ == start_vertices_ &&
              other_field->next_vertex_ == next_vertex_;
     }
@@ -139,7 +141,7 @@ void register_node_type_geo_edge_paths_to_selection()
   geo_node_type_base(
       &ntype, GEO_NODE_EDGE_PATHS_TO_SELECTION, "Edge Paths to Selection", NODE_CLASS_INPUT);
   ntype.declare = file_ns::node_declare;
-  node_type_size(&ntype, 150, 100, 300);
+  blender::bke::node_type_size(&ntype, 150, 100, 300);
   ntype.geometry_node_execute = file_ns::node_geo_exec;
   nodeRegisterType(&ntype);
 }

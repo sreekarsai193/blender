@@ -15,10 +15,10 @@ namespace blender::nodes::node_geo_input_shortest_edge_paths_cc {
 
 static void node_declare(NodeDeclarationBuilder &b)
 {
-  b.add_input<decl::Bool>(N_("End Vertex")).default_value(false).hide_value().supports_field();
-  b.add_input<decl::Float>(N_("Edge Cost")).default_value(1.0f).hide_value().supports_field();
-  b.add_output<decl::Int>(N_("Next Vertex Index")).field_source();
-  b.add_output<decl::Float>(N_("Total Cost")).field_source();
+  b.add_input<decl::Bool>("End Vertex").default_value(false).hide_value().supports_field();
+  b.add_input<decl::Float>("Edge Cost").default_value(1.0f).hide_value().supports_field();
+  b.add_output<decl::Int>("Next Vertex Index").field_source();
+  b.add_output<decl::Float>("Total Cost").field_source();
 }
 
 typedef std::pair<float, int> VertPriority;
@@ -99,13 +99,13 @@ class ShortestEdgePathsNextVertFieldInput final : public bke::MeshFieldInput {
                                  const eAttrDomain domain,
                                  const IndexMask /*mask*/) const final
   {
-    bke::MeshFieldContext edge_context{mesh, ATTR_DOMAIN_EDGE};
+    const bke::MeshFieldContext edge_context{mesh, ATTR_DOMAIN_EDGE};
     fn::FieldEvaluator edge_evaluator{edge_context, mesh.totedge};
     edge_evaluator.add(cost_);
     edge_evaluator.evaluate();
     const VArray<float> input_cost = edge_evaluator.get_evaluated<float>(0);
 
-    bke::MeshFieldContext point_context{mesh, ATTR_DOMAIN_POINT};
+    const bke::MeshFieldContext point_context{mesh, ATTR_DOMAIN_POINT};
     fn::FieldEvaluator point_evaluator{point_context, mesh.totvert};
     point_evaluator.add(end_selection_);
     point_evaluator.evaluate();
@@ -144,7 +144,8 @@ class ShortestEdgePathsNextVertFieldInput final : public bke::MeshFieldInput {
   bool is_equal_to(const fn::FieldNode &other) const override
   {
     if (const ShortestEdgePathsNextVertFieldInput *other_field =
-            dynamic_cast<const ShortestEdgePathsNextVertFieldInput *>(&other)) {
+            dynamic_cast<const ShortestEdgePathsNextVertFieldInput *>(&other))
+    {
       return other_field->end_selection_ == end_selection_ && other_field->cost_ == cost_;
     }
     return false;
@@ -174,13 +175,13 @@ class ShortestEdgePathsCostFieldInput final : public bke::MeshFieldInput {
                                  const eAttrDomain domain,
                                  const IndexMask /*mask*/) const final
   {
-    bke::MeshFieldContext edge_context{mesh, ATTR_DOMAIN_EDGE};
+    const bke::MeshFieldContext edge_context{mesh, ATTR_DOMAIN_EDGE};
     fn::FieldEvaluator edge_evaluator{edge_context, mesh.totedge};
     edge_evaluator.add(cost_);
     edge_evaluator.evaluate();
     const VArray<float> input_cost = edge_evaluator.get_evaluated<float>(0);
 
-    bke::MeshFieldContext point_context{mesh, ATTR_DOMAIN_POINT};
+    const bke::MeshFieldContext point_context{mesh, ATTR_DOMAIN_POINT};
     fn::FieldEvaluator point_evaluator{point_context, mesh.totvert};
     point_evaluator.add(end_selection_);
     point_evaluator.evaluate();
@@ -212,7 +213,8 @@ class ShortestEdgePathsCostFieldInput final : public bke::MeshFieldInput {
   bool is_equal_to(const fn::FieldNode &other) const override
   {
     if (const ShortestEdgePathsCostFieldInput *other_field =
-            dynamic_cast<const ShortestEdgePathsCostFieldInput *>(&other)) {
+            dynamic_cast<const ShortestEdgePathsCostFieldInput *>(&other))
+    {
       return other_field->end_selection_ == end_selection_ && other_field->cost_ == cost_;
     }
     return false;

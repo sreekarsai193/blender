@@ -290,17 +290,6 @@ typedef enum {
   V3D_SNAPCURSOR_SNAP_EDIT_GEOM_CAGE = 1 << 4,
 } eV3DSnapCursor;
 
-typedef enum {
-  V3D_PLACE_DEPTH_SURFACE = 0,
-  V3D_PLACE_DEPTH_CURSOR_PLANE = 1,
-  V3D_PLACE_DEPTH_CURSOR_VIEW = 2,
-} eV3DPlaceDepth;
-
-typedef enum {
-  V3D_PLACE_ORIENT_SURFACE = 0,
-  V3D_PLACE_ORIENT_DEFAULT = 1,
-} eV3DPlaceOrient;
-
 typedef struct V3DSnapCursorData {
   eSnapMode snap_elem;
   float loc[3];
@@ -317,16 +306,11 @@ typedef struct V3DSnapCursorData {
 typedef struct V3DSnapCursorState {
   /* Setup. */
   eV3DSnapCursor flag;
-  eV3DPlaceDepth plane_depth;
-  eV3DPlaceOrient plane_orient;
   uchar color_line[4];
   uchar color_point[4];
   uchar color_box[4];
   float *prevpoint;
   float box_dimensions[3];
-  eSnapMode snap_elem_force; /* If SCE_SNAP_MODE_NONE, use scene settings. */
-  short plane_axis;
-  bool use_plane_axis_auto;
   bool draw_point;
   bool draw_plane;
   bool draw_box;
@@ -336,10 +320,12 @@ typedef struct V3DSnapCursorState {
 } V3DSnapCursorState;
 
 void ED_view3d_cursor_snap_state_default_set(V3DSnapCursorState *state);
-V3DSnapCursorState *ED_view3d_cursor_snap_state_get(void);
-V3DSnapCursorState *ED_view3d_cursor_snap_active(void);
-void ED_view3d_cursor_snap_deactive(V3DSnapCursorState *state);
-void ED_view3d_cursor_snap_prevpoint_set(V3DSnapCursorState *state, const float prev_point[3]);
+V3DSnapCursorState *ED_view3d_cursor_snap_state_active_get(void);
+void ED_view3d_cursor_snap_state_active_set(V3DSnapCursorState *state);
+V3DSnapCursorState *ED_view3d_cursor_snap_state_create(void);
+void ED_view3d_cursor_snap_state_free(V3DSnapCursorState *state);
+void ED_view3d_cursor_snap_state_prevpoint_set(V3DSnapCursorState *state,
+                                               const float prev_point[3]);
 void ED_view3d_cursor_snap_data_update(V3DSnapCursorState *state,
                                        const struct bContext *C,
                                        int x,
@@ -1330,8 +1316,19 @@ void ED_view3d_shade_update(struct Main *bmain, struct View3D *v3d, struct ScrAr
 
 #define OVERLAY_RETOPOLOGY_ENABLED(overlay) \
   (((overlay).edit_flag & V3D_OVERLAY_EDIT_RETOPOLOGY) != 0)
+#ifdef __APPLE__
+/* Apple silicon tile depth test requires a higher value to reduce drawing artifacts.*/
+#  define OVERLAY_RETOPOLOGY_MIN_OFFSET_ENABLED 0.0015f
+#  define OVERLAY_RETOPOLOGY_MIN_OFFSET_DISABLED 0.0015f
+#else
+#  define OVERLAY_RETOPOLOGY_MIN_OFFSET_ENABLED FLT_EPSILON
+#  define OVERLAY_RETOPOLOGY_MIN_OFFSET_DISABLED 0.0f
+#endif
+
 #define OVERLAY_RETOPOLOGY_OFFSET(overlay) \
-  (OVERLAY_RETOPOLOGY_ENABLED(overlay) ? max_ff((overlay).retopology_offset, FLT_EPSILON) : 0.0f)
+  (OVERLAY_RETOPOLOGY_ENABLED(overlay) ? \
+       max_ff((overlay).retopology_offset, OVERLAY_RETOPOLOGY_MIN_OFFSET_ENABLED) : \
+       OVERLAY_RETOPOLOGY_MIN_OFFSET_DISABLED)
 
 #define RETOPOLOGY_ENABLED(v3d) (OVERLAY_RETOPOLOGY_ENABLED((v3d)->overlay))
 #define RETOPOLOGY_OFFSET(v3d) (OVERLAY_RETOPOLOGY_OFFSET((v3d)->overlay))

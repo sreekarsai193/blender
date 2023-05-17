@@ -149,6 +149,7 @@ Mesh *create_grid_mesh(const int verts_x,
     calculate_uvs(mesh, positions, corner_verts, size_x, size_y, uv_map_id);
   }
 
+  mesh->tag_loose_verts_none();
   mesh->loose_edges_tag_none();
 
   const float3 bounds = float3(size_x * 0.5f, size_y * 0.5f, 0.0f);
@@ -163,28 +164,28 @@ namespace blender::nodes::node_geo_mesh_primitive_grid_cc {
 
 static void node_declare(NodeDeclarationBuilder &b)
 {
-  b.add_input<decl::Float>(N_("Size X"))
+  b.add_input<decl::Float>("Size X")
       .default_value(1.0f)
       .min(0.0f)
       .subtype(PROP_DISTANCE)
-      .description(N_("Side length of the plane in the X direction"));
-  b.add_input<decl::Float>(N_("Size Y"))
+      .description("Side length of the plane in the X direction");
+  b.add_input<decl::Float>("Size Y")
       .default_value(1.0f)
       .min(0.0f)
       .subtype(PROP_DISTANCE)
-      .description(N_("Side length of the plane in the Y direction"));
-  b.add_input<decl::Int>(N_("Vertices X"))
+      .description("Side length of the plane in the Y direction");
+  b.add_input<decl::Int>("Vertices X")
       .default_value(3)
       .min(2)
       .max(1000)
-      .description(N_("Number of vertices in the X direction"));
-  b.add_input<decl::Int>(N_("Vertices Y"))
+      .description("Number of vertices in the X direction");
+  b.add_input<decl::Int>("Vertices Y")
       .default_value(3)
       .min(2)
       .max(1000)
-      .description(N_("Number of vertices in the Y direction"));
-  b.add_output<decl::Geometry>(N_("Mesh"));
-  b.add_output<decl::Vector>(N_("UV Map")).field_on_all();
+      .description("Number of vertices in the Y direction");
+  b.add_output<decl::Geometry>("Mesh");
+  b.add_output<decl::Vector>("UV Map").field_on_all();
 }
 
 static void node_geo_exec(GeoNodeExecParams params)
@@ -198,19 +199,12 @@ static void node_geo_exec(GeoNodeExecParams params)
     return;
   }
 
-  AutoAnonymousAttributeID uv_map_id = params.get_output_anonymous_attribute_id_if_needed(
-      "UV Map");
+  AnonymousAttributeIDPtr uv_map_id = params.get_output_anonymous_attribute_id_if_needed("UV Map");
 
   Mesh *mesh = create_grid_mesh(verts_x, verts_y, size_x, size_y, uv_map_id.get());
   BKE_id_material_eval_ensure_default_slot(&mesh->id);
 
   params.set_output("Mesh", GeometrySet::create_with_mesh(mesh));
-
-  if (uv_map_id) {
-    params.set_output("UV Map",
-                      AnonymousAttributeFieldInput::Create<float3>(
-                          std::move(uv_map_id), params.attribute_producer_name()));
-  }
 }
 
 }  // namespace blender::nodes::node_geo_mesh_primitive_grid_cc

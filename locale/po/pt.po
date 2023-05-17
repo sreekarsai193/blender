@@ -1,9 +1,9 @@
 
 msgid ""
 msgstr ""
-"Project-Id-Version: Blender 3.6.0 Alpha (b'dfa42c614fb4')\n"
+"Project-Id-Version: Blender 3.6.0 Alpha (b'51c2a0f81606')\n"
 "Report-Msgid-Bugs-To: Ivan Paulos Tomé <ivan.paulos.tome@yandex.com>\n"
-"POT-Creation-Date: 2023-04-17 09:43:08\n"
+"POT-Creation-Date: 2023-05-15 09:19:43\n"
 "PO-Revision-Date: 2017-09-08 21:24-0300\n"
 "Last-Translator: Ivan Paulos Tomé <greylica@gmail.com>\n"
 "Language-Team: Ivan Paulos Tomé, Inês Almeida, João Brandão (ULISBOA), Paulo Martins <ivan.paulos.tome@yandex.com>\n"
@@ -3477,10 +3477,6 @@ msgid "Vertex group for fine control over bending stiffness"
 msgstr "Grupo de vértices para o controlo fino da rigidez de conformação."
 
 
-msgid "Mass Vertex Group"
-msgstr "Grupo de vértices de massa"
-
-
 msgid "Vertex Group for pinning of vertices"
 msgstr "Grupo de vértices para fixação dos vértices."
 
@@ -5718,10 +5714,6 @@ msgid "Map To"
 msgstr "Mapear para"
 
 
-msgid "The transformation type to affect of the constrained object"
-msgstr "O tipo de transformação para afetar o objeto restringido."
-
-
 msgid "Map To X From"
 msgstr "Mapear para X a partir de"
 
@@ -6012,14 +6004,6 @@ msgstr "Plano"
 
 msgid "Plane for projected stroke"
 msgstr "O plano para a projeção dos traços."
-
-
-msgid "Normal/View"
-msgstr "Normais e visualização"
-
-
-msgid "Normal/Surface"
-msgstr "Normais e superfícies"
 
 
 msgid "View"
@@ -8386,16 +8370,8 @@ msgid "Maximum distance for the field to work"
 msgstr "Distância máxima para o funcionamento dos campos de força."
 
 
-msgid "Minimum distance for the field's fall-off"
-msgstr "Distância mínima para que os objetos ou partículas escapem dos campos de força."
-
-
 msgid "Falloff Power"
 msgstr "Potência de decaimento"
-
-
-msgid "Fall-Off"
-msgstr "Cair para fora"
 
 
 msgid "Cone"
@@ -8548,10 +8524,6 @@ msgstr "Distância radial máxima para o funcionamento dos campos de força."
 
 msgid "Minimum Radial Distance"
 msgstr "Distância radial mínima"
-
-
-msgid "Minimum radial distance for the field's fall-off"
-msgstr "Distância radial mínima para que os objetos ou partículas escapem dos campos de força."
 
 
 msgid "Rest Length"
@@ -8714,16 +8686,8 @@ msgid "Use Min"
 msgstr "Usar mínimo"
 
 
-msgid "Use a minimum distance for the field's fall-off"
-msgstr "Usa uma distância mínima para que os objetos ou partículas escapem dos campos de força."
-
-
 msgid "Multiple Springs"
 msgstr "Múltiplas molas"
-
-
-msgid "Every point is effected by multiple springs"
-msgstr "Todo ponto é afetado por várias molas."
 
 
 msgid "Use Coordinates"
@@ -8736,10 +8700,6 @@ msgstr "Usa as coordenadas globais ou do objeto para a textura."
 
 msgid "Use a maximum radial distance for the field to work"
 msgstr "Usa uma distância radial máxima para o funcionamento dos campos de força."
-
-
-msgid "Use a minimum radial distance for the field's fall-off"
-msgstr "Usa uma distância radial mínima para que os objetos ou partículas escapem dos campos de força."
 
 
 msgid "Root Texture Coordinates"
@@ -11121,14 +11081,6 @@ msgid "Armature layer visibility"
 msgstr "Visibilidade de camada de armação."
 
 
-msgid "Layer Proxy Protection"
-msgstr "Proteção para camadas de aproximações"
-
-
-msgid "Protected layers in Proxy Instances are restored to Proxy settings on file reload and undo"
-msgstr "As camadas protegidas em instâncias das aproximações são restauradas para as definições originais presentes no ficheiro durante operações de recarregamento e desfazer."
-
-
 msgid "Pose Position"
 msgstr "Posição de pose"
 
@@ -11299,6 +11251,14 @@ msgstr "Máscara de textura de sobreposição de alfa"
 
 msgid "Editable falloff curve"
 msgstr "Curva de decaimento editável."
+
+
+msgid "Comb"
+msgstr "Pentear"
+
+
+msgid "Puff"
+msgstr "Inflar"
 
 
 msgid "Paint most on faces pointing towards the view according to this angle"
@@ -11807,10 +11767,6 @@ msgstr "Esculpe em uma camada persistente da malha."
 
 msgid "Use Plane Trim"
 msgstr "Usar aparamento de planos"
-
-
-msgid "Enable Plane Trim"
-msgstr "Ativar aparamento de planos"
 
 
 msgid "Jitter Pressure"
@@ -12397,18 +12353,6 @@ msgid "Follow"
 msgstr "Propagar"
 
 
-msgid "Make curve path children to rotate along the path"
-msgstr "Propaga as inclinações da direção das normais das curvas aos objetos crianças para que estes inclinem-se ao longo do caminho."
-
-
-msgid "Option for paths and curve-deform: apply the curve radius with path following it and deforming"
-msgstr "Opções para caminhos e deformação por curvas: Aplica o valor dos raios dos pontos de controlo presentes na trajetória das curvas para a deformação dos objetos."
-
-
-msgid "Option for curve-deform: make deformed child to stretch along entire path"
-msgstr "Opções para deformação por curvas: Faz com que as crianças deformadas se estiquem ao longo do caminho todo."
-
-
 msgid "Surface Curve"
 msgstr "Superfície de curva"
 
@@ -12515,6 +12459,10 @@ msgstr "Fonte em negrito e itálico"
 
 msgid "Font Italic"
 msgstr "Fonte em itálico"
+
+
+msgid "Text Selected"
+msgstr "Texto selecionado"
 
 
 msgid "X Offset"
@@ -29536,16 +29484,8 @@ msgid "Export Keying Set..."
 msgstr "Exportar conjunto de inserção de chaves..."
 
 
-msgid "Export Keying Set to a python script"
-msgstr "Exporta o conjunto de inserção de chaves para um script Python."
-
-
 msgid "Filter folders"
 msgstr "Filtra por pastas."
-
-
-msgid "Filter python"
-msgstr "Filtra por ficheiros Python."
 
 
 msgid "Filter text"
@@ -30133,10 +30073,6 @@ msgstr "Filtra por ficheiros de imagem"
 
 msgid "Filter movie files"
 msgstr "Filtra por ficheiros de filme"
-
-
-msgid "Filter python files"
-msgstr "Filtra por ficheiros Python"
 
 
 msgid "Filter sound files"
@@ -31499,10 +31435,6 @@ msgstr "Palavra anterior"
 msgctxt "Operator"
 msgid "Console Execute"
 msgstr "Execução na linha de comando"
-
-
-msgid "Execute the current console line as a python expression"
-msgstr "Executa as linhas de comando atuais como uma expressão Python."
 
 
 msgctxt "Operator"
@@ -33092,6 +33024,14 @@ msgid "Execute selected file"
 msgstr "Executa o ficheiro selecionado."
 
 
+msgid "Show"
+msgstr "Mostrar"
+
+
+msgid "Play"
+msgstr "Reproduzir"
+
+
 msgctxt "Operator"
 msgid "Increment Number in Filename"
 msgstr "Número incremental no nome do ficheiro"
@@ -33160,11 +33100,6 @@ msgstr "Próxima pasta"
 
 msgid "Move to next folder"
 msgstr "Navegação no próximo diretório (referenciado pela navegação prévia)."
-
-
-msgctxt "Operator"
-msgid "Parent File"
-msgstr "Ficheiro parente"
 
 
 msgid "Move to parent directory"
@@ -33450,6 +33385,10 @@ msgstr "Carrega uma nova fonte a partir de um ficheiro."
 
 msgid "Select all text"
 msgstr "Seleciona todo o texto."
+
+
+msgid "Select word under cursor"
+msgstr "Seleciona a palavra abaixo do cursor."
 
 
 msgctxt "Operator"
@@ -34363,6 +34302,15 @@ msgstr "Selecionar grupo de vértices"
 
 msgid "Select all the vertices assigned to the active vertex group"
 msgstr "Seleciona todos os vértices atribuídos para o grupo de vértices ativo."
+
+
+msgctxt "Operator"
+msgid "Weight Paint Sample Weight"
+msgstr "Amostra de peso para pintura de pesos"
+
+
+msgid "Use the mouse to sample a weight in the 3D view"
+msgstr "Permite usar o rato para obter uma amostra de peso dentro da janela de visualização 3D."
 
 
 msgctxt "Operator"
@@ -39178,6 +39126,10 @@ msgid "Bind mesh to system in laplacian deform modifier"
 msgstr "Atrela a malha para um sistema no modificador de deformação laplaciano."
 
 
+msgid "Subset"
+msgstr "Sub-conjunto"
+
+
 msgctxt "Operator"
 msgid "Clear Location"
 msgstr "Limpar localização"
@@ -40097,10 +40049,6 @@ msgid "Remove vertex group assignments which are not required"
 msgstr "Remove as atribuições de grupo de vértices que não são requeridas."
 
 
-msgid "Subset"
-msgstr "Sub-conjunto"
-
-
 msgid "Keep Single"
 msgstr "Manter "
 
@@ -40912,10 +40860,6 @@ msgid "Hide vertices"
 msgstr "Ocultar os vértices"
 
 
-msgid "Show"
-msgstr "Mostrar"
-
-
 msgid "Show vertices"
 msgstr "Mostra os vértices"
 
@@ -41185,15 +41129,6 @@ msgstr "Modo de pintura de pesos de influência"
 
 msgid "Toggle weight paint mode in 3D view"
 msgstr "Alterna para o modo de pintura de pesos na janela de visualização 3D."
-
-
-msgctxt "Operator"
-msgid "Weight Paint Sample Weight"
-msgstr "Amostra de peso para pintura de pesos"
-
-
-msgid "Use the mouse to sample a weight in the 3D view"
-msgstr "Permite usar o rato para obter uma amostra de peso dentro da janela de visualização 3D."
 
 
 msgctxt "Operator"
@@ -41641,10 +41576,6 @@ msgid "Clear Pose Constraints"
 msgstr "Limpar as restrições de pose"
 
 
-msgid "Clear all the constraints for the selected bones"
-msgstr "Limpa todas as restrições para os ossos selecionados."
-
-
 msgctxt "Operator"
 msgid "Copy Constraints to Selected Bones"
 msgstr "Copiar restrições para ossos selecionados"
@@ -42090,10 +42021,6 @@ msgid "Export Key Configuration..."
 msgstr "Exportar definição de teclas..."
 
 
-msgid "Export key configuration to a python script"
-msgstr "Exporta as definições de teclas para um script Python."
-
-
 msgid "All Keymaps"
 msgstr "Todos os mapas de teclas"
 
@@ -42101,10 +42028,6 @@ msgstr "Todos os mapas de teclas"
 msgctxt "Operator"
 msgid "Import Key Configuration..."
 msgstr "Importar definição de teclas..."
-
-
-msgid "Import key configuration from a python script"
-msgstr "Importa as definições de teclas a partir de um script Python."
 
 
 msgid "Keep Original"
@@ -43476,15 +43399,6 @@ msgid "Deinterlace all selected movie sources"
 msgstr "Desentrelaça todas as fontes de filme selecionadas."
 
 
-msgctxt "Operator"
-msgid "Erase Strips"
-msgstr "Apagar faixas"
-
-
-msgid "Erase selected strips from the sequencer"
-msgstr "Apaga as faixas selecionadas a partir do editor de sequências."
-
-
 msgid "Duplicate the selected strips"
 msgstr "Duplicar as faixas selecionadas"
 
@@ -44495,10 +44409,6 @@ msgstr "Selecionar linha"
 
 msgid "Select text by line"
 msgstr "Seleciona o texto por linha."
-
-
-msgid "Select word under cursor"
-msgstr "Seleciona a palavra abaixo do cursor."
 
 
 msgctxt "Operator"
@@ -47033,10 +46943,6 @@ msgid "Run once and exit"
 msgstr "Executa uma vez e sai"
 
 
-msgid "Play"
-msgstr "Reproduzir"
-
-
 msgid "Random Order"
 msgstr "Ordem aleatória"
 
@@ -47166,10 +47072,6 @@ msgid "Operator Enum Pie"
 msgstr "Operador de enumeração de setorização"
 
 
-msgid "Operator name (in python as string)"
-msgstr "Nome do operador em Python, especificado como variável de texto."
-
-
 msgid "Property name (as a string)"
 msgstr "Nome da propriedade, especificado como uma variável de texto."
 
@@ -47218,10 +47120,6 @@ msgstr "Limpa as previsões de cenas."
 
 msgid "Trusted Blend Files"
 msgstr "Ficheiros Blender fiáveis"
-
-
-msgid "Enable python evaluation for selected files"
-msgstr "Ativa a avaliação python para os ficheiros selecionados."
 
 
 msgctxt "Operator"
@@ -48456,10 +48354,6 @@ msgid "Audio"
 msgstr "Áudio"
 
 
-msgid "FFMPEG Presets"
-msgstr "Predefinições FFMPEG "
-
-
 msgid "Views"
 msgstr "Visualizações"
 
@@ -48544,6 +48438,34 @@ msgid "Pose Library"
 msgstr "Biblioteca de poses"
 
 
+msgid "Comb hairs"
+msgstr "Permite pentear os cabelos."
+
+
+msgid "Smooth hairs"
+msgstr "Suavizar cabelos"
+
+
+msgid "Add hairs"
+msgstr "Adicionar cabelos"
+
+
+msgid "Make hairs longer or shorter"
+msgstr "Torna os cabelos mais longos ou curtos."
+
+
+msgid "Make hairs stand up"
+msgstr "Faz com que os cabelos fiquem em pé."
+
+
+msgid "Cut hairs"
+msgstr "Cortar cabelos"
+
+
+msgid "Weight hair particles"
+msgstr "Partículas de peso de cabelos."
+
+
 msgctxt "Operator"
 msgid "Box Mask"
 msgstr "Máscara em caixa"
@@ -48577,6 +48499,11 @@ msgstr "Interpolar"
 msgctxt "Operator"
 msgid "Thickness"
 msgstr "Espessura"
+
+
+msgctxt "Operator"
+msgid "Slide"
+msgstr "Deslizar"
 
 
 msgid "Default tools for particle mode"
@@ -48773,42 +48700,6 @@ msgstr "Objeto de formato"
 
 msgid "Outer shape to use for tools"
 msgstr "Formato exterior a ser usado para as ferramentas."
-
-
-msgid "Comb"
-msgstr "Pentear"
-
-
-msgid "Comb hairs"
-msgstr "Permite pentear os cabelos."
-
-
-msgid "Smooth hairs"
-msgstr "Suavizar cabelos"
-
-
-msgid "Add hairs"
-msgstr "Adicionar cabelos"
-
-
-msgid "Make hairs longer or shorter"
-msgstr "Torna os cabelos mais longos ou curtos."
-
-
-msgid "Puff"
-msgstr "Inflar"
-
-
-msgid "Make hairs stand up"
-msgstr "Faz com que os cabelos fiquem em pé."
-
-
-msgid "Cut hairs"
-msgstr "Cortar cabelos"
-
-
-msgid "Weight hair particles"
-msgstr "Partículas de peso de cabelos."
 
 
 msgid "Auto Velocity"
@@ -49607,20 +49498,12 @@ msgid "Pose Matrix"
 msgstr "Matriz de pose"
 
 
-msgid "Final 4x4 matrix after constraints and drivers are applied (object space)"
-msgstr "Matriz de 4x4 depois que as restrições e controladores estão aplicados (espaço de objeto)."
-
-
 msgid "Alternative access to location/scale/rotation relative to the parent and own rest bone"
 msgstr "Permite um acesso alternativo a localização, rotação ou escalonamento relacionados ao parente e seu próprio osso de descanso."
 
 
 msgid "Channel Matrix"
 msgstr "Matriz de canais"
-
-
-msgid "4x4 matrix, before constraints"
-msgstr "Matriz 4x4, antes das restrições."
 
 
 msgid "Parent of this pose bone"
@@ -54752,6 +54635,10 @@ msgid "Control point weight values"
 msgstr "Valores de peso de influência dos pontos de controlo."
 
 
+msgid "Mass Vertex Group"
+msgstr "Grupo de vértices de massa"
+
+
 msgid "Control point mass values"
 msgstr "Valores de massa nos pontos de controlo."
 
@@ -55058,10 +54945,6 @@ msgstr "Visão da tabela de animação para dados de rastreamento."
 
 msgid "Space Console"
 msgstr "Espaço da linha de comando"
-
-
-msgid "Interactive python console"
-msgstr "Linha de comando interativa Python."
 
 
 msgid "Font size to use for displaying the text"
@@ -56010,10 +55893,6 @@ msgstr "Pesquisa novamente a partir do início do ficheiro quando atingir o fina
 
 msgid "Live Edit"
 msgstr "Executar durante a edição"
-
-
-msgid "Run python while editing"
-msgstr "Execução de script Python durante a edição."
 
 
 msgid "Search string is sensitive to uppercase and lowercase letters"
@@ -57840,10 +57719,6 @@ msgid "Shade Top"
 msgstr "Sombrear o topo"
 
 
-msgid "Text Selected"
-msgstr "Texto selecionado"
-
-
 msgid "Theme Widget State Color"
 msgstr "Tema de cor para o estado dos assistentes"
 
@@ -58106,14 +57981,6 @@ msgstr "Edição proporcional no modo de máscara."
 
 msgid "Proportional editing object mode"
 msgstr "Edição proporcional no modo de objetos."
-
-
-msgid "Proportional Editing FCurves"
-msgstr "Edição proporcional para curvas-f"
-
-
-msgid "Proportional editing in FCurve editor"
-msgstr "Edição proporcional no editor de curvas-f."
 
 
 msgid "Proportional Editing using screen space locations"
@@ -59928,10 +59795,6 @@ msgid "Extrapolate"
 msgstr "Extrapolar"
 
 
-msgid "Blender 2.6 doesn't support python constraints yet"
-msgstr "Blender 2.6 ainda não suporta restrições Python."
-
-
 msgid "Pivot Offset"
 msgstr "Deslocamento do pivô"
 
@@ -60664,11 +60527,6 @@ msgstr "Limpar canais"
 msgctxt "Operator"
 msgid "Extend"
 msgstr "Estender"
-
-
-msgctxt "Operator"
-msgid "Slide"
-msgstr "Deslizar"
 
 
 msgctxt "Operator"
@@ -62540,10 +62398,6 @@ msgid "Render height has to be 576 pixels for DV-PAL!"
 msgstr "Altura da renderização dele ser de 576 pixeis para DV-PAL !"
 
 
-msgid "FFMPEG only supports 48khz / stereo audio for DV!"
-msgstr "FFMPEG suporta somente áudio em estéreo definido em 48khz para saída em DV !"
-
-
 msgid "Error initializing video stream"
 msgstr "Erro ao inicializar o fluxo de vídeo."
 
@@ -62816,10 +62670,6 @@ msgid "<Missing ID block>"
 msgstr "<Bloco de dados faltando>"
 
 
-msgid "No RNA pointer available to retrieve values for this fcurve"
-msgstr "Sem ponteiro RNA disponível dos quais obter valores para esta curva-f."
-
-
 msgid "No F-Curve to add keyframes to"
 msgstr "Sem curvas-f para as quais adicionar fotogramas chave."
 
@@ -62850,10 +62700,6 @@ msgstr "Falha ao resolver o caminho para a propriedade, tente ao invés disso, e
 
 msgid "No active Keying Set"
 msgstr "Sem conjunto de inserção de chaves ativo"
-
-
-msgid "Could not update flags for this fcurve, as RNA path is invalid for the given ID (ID = %s, path = %s)"
-msgstr "Não é possível atualizar as bandeiras para esta curva-f, pois o caminho RNA é inválido para o identificador fornecido (ID = %s, caminho = %s)."
 
 
 msgid "F-Curve with path '%s[%d]' cannot be keyframed, ensure that it is not locked or sampled, and try removing F-Modifiers"
@@ -65823,10 +65669,6 @@ msgid "unknown error writing file"
 msgstr "Erro desconhecido ao escrever ficheiro."
 
 
-msgid "unknown error stating file"
-msgstr "Erro desconhecido na declaração do ficheiro."
-
-
 msgid "Could not reopen file"
 msgstr "Não é possível reabrir o ficheiro."
 
@@ -66618,22 +66460,6 @@ msgstr "Modificador de curva-f '%s' não encontrado na curva-f."
 
 msgid "Already a control point at frame %.6f"
 msgstr "Este ponto já representa um ponto de controlo no fotograma %.6f."
-
-
-msgid "FCurve has already sample points"
-msgstr "A curva-f já possui pontos de amostragem."
-
-
-msgid "FCurve has no keyframes"
-msgstr "A curva-f não possui fotogramas chave."
-
-
-msgid "FCurve has already keyframes"
-msgstr "A curva-f já possui fotogramas chave."
-
-
-msgid "FCurve has no sample points"
-msgstr "A curva-f não possui pontos de amostragem."
 
 
 msgid "Invalid frame range (%d - %d)"

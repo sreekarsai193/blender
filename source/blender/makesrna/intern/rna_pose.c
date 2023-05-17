@@ -200,7 +200,7 @@ static void rna_BoneGroup_name_set(PointerRNA *ptr, const char *value)
   bActionGroup *agrp = ptr->data;
 
   /* copy the new name into the name slot */
-  BLI_strncpy_utf8(agrp->name, value, sizeof(agrp->name));
+  STRNCPY_UTF8(agrp->name, value);
 
   BLI_uniquename(&ob->pose->agroups,
                  agrp,
@@ -294,8 +294,8 @@ static void rna_PoseChannel_name_set(PointerRNA *ptr, const char *value)
   char oldname[sizeof(pchan->name)], newname[sizeof(pchan->name)];
 
   /* need to be on the stack */
-  BLI_strncpy_utf8(newname, value, sizeof(pchan->name));
-  BLI_strncpy(oldname, pchan->name, sizeof(pchan->name));
+  STRNCPY_UTF8(newname, value);
+  STRNCPY(oldname, pchan->name);
 
   BLI_assert(BKE_id_is_in_global_main(&ob->id));
   BLI_assert(BKE_id_is_in_global_main(ob->data));
@@ -505,7 +505,7 @@ static void rna_pose_bgroup_name_index_get(PointerRNA *ptr, char *value, int ind
   grp = BLI_findlink(&pose->agroups, index - 1);
 
   if (grp) {
-    BLI_strncpy(value, grp->name, sizeof(grp->name));
+    strcpy(value, grp->name);
   }
   else {
     value[0] = '\0';
@@ -537,14 +537,17 @@ static void rna_pose_bgroup_name_index_set(PointerRNA *ptr, const char *value, s
   *index = 0;
 }
 
-static void rna_pose_pgroup_name_set(PointerRNA *ptr, const char *value, char *result, int maxlen)
+static void rna_pose_pgroup_name_set(PointerRNA *ptr,
+                                     const char *value,
+                                     char *result,
+                                     int result_maxncpy)
 {
   bPose *pose = (bPose *)ptr->data;
   bActionGroup *grp;
 
   for (grp = pose->agroups.first; grp; grp = grp->next) {
     if (STREQ(grp->name, value)) {
-      BLI_strncpy(result, value, maxlen);
+      BLI_strncpy(result, value, result_maxncpy);
       return;
     }
   }
@@ -659,7 +662,7 @@ bool rna_PoseChannel_constraints_override_apply(Main *bmain,
                                                 PointerRNA *UNUSED(ptr_item_storage),
                                                 IDOverrideLibraryPropertyOperation *opop)
 {
-  BLI_assert(opop->operation == IDOVERRIDE_LIBRARY_OP_INSERT_AFTER &&
+  BLI_assert(opop->operation == LIBOVERRIDE_OP_INSERT_AFTER &&
              "Unsupported RNA override operation on constraints collection");
 
   bPoseChannel *pchan_dst = (bPoseChannel *)ptr_dst->data;
@@ -1507,6 +1510,12 @@ static void rna_def_pose_itasc(BlenderRNA *brna)
   RNA_def_property_int_sdna(prop, NULL, "numstep");
   RNA_def_property_range(prop, 1.0f, 50.0f);
   RNA_def_property_ui_text(prop, "Num Steps", "Divide the frame interval into this many steps");
+  RNA_def_property_update(prop, NC_OBJECT | ND_POSE, "rna_Itasc_update");
+
+  prop = RNA_def_property(srna, "translate_root_bones", PROP_BOOLEAN, PROP_NONE);
+  RNA_def_property_boolean_sdna(prop, NULL, "flag", ITASC_TRANSLATE_ROOT_BONES);
+  RNA_def_property_ui_text(
+      prop, "Translate Roots", "Translate root (i.e. parentless) bones to the armature origin");
   RNA_def_property_update(prop, NC_OBJECT | ND_POSE, "rna_Itasc_update");
 
   prop = RNA_def_property(srna, "mode", PROP_ENUM, PROP_NONE);

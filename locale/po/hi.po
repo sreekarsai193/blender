@@ -1,9 +1,9 @@
 
 msgid ""
 msgstr ""
-"Project-Id-Version: Blender 3.6.0 Alpha (b'dfa42c614fb4')\n"
+"Project-Id-Version: Blender 3.6.0 Alpha (b'51c2a0f81606')\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-04-17 09:43:08\n"
+"POT-Creation-Date: 2023-05-15 09:19:43\n"
 "PO-Revision-Date: 2015-03-03 16:21+0530\n"
 "Last-Translator: Roshan Lal Gumasta <roshan@anisecrets.com>\n"
 "Language-Team: Hindi <www.anisecrets.com>\n"
@@ -1848,6 +1848,10 @@ msgstr "गतिकी"
 
 msgid "Add Color"
 msgstr "रंग जोड़ें"
+
+
+msgid "Puff"
+msgstr "कश"
 
 
 msgid "Repeat"
@@ -3802,6 +3806,14 @@ msgid "Open"
 msgstr "खोलें"
 
 
+msgid "Show"
+msgstr "दिखाएँ"
+
+
+msgid "Play"
+msgstr "चलाएँ"
+
+
 msgid "Next"
 msgstr "अगला"
 
@@ -4153,10 +4165,6 @@ msgstr "चिन्ह"
 
 msgid "Reset"
 msgstr "पूर्ववत करें"
-
-
-msgid "Show"
-msgstr "दिखाएँ"
 
 
 msgid "Fill the whole mask with a given value, or invert its values"
@@ -4564,10 +4572,6 @@ msgid "Pause"
 msgstr "विराम दें"
 
 
-msgid "Play"
-msgstr "चलाएँ"
-
-
 msgctxt "Operator"
 msgid "View Documentation"
 msgstr "देखें प्रलेखन"
@@ -4786,6 +4790,11 @@ msgid "Circle"
 msgstr "चक्र"
 
 
+msgctxt "Operator"
+msgid "Slide"
+msgstr "सरकाएँ"
+
+
 msgid "Default tools for particle mode"
 msgstr "कण मोड के लिए मूलभूत उपकरण"
 
@@ -4808,10 +4817,6 @@ msgstr "संपादन योग्य"
 
 msgid "Tip"
 msgstr "युक्ति"
-
-
-msgid "Puff"
-msgstr "कश"
 
 
 msgid "Enemy"
@@ -5578,10 +5583,6 @@ msgid "Animate Path"
 msgstr "पथ अनुप्राणित करें"
 
 
-msgid "Blender 2.6 doesn't support python constraints yet"
-msgstr "ब्लेंडर २.६ पाइथन प्रतिबंधी का अभी तक समर्थन नहीं करता।"
-
-
 msgid "Layers:"
 msgstr "परत:"
 
@@ -5804,11 +5805,6 @@ msgstr "स्नैप"
 msgctxt "Operator"
 msgid "Extend"
 msgstr "विस्तृत करें"
-
-
-msgctxt "Operator"
-msgid "Slide"
-msgstr "सरकाएँ"
 
 
 msgctxt "Operator"
@@ -6324,10 +6320,6 @@ msgstr " प्रतिपादन ऊंचाई DV NTSC के लिए �
 
 msgid "Render height has to be 576 pixels for DV-PAL!"
 msgstr " प्रतिपादन ऊंचाई ५७६ पिक्सल DV-पाल लिए होना चाहिए!"
-
-
-msgid "FFMPEG only supports 48khz / stereo audio for DV!"
-msgstr "FFMPEG केवल ४८ khz समर्थन करता है / स्टीरियो श्रव्य डीवी के लिए!"
 
 
 msgid "Error initializing video stream"

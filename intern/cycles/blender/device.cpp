@@ -115,12 +115,17 @@ DeviceInfo blender_device_info(BL::Preferences &b_preferences,
   bool accumulated_use_hardware_raytracing = false;
   foreach (
       DeviceInfo &info,
-      (device.multi_devices.size() != 0 ? device.multi_devices : vector<DeviceInfo>({device}))) {
+      (device.multi_devices.size() != 0 ? device.multi_devices : vector<DeviceInfo>({device})))
+  {
     if (info.type == DEVICE_METAL && !get_boolean(cpreferences, "use_metalrt")) {
       info.use_hardware_raytracing = false;
     }
 
     if (info.type == DEVICE_ONEAPI && !get_boolean(cpreferences, "use_oneapirt")) {
+      info.use_hardware_raytracing = false;
+    }
+
+    if (info.type == DEVICE_HIP && !get_boolean(cpreferences, "use_hiprt")) {
       info.use_hardware_raytracing = false;
     }
 

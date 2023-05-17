@@ -608,7 +608,8 @@ static IDProperty *idp_from_PySequence(const char *name, PyObject *ob)
     else {
       const char format = PyC_StructFmt_type_from_str(buffer.format);
       if (PyC_StructFmt_type_is_float_any(format) ||
-          (PyC_StructFmt_type_is_int_any(format) && buffer.itemsize == 4)) {
+          (PyC_StructFmt_type_is_int_any(format) && buffer.itemsize == 4))
+      {
         use_buffer = true;
       }
       else {
@@ -737,7 +738,8 @@ bool BPy_IDProperty_Map_ValidateAndCreate(PyObject *name_obj, IDProperty *group,
      * obviously this isn't a complete solution, but helps for common cases. */
     prop_exist = IDP_GetPropertyFromGroup(group, prop->name);
     if ((prop_exist != NULL) && (prop_exist->type == prop->type) &&
-        (prop_exist->subtype == prop->subtype)) {
+        (prop_exist->subtype == prop->subtype))
+    {
       /* Preserve prev/next links!!! See #42593. */
       prop->prev = prop_exist->prev;
       prop->next = prop_exist->next;
@@ -1551,7 +1553,7 @@ static PyObject *BPy_IDGroup_update(BPy_IDProperty *self, PyObject *value)
 PyDoc_STRVAR(BPy_IDGroup_to_dict_doc,
              ".. method:: to_dict()\n"
              "\n"
-             "   Return a purely python version of the group.\n");
+             "   Return a purely Python version of the group.\n");
 static PyObject *BPy_IDGroup_to_dict(BPy_IDProperty *self)
 {
   return BPy_IDGroup_MapDataToPy(self->prop);

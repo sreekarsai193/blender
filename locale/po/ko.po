@@ -1,9 +1,9 @@
 
 msgid ""
 msgstr ""
-"Project-Id-Version: Blender 3.6.0 Alpha (b'dfa42c614fb4')\n"
+"Project-Id-Version: Blender 3.6.0 Alpha (b'51c2a0f81606')\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-04-17 09:43:08\n"
+"POT-Creation-Date: 2023-05-15 09:19:43\n"
 "PO-Revision-Date: 2020-01-04 05:04+0900\n"
 "Last-Translator: Geuntak Jeong <beroberos@gmail.com>\n"
 "Language-Team: Korean (http://www.transifex.com/lxlalexlxl/blender/language/ko/)\n"
@@ -4211,10 +4211,6 @@ msgid "Vertex group for fine control over the internal spring stiffness"
 msgstr "내부 스프링 강성을 정밀하게 제어하기위한 버텍스 그룹"
 
 
-msgid "Mass Vertex Group"
-msgstr "질량 버텍스 그룹"
-
-
 msgid "Vertex Group for pinning of vertices"
 msgstr "버텍스의 자동 지정에 대한 버텍스 그룹"
 
@@ -6868,10 +6864,6 @@ msgid "Map To"
 msgstr "다음으로 맵"
 
 
-msgid "The transformation type to affect of the constrained object"
-msgstr "제약된 오브젝트에 영향을 주는 변형 유형"
-
-
 msgid "Map To X From"
 msgstr "다음에서 X로 맵"
 
@@ -7248,28 +7240,8 @@ msgid "Plane for projected stroke"
 msgstr "투사된 스트로크에 대한 평면"
 
 
-msgid "Normal/View"
-msgstr "노멀/뷰"
-
-
-msgid "Display perpendicular to the surface"
-msgstr "표면에 수직으로 표시"
-
-
-msgid "Normal/Surface"
-msgstr "노멀/표면"
-
-
-msgid "Display aligned to the surface"
-msgstr "표면에 정렬된 표시"
-
-
 msgid "View"
 msgstr "뷰"
-
-
-msgid "Display aligned to the viewport"
-msgstr "뷰포트에 정렬된 표시"
 
 
 msgid "Detect Corners"
@@ -7886,10 +7858,6 @@ msgstr "스크립트 표현식에 대해 사용하는 표현식"
 
 msgid "Simple Expression"
 msgstr "간단한 표현식"
-
-
-msgid "The scripted expression can be evaluated without using the full python interpreter"
-msgstr "스크립팅된 표현식은 전체 Python 인터프리터를 사용하지 않고도 평가할 수 있습니다"
 
 
 msgid "Invalid"
@@ -10121,20 +10089,12 @@ msgid "Maximum distance for the field to work"
 msgstr "필드가 작동하는 최대 거리"
 
 
-msgid "Minimum distance for the field's fall-off"
-msgstr "필드 감소에 대한 최소의 거리"
-
-
 msgid "Falloff Power"
 msgstr "파워 감소"
 
 
 msgid "How quickly strength falls off with distance from the force field"
 msgstr "포스 필드로부터 떨어진 곳일수록 얼마나 빨리 강도가 떨어지는지"
-
-
-msgid "Fall-Off"
-msgstr "감소"
 
 
 msgid "Cone"
@@ -10287,10 +10247,6 @@ msgstr "필드가 작동하기위한 최대 방사형 거리"
 
 msgid "Minimum Radial Distance"
 msgstr "최소의 방사형 거리"
-
-
-msgid "Minimum radial distance for the field's fall-off"
-msgstr "필드의 감소에 대한 최소의 방사형 거리"
 
 
 msgid "Rest Length"
@@ -10481,16 +10437,8 @@ msgid "Use Min"
 msgstr "최소를 사용"
 
 
-msgid "Use a minimum distance for the field's fall-off"
-msgstr "필드 감소에 대한 최소의 거리를 사용"
-
-
 msgid "Multiple Springs"
 msgstr "다중의 스프링"
-
-
-msgid "Every point is effected by multiple springs"
-msgstr "모든 포인트는 다중의 스프링에 의해 영향된"
 
 
 msgid "Use Coordinates"
@@ -10503,10 +10451,6 @@ msgstr "텍스처에 대한 오브젝트/글로벌 좌표를 사용"
 
 msgid "Use a maximum radial distance for the field to work"
 msgstr "작동하는 필드에 대해 최대 방사형 거리를 사용"
-
-
-msgid "Use a minimum radial distance for the field's fall-off"
-msgstr "필드의 감소에 대한 최소의 방사형 거리를 사용"
 
 
 msgid "Root Texture Coordinates"
@@ -13727,8 +13671,8 @@ msgid "Falloff Curve"
 msgstr "감소 커브"
 
 
-msgid "Custom light falloff curve"
-msgstr "커스텀 라이트 감소 커브"
+msgid "Custom falloff curve"
+msgstr "커스텀 감소 커브"
 
 
 msgid "If not zero, the distance from the hook where influence ends"
@@ -14558,14 +14502,6 @@ msgid "Armature layer visibility"
 msgstr "아마튜어 레이어 가시성"
 
 
-msgid "Layer Proxy Protection"
-msgstr "레이어 프록시 보호"
-
-
-msgid "Protected layers in Proxy Instances are restored to Proxy settings on file reload and undo"
-msgstr "프록시 인스턴스로 보호된 레이어는 파일 다시 불러오기 및 실행 취소시 프록시 설정으로 복원됩니다"
-
-
 msgid "Pose Position"
 msgstr "포즈 위치"
 
@@ -14902,6 +14838,14 @@ msgid "Editable falloff curve"
 msgstr "편집 가능한 커브 감소"
 
 
+msgid "Comb"
+msgstr "빗"
+
+
+msgid "Puff"
+msgstr "퍼프"
+
+
 msgid "Dash Ratio"
 msgstr "대시 비율"
 
@@ -15012,10 +14956,6 @@ msgstr "지우기"
 
 msgid "The brush is used for erasing strokes"
 msgstr "브러시는 스트로크를 지우는 데 사용됩니다"
-
-
-msgid "Weight Paint for Vertex Groups"
-msgstr "버텍스 그룹의 웨이트 페인트"
 
 
 msgid "Gradient Spacing"
@@ -15627,10 +15567,6 @@ msgstr "메쉬의 지속적인 레이어에 스컬프트"
 
 
 msgid "Use Plane Trim"
-msgstr "평면 다듬기를 사용"
-
-
-msgid "Enable Plane Trim"
 msgstr "평면 다듬기를 사용"
 
 
@@ -16350,18 +16286,6 @@ msgid "Follow"
 msgstr "따라가기"
 
 
-msgid "Make curve path children to rotate along the path"
-msgstr "경로를 따라 회전하는 커브 경로의 자식을 만들기"
-
-
-msgid "Option for paths and curve-deform: apply the curve radius with path following it and deforming"
-msgstr "경로 및 커브 변형 옵션: 커브 반경을 그 다음 경로와 함께 적용"
-
-
-msgid "Option for curve-deform: make deformed child to stretch along entire path"
-msgstr "커브 변형에 대한 옵션 : 변형된 자식이 전체 경로를 따라 늘어나도록합니다"
-
-
 msgid "Surface Curve"
 msgstr "표면 커브"
 
@@ -16468,6 +16392,10 @@ msgstr "폰트 굵게 기울임 꼴"
 
 msgid "Font Italic"
 msgstr "폰트 기울임"
+
+
+msgid "Text Selected"
+msgstr "텍스트 선택됨"
 
 
 msgid "X Offset"
@@ -18046,6 +17974,10 @@ msgstr "접촉 섀도우 두께"
 
 msgid "Pixel thickness used to detect occlusion"
 msgstr "폐색을 감지하는 데 사용되는 픽셀 두께"
+
+
+msgid "Custom light falloff curve"
+msgstr "커스텀 라이트 감소 커브"
 
 
 msgid "Falloff Type"
@@ -29200,10 +29132,6 @@ msgid "Center of the hook, used for falloff and display"
 msgstr "감소 및 표시에 사용되는 후크의 중심"
 
 
-msgid "Custom falloff curve"
-msgstr "커스텀 감소 커브"
-
-
 msgid "Vertex Indices"
 msgstr "버텍스 인덱스"
 
@@ -36495,6 +36423,10 @@ msgid "Select Children Only"
 msgstr "자식 만 선택"
 
 
+msgid "Extend Range"
+msgstr "범위를 확장"
+
+
 msgctxt "Operator"
 msgid "Collapse Channels"
 msgstr "채널을 축소"
@@ -36814,16 +36746,8 @@ msgid "Export Keying Set..."
 msgstr "키잉 설정을 내보내기..."
 
 
-msgid "Export Keying Set to a python script"
-msgstr "키잉 설정을 Python 스크립트로 내보내기"
-
-
 msgid "Filter folders"
 msgstr "폴더를 필터"
-
-
-msgid "Filter python"
-msgstr "Python을 필터"
 
 
 msgid "Filter text"
@@ -37444,10 +37368,6 @@ msgstr "이미지 파일을 필터"
 
 msgid "Filter movie files"
 msgstr "영상 파일을 필터"
-
-
-msgid "Filter python files"
-msgstr "Python 파일을 필터"
 
 
 msgid "Filter sound files"
@@ -38922,10 +38842,6 @@ msgstr "이전 단어"
 msgctxt "Operator"
 msgid "Console Execute"
 msgstr "콘솔 실행"
-
-
-msgid "Execute the current console line as a python expression"
-msgstr "Python 표현식으로 현재 콘솔 라인을 실행"
 
 
 msgctxt "Operator"
@@ -41001,6 +40917,14 @@ msgid "Execute selected file"
 msgstr "선택된 파일을 실행"
 
 
+msgid "Show"
+msgstr "표시"
+
+
+msgid "Play"
+msgstr "재생"
+
+
 msgctxt "Operator"
 msgid "Increment Number in Filename"
 msgstr "파일 이름에 증가 번호"
@@ -41069,11 +40993,6 @@ msgstr "다음 폴더"
 
 msgid "Move to next folder"
 msgstr "다음 폴더로 이동"
-
-
-msgctxt "Operator"
-msgid "Parent File"
-msgstr "부모 파일"
 
 
 msgid "Move to parent directory"
@@ -41489,6 +41408,10 @@ msgstr "파일에서 새로운 폰트를 불러오기"
 
 msgid "Select all text"
 msgstr "모든 텍스트를 선택"
+
+
+msgid "Select word under cursor"
+msgstr "커서 아래의 단어를 선택"
 
 
 msgctxt "Operator"
@@ -42948,6 +42871,15 @@ msgstr "스무스 버텍스 그룹"
 
 msgid "Smooth weights to the active vertex group"
 msgstr "활성 버텍스 그룹에 웨이트를 부드럽게합니다"
+
+
+msgctxt "Operator"
+msgid "Weight Paint Sample Weight"
+msgstr "웨이트 페인트 샘플 웨이트"
+
+
+msgid "Use the mouse to sample a weight in the 3D view"
+msgstr "3D 뷰에 웨이트를 샘플링하기 위해 마우스를 사용"
 
 
 msgctxt "Operator"
@@ -49168,6 +49100,44 @@ msgid "Irradiance probe to capture diffuse indirect lighting"
 msgstr "확산 간접 라이트닝을 포착하기 위한 방사선 조사 프로브"
 
 
+msgctxt "Operator"
+msgid "Bake Light Cache"
+msgstr "라이트 캐시를 베이크"
+
+
+msgid "Bake the active view layer lighting"
+msgstr "활성 뷰레이어 라이트닝을 베이크"
+
+
+msgid "Delay in millisecond before baking starts"
+msgstr "배이킹 시작전 밀리 초 지연"
+
+
+msgid "Subset"
+msgstr "집합"
+
+
+msgid "Subset of probes to update"
+msgstr "업데이트 할 프로브의 하위 설정"
+
+
+msgid "Dirty Only"
+msgstr "더티 만"
+
+
+msgid "Selected Only"
+msgstr "선택 항목 만"
+
+
+msgctxt "Operator"
+msgid "Delete Light Cache"
+msgstr "라이트 캐시를 삭제"
+
+
+msgid "Delete cached indirect lighting"
+msgstr "캐시된 간접 라이트닝을 삭제"
+
+
 msgid "Link objects to a collection"
 msgstr "컬렉션에 오브젝트를 연결"
 
@@ -50417,10 +50387,6 @@ msgid "Remove vertex group assignments which are not required"
 msgstr "필요없는 버텍스 그룹 할당을 제거합니다"
 
 
-msgid "Subset"
-msgstr "집합"
-
-
 msgid "Keep Single"
 msgstr "단일을 유지"
 
@@ -51124,10 +51090,6 @@ msgid "Extend selection for activation"
 msgstr "활성화에 대한 선택을 확장"
 
 
-msgid "Extend Range"
-msgstr "범위를 확장"
-
-
 msgid "Select a range from active element"
 msgstr "활성 요소에서 범위를 선택"
 
@@ -51557,10 +51519,6 @@ msgid "Hide vertices"
 msgstr "버텍스를 숨기기"
 
 
-msgid "Show"
-msgstr "표시"
-
-
 msgid "Show vertices"
 msgstr "버텍스를 표시"
 
@@ -51839,15 +51797,6 @@ msgstr "웨이트 페인트 모드"
 
 msgid "Toggle weight paint mode in 3D view"
 msgstr "3D 뷰에서 웨이트 페인트 모드를 토글"
-
-
-msgctxt "Operator"
-msgid "Weight Paint Sample Weight"
-msgstr "웨이트 페인트 샘플 웨이트"
-
-
-msgid "Use the mouse to sample a weight in the 3D view"
-msgstr "3D 뷰에 웨이트를 샘플링하기 위해 마우스를 사용"
 
 
 msgctxt "Operator"
@@ -52206,10 +52155,6 @@ msgid "Apply the current pose as the new rest pose"
 msgstr "새로운 레스트 포즈로 현재 포즈를 적용"
 
 
-msgid "Selected Only"
-msgstr "선택 항목 만"
-
-
 msgid "Only apply the selected bones (with propagation to children)"
 msgstr "선택한 본만 적용 (자식에게 전파)"
 
@@ -52314,10 +52259,6 @@ msgstr "활성 본에 제약을 추가, 선택한 오브젝트/본에 대상 설
 msgctxt "Operator"
 msgid "Clear Pose Constraints"
 msgstr "포즈 제약을 지우기"
-
-
-msgid "Clear all the constraints for the selected bones"
-msgstr "선택된 본에 대한 제약을 모두 지우기"
 
 
 msgctxt "Operator"
@@ -52823,10 +52764,6 @@ msgid "Export Key Configuration..."
 msgstr "키 구성을 내보내기..."
 
 
-msgid "Export key configuration to a python script"
-msgstr "Python 스크립트로 키 구성을 내보내기"
-
-
 msgid "All Keymaps"
 msgstr "모든 키 맵"
 
@@ -52838,10 +52775,6 @@ msgstr "모든 키맵을 작성 (사용자가 수정 한 것이 아닙니다)"
 msgctxt "Operator"
 msgid "Import Key Configuration..."
 msgstr "키 구성을 가져오기..."
-
-
-msgid "Import key configuration from a python script"
-msgstr "Python 스크립트에서 키 설정을 가져오기"
 
 
 msgid "Keep Original"
@@ -53652,29 +53585,8 @@ msgid "Add or remove grease pencil material preset"
 msgstr "그리이스 펜슬 매테리얼 프리셋을 추가 또는 제거"
 
 
-msgctxt "Operator"
-msgid "Bake Light Cache"
-msgstr "라이트 캐시를 베이크"
-
-
-msgid "Bake the active view layer lighting"
-msgstr "활성 뷰레이어 라이트닝을 베이크"
-
-
-msgid "Delay in millisecond before baking starts"
-msgstr "배이킹 시작전 밀리 초 지연"
-
-
-msgid "Subset of probes to update"
-msgstr "업데이트 할 프로브의 하위 설정"
-
-
 msgid "Bake both irradiance grids and reflection cubemaps"
 msgstr "방사 조도 격자 및 반사 큐브 맵을 모두 구워 내기"
-
-
-msgid "Dirty Only"
-msgstr "더티 만"
 
 
 msgid "Cubemaps Only"
@@ -53683,15 +53595,6 @@ msgstr "큐브맵 만"
 
 msgid "Try to only bake reflection cubemaps if irradiance grids are up to date"
 msgstr "방사 조도 격자가 최신인 경우에만 반사 큐브 맵을 베이크합니다"
-
-
-msgctxt "Operator"
-msgid "Delete Light Cache"
-msgstr "라이트 캐시를 삭제"
-
-
-msgid "Delete cached indirect lighting"
-msgstr "캐시된 간접 라이트닝을 삭제"
 
 
 msgctxt "Operator"
@@ -54675,15 +54578,6 @@ msgstr "디인터레이스 무비"
 
 msgid "Deinterlace all selected movie sources"
 msgstr "선택된 모든 무비 소스를 디인터레이스"
-
-
-msgctxt "Operator"
-msgid "Erase Strips"
-msgstr "스트립을 지우기"
-
-
-msgid "Erase selected strips from the sequencer"
-msgstr "시퀀서에서 선택된 스트립을 지우기"
 
 
 msgid "Duplicate the selected strips"
@@ -55833,10 +55727,6 @@ msgstr "라인을 선택"
 
 msgid "Select text by line"
 msgstr "라인으로 텍스트를 선택"
-
-
-msgid "Select word under cursor"
-msgstr "커서 아래의 단어를 선택"
 
 
 msgctxt "Operator"
@@ -59101,10 +58991,6 @@ msgid "Run once and exit"
 msgstr "한 번 실행 및 종료"
 
 
-msgid "Play"
-msgstr "재생"
-
-
 msgid "Random Order"
 msgstr "랜덤 순서"
 
@@ -59265,10 +59151,6 @@ msgid "Operator Enum Pie"
 msgstr "작업자 열거 파이"
 
 
-msgid "Operator name (in python as string)"
-msgstr "작업자 이름 (문자열로 Python에서)"
-
-
 msgid "Property name (as a string)"
 msgstr "속성 이름 (문자열로)"
 
@@ -59325,10 +59207,6 @@ msgstr "씬의 미리보기를 지우기"
 
 msgid "Trusted Blend Files"
 msgstr "신뢰된 Blend 파일"
-
-
-msgid "Enable python evaluation for selected files"
-msgstr "선택한 파일에 대한 Python 평가를 사용"
 
 
 msgctxt "Operator"
@@ -61208,10 +61086,6 @@ msgid "Video"
 msgstr "비디오"
 
 
-msgid "FFMPEG Presets"
-msgstr "FFMPEG 프리셋"
-
-
 msgid "Views"
 msgstr "뷰"
 
@@ -61655,9 +61529,25 @@ msgid "Comb"
 msgstr "빗"
 
 
+msgid "Comb hairs"
+msgstr "헤어 빗"
+
+
+msgid "Smooth hairs"
+msgstr "스무스 헤어"
+
+
+msgid "Add hairs"
+msgstr "해어를 추가"
+
+
 msgctxt "Operator"
 msgid "Length"
 msgstr "길이"
+
+
+msgid "Make hairs longer or shorter"
+msgstr "길거나 짧은 헤어를 만들기"
 
 
 msgctxt "Operator"
@@ -61665,9 +61555,21 @@ msgid "Puff"
 msgstr "퍼프"
 
 
+msgid "Make hairs stand up"
+msgstr "일어난 헤어를 만들기"
+
+
+msgid "Cut hairs"
+msgstr "해어를 잘라내기"
+
+
 msgctxt "Operator"
 msgid "Weight"
 msgstr "웨이트"
+
+
+msgid "Weight hair particles"
+msgstr "웨이트 헤어 파티클"
 
 
 msgctxt "Operator"
@@ -61852,6 +61754,11 @@ msgstr "강도"
 msgctxt "Operator"
 msgid "Twist"
 msgstr "비틀기"
+
+
+msgctxt "Operator"
+msgid "Slide"
+msgstr "슬라이드"
 
 
 msgid "Clone from Paint Slot"
@@ -62088,42 +61995,6 @@ msgstr "파티클을 표시"
 
 msgid "Display actual particles"
 msgstr "실제 파티클을 표시"
-
-
-msgid "Comb"
-msgstr "빗"
-
-
-msgid "Comb hairs"
-msgstr "헤어 빗"
-
-
-msgid "Smooth hairs"
-msgstr "스무스 헤어"
-
-
-msgid "Add hairs"
-msgstr "해어를 추가"
-
-
-msgid "Make hairs longer or shorter"
-msgstr "길거나 짧은 헤어를 만들기"
-
-
-msgid "Puff"
-msgstr "퍼프"
-
-
-msgid "Make hairs stand up"
-msgstr "일어난 헤어를 만들기"
-
-
-msgid "Cut hairs"
-msgstr "해어를 잘라내기"
-
-
-msgid "Weight hair particles"
-msgstr "웨이트 헤어 파티클"
 
 
 msgid "Auto Velocity"
@@ -62962,20 +62833,12 @@ msgid "Pose Matrix"
 msgstr "포즈 매트릭스"
 
 
-msgid "Final 4x4 matrix after constraints and drivers are applied (object space)"
-msgstr "제약과 드라이버가 적용된 이후에 최종 4x4 행렬 (오브젝트 공간)"
-
-
 msgid "Alternative access to location/scale/rotation relative to the parent and own rest bone"
 msgstr "부모 및 자신의 나머지 본과 관련하여 위치/축적/회전에 대한 대안 액세스"
 
 
 msgid "Channel Matrix"
 msgstr "채널 매트릭스"
-
-
-msgid "4x4 matrix, before constraints"
-msgstr "4x4 매트릭스, 제약 이전에"
 
 
 msgid "Parent of this pose bone"
@@ -70101,6 +69964,10 @@ msgid "Control point weight values"
 msgstr "웨이트 값 컨트롤 포인트"
 
 
+msgid "Mass Vertex Group"
+msgstr "질량 버텍스 그룹"
+
+
 msgid "Control point mass values"
 msgstr "질량 값 컨트롤 포인트"
 
@@ -70467,10 +70334,6 @@ msgstr "트레팅 데이터에 대한 도프시트 보기"
 
 msgid "Space Console"
 msgstr "공간 콘솔"
-
-
-msgid "Interactive python console"
-msgstr "대화형 Python 콘솔"
 
 
 msgid "Font size to use for displaying the text"
@@ -71731,10 +71594,6 @@ msgstr "파일 끝에 도달하면 다시 검색"
 
 msgid "Live Edit"
 msgstr "실시간 편집"
-
-
-msgid "Run python while editing"
-msgstr "편집하는 동안 Python을 실행"
 
 
 msgid "Match Case"
@@ -73809,10 +73668,6 @@ msgid "Text Cursor"
 msgstr "텍스트 커서"
 
 
-msgid "Color of the interface widgets text insertion cursor (caret)"
-msgstr "인터페이스 위젯 텍스트 삽입 커서 (캐럿)의 컬러"
-
-
 msgid "Bone Pose"
 msgstr "본 포즈"
 
@@ -73955,10 +73810,6 @@ msgstr "셰이드 아래쪽"
 
 msgid "Shade Top"
 msgstr "셰이드 위쪽"
-
-
-msgid "Text Selected"
-msgstr "텍스트 선택됨"
 
 
 msgid "Theme Widget State Color"
@@ -74165,13 +74016,13 @@ msgid "Normal Vector used to copy, add or multiply"
 msgstr "복사, 추가 또는 곱하기에 사용되는 노멀 벡터"
 
 
+msgid "Display size for proportional editing circle"
+msgstr "비례 편집 원형에 대한 크기를 표시"
+
+
 msgctxt "Curve"
 msgid "Proportional Editing Falloff"
 msgstr "비례 편집 감소"
-
-
-msgid "Display size for proportional editing circle"
-msgstr "비례 편집 원형에 대한 크기를 표시"
 
 
 msgid "UV Local View"
@@ -74368,14 +74219,6 @@ msgstr "비례 편집 마스크 모드"
 
 msgid "Proportional editing object mode"
 msgstr "비례 편집 오브젝트 모드"
-
-
-msgid "Proportional Editing FCurves"
-msgstr "F커브를 비례 편집"
-
-
-msgid "Proportional editing in FCurve editor"
-msgstr "F커브 에디터에서 비례 편집"
 
 
 msgid "Projected from View"
@@ -77241,10 +77084,6 @@ msgid "Extrapolate"
 msgstr "외삽법"
 
 
-msgid "Blender 2.6 doesn't support python constraints yet"
-msgstr "블렌더 2.6은 아직 Python 제약을 지원하지 않습니다"
-
-
 msgctxt "Operator"
 msgid "Add Target Bone"
 msgstr "대상 본 추가"
@@ -79042,11 +78881,6 @@ msgstr "채널을 정리"
 msgctxt "Operator"
 msgid "Extend"
 msgstr "확장"
-
-
-msgctxt "Operator"
-msgid "Slide"
-msgstr "슬라이드"
 
 
 msgctxt "Operator"
@@ -81530,16 +81364,6 @@ msgstr "내부를 재계산"
 
 
 msgctxt "Operator"
-msgid "Copy Vectors"
-msgstr "벡터를 복사"
-
-
-msgctxt "Operator"
-msgid "Paste Vectors"
-msgstr "벡터를 붙여 넣기"
-
-
-msgctxt "Operator"
 msgid "Reset Vectors"
 msgstr "벡터를 초기화"
 
@@ -82412,10 +82236,6 @@ msgid "Render height has to be 576 pixels for DV-PAL!"
 msgstr "DV-PAL를 위해서는 렌더 높이는 576 픽셀이어야 합니다!"
 
 
-msgid "FFMPEG only supports 48khz / stereo audio for DV!"
-msgstr "FFMPEG는 48kHz 만 지원 / DV를 위해 스테레오 오디오!"
-
-
 msgid "Error initializing video stream"
 msgstr "비디오 스트림 초기화 오류"
 
@@ -82776,10 +82596,6 @@ msgid "<Missing ID block>"
 msgstr "<Missing ID block>"
 
 
-msgid "No RNA pointer available to retrieve values for this fcurve"
-msgstr "이 F-커브의 값을 검색할 수 있는 RNA 포인터가 없습니다"
-
-
 msgid "No F-Curve to add keyframes to"
 msgstr "다음으로 키 프레임을 추가하는 F-커브이 없음"
 
@@ -82814,10 +82630,6 @@ msgstr "속성 경로를 확인하지 못함, 대신 키잉 설정을 사용하�
 
 msgid "No active Keying Set"
 msgstr "활성 키잉 설정되지 않음"
-
-
-msgid "Could not update flags for this fcurve, as RNA path is invalid for the given ID (ID = %s, path = %s)"
-msgstr "RNA 경로가 지정된 ID에 유효하지 않으므로 이 F-커브에 대한 플래그를 업데이트 할 수 없습니다 (ID = %s, 경로 = %s)"
 
 
 msgid "F-Curve with path '%s[%d]' cannot be keyframed, ensure that it is not locked or sampled, and try removing F-Modifiers"
@@ -86761,10 +86573,6 @@ msgid "unknown error writing file"
 msgstr "알 수 없는 오류 파일 쓰기"
 
 
-msgid "unknown error stating file"
-msgstr "알 수 없는 오류 파일 상태"
-
-
 msgid "Could not reopen file"
 msgstr "파일을 다시 열 수 없음"
 
@@ -87760,22 +87568,6 @@ msgstr "F-커브에서 F-커브 모디파이어 '%s'를 찾을 수 없습니다"
 
 msgid "Already a control point at frame %.6f"
 msgstr "프레임 %.6f에서 이미 컨트롤 포인트"
-
-
-msgid "FCurve has already sample points"
-msgstr "F커브은 이미 샘플 포인트가 있습니다"
-
-
-msgid "FCurve has no keyframes"
-msgstr "F커브은 키 프레임이 없음"
-
-
-msgid "FCurve has already keyframes"
-msgstr "F커브은 이미 키 프레임이 있습니다"
-
-
-msgid "FCurve has no sample points"
-msgstr "F커브은 키 프레임이 없음"
 
 
 msgid "Invalid frame range (%d - %d)"
