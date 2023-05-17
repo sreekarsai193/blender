@@ -142,6 +142,10 @@ void ED_region_visibility_change_update_animated(struct bContext *C,
                                                  struct ScrArea *area,
                                                  struct ARegion *region);
 
+void ED_region_clear(const struct bContext *C,
+                     const struct ARegion *region,
+                     int /*ThemeColorID*/ colorid);
+
 void ED_region_info_draw(struct ARegion *region,
                          const char *text,
                          float fill_color[4],
@@ -697,6 +701,8 @@ ARegion *ED_area_find_region_xy_visual(const ScrArea *area, int regiontype, cons
 struct ARegionType *ED_area_type_hud(int space_type);
 void ED_area_type_hud_clear(struct wmWindowManager *wm, ScrArea *area_keep);
 void ED_area_type_hud_ensure(struct bContext *C, struct ScrArea *area);
+ARegion *ED_area_type_hud_redo_region_find(const struct ScrArea *area,
+                                           const struct ARegion *hud_region);
 
 /**
  * Default key-maps, bit-flags (matches order of evaluation).

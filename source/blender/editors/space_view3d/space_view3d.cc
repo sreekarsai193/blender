@@ -297,15 +297,13 @@ static SpaceLink *view3d_create(const ScrArea * /*area*/, const Scene *scene)
   BLI_addtail(&v3d->regionbase, region);
   region->regiontype = RGN_TYPE_ASSET_SHELF_FOOTER;
   region->alignment = RGN_ALIGN_BOTTOM;
-  region->flag = RGN_FLAG_HIDDEN;
 
   /* asset shelf */
   region = MEM_cnew<ARegion>("asset shelf for view3d");
 
   BLI_addtail(&v3d->regionbase, region);
   region->regiontype = RGN_TYPE_ASSET_SHELF;
-  region->alignment = RGN_ALIGN_BOTTOM | RGN_SPLIT_PREV;
-  region->flag |= RGN_FLAG_DYNAMIC_SIZE;
+  region->alignment = RGN_ALIGN_BOTTOM;
 
   /* main region */
   region = MEM_cnew<ARegion>("main region for view3d");
@@ -1917,6 +1915,21 @@ static void view3d_tools_region_draw(const bContext *C, ARegion *region)
   ED_region_panels_ex(C, region, contexts);
 }
 
+static void view3d_asset_shelf_region_layout(const bContext *C, ARegion *region)
+{
+  View3D *v3d = CTX_wm_view3d(C);
+  ED_asset_shelf_region_layout(C, region, v3d->asset_shelf);
+}
+
+/* add handlers, stuff you only do once or on area/region changes */
+static void view3d_asset_shelf_region_init(wmWindowManager *wm, ARegion *region)
+{
+  wmKeyMap *keymap = WM_keymap_ensure(wm->defaultconf, "3D View Generic", SPACE_VIEW3D, 0);
+  WM_event_add_keymap_handler(&region->handlers, keymap);
+
+  ED_asset_shelf_region_init(wm, region);
+}
+
 /* area (not region) level listener */
 static void space_view3d_listener(const wmSpaceTypeListenerParams *params)
 {
@@ -2126,14 +2139,14 @@ static void view3d_space_blend_read_lib(BlendLibReader *reader, ID *parent_id, S
 {
   View3D *v3d = (View3D *)sl;
 
-  BLO_read_id_address(reader, parent_id->lib, &v3d->camera);
-  BLO_read_id_address(reader, parent_id->lib, &v3d->ob_center);
+  BLO_read_id_address(reader, parent_id, &v3d->camera);
+  BLO_read_id_address(reader, parent_id, &v3d->ob_center);
 
   if (v3d->localvd) {
-    BLO_read_id_address(reader, parent_id->lib, &v3d->localvd->camera);
+    BLO_read_id_address(reader, parent_id, &v3d->localvd->camera);
   }
 
-  BKE_viewer_path_blend_read_lib(reader, parent_id->lib, &v3d->viewer_path);
+  BKE_viewer_path_blend_read_lib(reader, parent_id, &v3d->viewer_path);
 }
 
 static void view3d_space_blend_write(BlendWriter *writer, SpaceLink *sl)
@@ -2244,21 +2257,19 @@ void ED_spacetype_view3d()
   /* regions: asset shelf */
   art = MEM_cnew<ARegionType>("spacetype view3d asset shelf region");
   art->regionid = RGN_TYPE_ASSET_SHELF;
-  art->prefsizey = HEADERY * 3.5f;
-  art->keymapflag = ED_KEYMAP_UI | ED_KEYMAP_ASSET_SHELF | ED_KEYMAP_VIEW2D | ED_KEYMAP_FRAMES |
-                    ED_KEYMAP_HEADER;
+  art->keymapflag = ED_KEYMAP_UI | ED_KEYMAP_ASSET_SHELF | ED_KEYMAP_FRAMES;
   art->listener = ED_asset_shelf_region_listen;
   art->poll = ED_asset_shelf_poll;
+  art->snap_size = ED_asset_shelf_region_snap;
   art->context = view3d_asset_shelf_context;
-  art->init = view3d_header_region_init;
+  art->init = view3d_asset_shelf_region_init;
+  art->layout = view3d_asset_shelf_region_layout;
   art->draw = ED_asset_shelf_region_draw;
   BLI_addhead(&st->regiontypes, art);
-  ED_asset_shelf_region_register(art, "VIEW3D_HT_asset_shelf_main", SPACE_VIEW3D);
 
   /* regions: asset shelf footer */
   art = MEM_cnew<ARegionType>("spacetype view3d asset shelf footer region");
   art->regionid = RGN_TYPE_ASSET_SHELF_FOOTER;
-  art->prefsizey = HEADERY;
   art->keymapflag = ED_KEYMAP_UI | ED_KEYMAP_ASSET_SHELF | ED_KEYMAP_VIEW2D | ED_KEYMAP_FOOTER;
   art->init = ED_asset_shelf_footer_region_init;
   art->poll = ED_asset_shelf_poll;
@@ -2266,7 +2277,7 @@ void ED_spacetype_view3d()
   art->listener = ED_asset_shelf_footer_region_listen;
   art->context = view3d_asset_shelf_context;
   BLI_addhead(&st->regiontypes, art);
-  ED_asset_shelf_footer_register(art, "VIEW3D_HT_asset_shelf_footer", SPACE_VIEW3D);
+  ED_asset_shelf_footer_register(art, SPACE_VIEW3D);
 
   /* regions: hud */
   art = ED_area_type_hud(st->spaceid);

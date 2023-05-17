@@ -34,6 +34,7 @@
 #include "WM_types.h"
 
 #include "ED_asset.h"
+#include "ED_asset_shelf.h"
 #include "ED_buttons.h"
 #include "ED_screen.h"
 #include "ED_screen_types.h"
@@ -930,16 +931,37 @@ static void fullscreen_azone_init(ScrArea *area, ARegion *region)
   BLI_rcti_init(&az->rect, az->x1, az->x2, az->y1, az->y2);
 }
 
+/**
+ * Return true if the background color alpha is close to fully transparent. That is, a value of
+ * less than 50 on a [0-255] scale (arbitrary/eyeballed threshold). Assumes the region uses
+ * #TH_BACK for its background.
+ */
+static bool region_back_is_barely_visible(const ScrArea *area, const ARegion *region)
+{
+  /* Ensure the right theme is active, may not be the case on startup, for example. */
+  bThemeState theme_state;
+  UI_Theme_Store(&theme_state);
+  UI_SetTheme(area->spacetype, region->regiontype);
+
+  uchar back[4];
+  UI_GetThemeColor4ubv(TH_BACK, back);
+
+  UI_Theme_Restore(&theme_state);
+
+  return back[3] < 50;
+}
+
 #define AZONEPAD_EDGE (0.1f * U.widget_unit)
 #define AZONEPAD_ICON (0.45f * U.widget_unit)
-static void region_azone_edge(AZone *az, ARegion *region)
+static void region_azone_edge(const ScrArea *area, AZone *az, const ARegion *region)
 {
   /* If there is no visible region background, users typically expect the #AZone to be closer to
    * the content, so move it a bit. Headers-like regions are usually thin and there's not much
    * padding around them, so don't touch the #AZone there (also avoids mouse hover conflicts with
    * actual contents).
    * Note that this is an arbitrary amount that matches nicely with numbers elsewhere. */
-  const int overlap_padding = (region->overlap && !RGN_TYPE_IS_HEADER_ANY(region->regiontype)) ?
+  const int overlap_padding = (region->overlap && region_back_is_barely_visible(area, region) &&
+                               !RGN_TYPE_IS_HEADER_ANY(region->regiontype)) ?
                                   int(0.4f * U.widget_unit) :
                                   0;
 
@@ -1058,7 +1080,7 @@ static void region_azone_edge_init(ScrArea *area,
     region_azone_tab_plus(area, az, region);
   }
   else {
-    region_azone_edge(az, region);
+    region_azone_edge(area, az, region);
   }
 }
 
@@ -1334,8 +1356,12 @@ static void region_rect_recursive(
   else if (region->regiontype == RGN_TYPE_FOOTER) {
     prefsizey = ED_area_footersize();
   }
+  else if (region->regiontype == RGN_TYPE_ASSET_SHELF) {
+    prefsizey = region->sizey > 1 ? (UI_SCALE_FAC * (region->sizey + 0.5f)) :
+                                    ED_asset_shelf_region_prefsizey();
+  }
   else if (region->regiontype == RGN_TYPE_ASSET_SHELF_FOOTER) {
-    prefsizey = ED_area_footersize();
+    prefsizey = ED_asset_shelf_footer_size();
   }
   else if (ED_area_is_global(area)) {
     prefsizey = ED_region_global_size_y();
@@ -2669,12 +2695,9 @@ static ThemeColorID region_background_color_id(const bContext *C, const ARegion 
   }
 }
 
-static void region_clear_color(const bContext *C, const ARegion *region, ThemeColorID colorid)
+void ED_region_clear(const bContext *C, const ARegion *region, const int /*ThemeColorID*/ colorid)
 {
-  if (region->alignment == RGN_ALIGN_FLOAT) {
-    /* handle our own drawing. */
-  }
-  else if (region->overlap) {
+  if (region->overlap) {
     /* view should be in pixelspace */
     UI_view2d_view_restore(C);
 
@@ -3119,7 +3142,7 @@ void ED_region_panels_draw(const bContext *C, ARegion *region)
   View2D *v2d = &region->v2d;
 
   if (region->alignment != RGN_ALIGN_FLOAT) {
-    region_clear_color(
+    ED_region_clear(
         C, region, (region->type->regionid == RGN_TYPE_PREVIEW) ? TH_PREVIEW_BACK : TH_BACK);
   }
 
@@ -3333,15 +3356,12 @@ void ED_region_header_layout(const bContext *C, ARegion *region)
   bool region_layout_based = region->flag & RGN_FLAG_DYNAMIC_SIZE;
 
   /* Height of buttons and scaling needed to achieve it. */
-  const bool is_fixed_header_height = region->type->prefsizey == HEADERY;
-  const int buttony = is_fixed_header_height ? UI_UNIT_Y :
-                                               region->winy - 2 * UI_SCALE_FAC - UI_HEADER_OFFSET;
+  const int buttony = min_ii(UI_UNIT_Y, region->winy - 2 * UI_SCALE_FAC);
   const float buttony_scale = buttony / float(UI_UNIT_Y);
 
   /* Vertically center buttons. */
   int xco = UI_HEADER_OFFSET;
-  int yco = is_fixed_header_height ? buttony + (region->winy - buttony) / 2 :
-                                     buttony + UI_HEADER_OFFSET / 2;
+  int yco = buttony + (region->winy - buttony) / 2;
   int maxco = xco;
 
   /* XXX workaround for 1 px alignment issue. Not sure what causes it...
@@ -3421,7 +3441,7 @@ void ED_region_header_layout(const bContext *C, ARegion *region)
 void ED_region_header_draw(const bContext *C, ARegion *region)
 {
   /* clear */
-  region_clear_color(C, region, region_background_color_id(C, region));
+  ED_region_clear(C, region, region_background_color_id(C, region));
 
   UI_view2d_view_ortho(&region->v2d);
 

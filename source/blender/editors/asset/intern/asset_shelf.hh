@@ -9,9 +9,11 @@
 #include "BLI_function_ref.hh"
 
 struct ARegion;
+struct AssetLibraryReference;
 struct AssetShelfSettings;
 struct bContext;
 struct uiBlock;
+struct uiLayout;
 
 namespace blender::asset_system {
 class AssetCatalogPath;
@@ -19,7 +21,13 @@ class AssetCatalogPath;
 
 namespace blender::ed::asset::shelf {
 
-uiBlock *catalog_selector_block_draw(bContext *C, ARegion *region, void * /*arg1*/);
+void build_asset_view(uiLayout &layout,
+                      const AssetLibraryReference &library_ref,
+                      const AssetShelfSettings *shelf_settings,
+                      const bContext &C,
+                      ARegion &region);
+
+void catalog_selector_panel_register(struct ARegionType *region_type);
 
 AssetShelfSettings *settings_from_context(const bContext *C);
 

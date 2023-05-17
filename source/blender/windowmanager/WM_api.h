@@ -1360,8 +1360,12 @@ int WM_operator_flag_only_pass_through_on_press(int retval, const struct wmEvent
  * Start dragging immediately with the given data.
  * Note that \a poin should be valid allocated and not on stack.
  */
-void WM_event_start_drag(
-    struct bContext *C, int icon, int type, void *poin, double value, unsigned int flags);
+void WM_event_start_drag(struct bContext *C,
+                         int icon,
+                         eWM_DragDataType type,
+                         void *poin,
+                         double value,
+                         unsigned int flags);
 /**
  * Create and fill the dragging data, but don't start dragging just yet (unlike
  * #WM_event_start_drag()). Must be followed up by #WM_event_start_prepared_drag(), otherwise the
@@ -1369,15 +1373,19 @@ void WM_event_start_drag(
  *
  * Note that \a poin should be valid allocated and not on stack.
  */
-wmDrag *WM_drag_data_create(
-    struct bContext *C, int icon, int type, void *poin, double value, unsigned int flags);
+wmDrag *WM_drag_data_create(struct bContext *C,
+                            int icon,
+                            eWM_DragDataType type,
+                            void *poin,
+                            double value,
+                            unsigned int flags);
 /**
  * Invoke dragging using the given \a drag data.
  */
 void WM_event_start_prepared_drag(struct bContext *C, wmDrag *drag);
 void WM_event_drag_image(struct wmDrag *, struct ImBuf *, float scale);
 void WM_drag_free(struct wmDrag *drag);
-void WM_drag_data_free(int dragtype, void *poin);
+void WM_drag_data_free(eWM_DragDataType dragtype, void *poin);
 void WM_drag_free_list(struct ListBase *lb);
 struct wmDropBox *WM_dropbox_add(
     ListBase *lb,
@@ -1419,7 +1427,8 @@ bool WM_drag_is_ID_type(const struct wmDrag *drag, int idcode);
  */
 wmDragAsset *WM_drag_create_asset_data(const struct AssetHandle *asset,
                                        const char *path,
-                                       int /* #eAssetImportMethod */ import_type);
+                                       int /* #eAssetImportMethod */ import_type,
+                                       struct bContext *evil_C);
 struct wmDragAsset *WM_drag_get_asset_data(const struct wmDrag *drag, int idcode);
 struct AssetMetaData *WM_drag_get_asset_meta_data(const struct wmDrag *drag, int idcode);
 /**
@@ -1448,7 +1457,9 @@ struct wmDragAssetCatalog *WM_drag_get_asset_catalog_data(const struct wmDrag *d
 /**
  * \note Does not store \a asset in any way, so it's fine to pass a temporary.
  */
-void WM_drag_add_asset_list_item(wmDrag *drag, const struct AssetHandle *asset);
+void WM_drag_add_asset_list_item(wmDrag *drag,
+                                 const struct AssetHandle *asset,
+                                 struct bContext *evil_C);
 const ListBase *WM_drag_asset_list_get(const wmDrag *drag);
 
 const char *WM_drag_get_item_name(struct wmDrag *drag);

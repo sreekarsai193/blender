@@ -102,6 +102,8 @@ class AssetRepresentation {
 /* C-Handle */
 struct AssetRepresentation;
 
+const blender::StringRefNull AS_asset_representation_relative_path_get(
+    const AssetRepresentation *asset_handle);
 std::string AS_asset_representation_full_path_get(const ::AssetRepresentation *asset);
 /** Get the absolute path to the .blend file containing the given asset. String will be empty if
  * the asset could not be mapped to a valid .blend file path. Valid in this case also means that

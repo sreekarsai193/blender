@@ -177,7 +177,8 @@ static void wm_dropbox_invoke(bContext *C, wmDrag *drag)
   }
 }
 
-wmDrag *WM_drag_data_create(bContext *C, int icon, int type, void *poin, double value, uint flags)
+wmDrag *WM_drag_data_create(
+    bContext *C, int icon, eWM_DragDataType type, void *poin, double value, uint flags)
 {
   wmDrag *drag = MEM_cnew<wmDrag>(__func__);
 
@@ -210,7 +211,7 @@ wmDrag *WM_drag_data_create(bContext *C, int icon, int type, void *poin, double 
       LISTBASE_FOREACH (const CollectionPointerLink *, link, &asset_file_links) {
         const FileDirEntry *asset_file = static_cast<const FileDirEntry *>(link->ptr.data);
         const AssetHandle asset_handle = {asset_file};
-        WM_drag_add_asset_list_item(drag, &asset_handle);
+        WM_drag_add_asset_list_item(drag, &asset_handle, C);
       }
       BLI_freelistN(&asset_file_links);
       break;
@@ -232,7 +233,8 @@ void WM_event_start_prepared_drag(bContext *C, wmDrag *drag)
   wm_dropbox_invoke(C, drag);
 }
 
-void WM_event_start_drag(bContext *C, int icon, int type, void *poin, double value, uint flags)
+void WM_event_start_drag(
+    bContext *C, int icon, eWM_DragDataType type, void *poin, double value, uint flags)
 {
   wmDrag *drag = WM_drag_data_create(C, icon, type, poin, value, flags);
   WM_event_start_prepared_drag(C, drag);
@@ -288,7 +290,7 @@ void WM_event_drag_image(wmDrag *drag, ImBuf *imb, float scale)
   drag->imbuf_scale = scale;
 }
 
-void WM_drag_data_free(int dragtype, void *poin)
+void WM_drag_data_free(eWM_DragDataType dragtype, void *poin)
 {
   /* Don't require all the callers to have a nullptr-check, just allow passing nullptr. */
   if (!poin) {
@@ -563,7 +565,10 @@ bool WM_drag_is_ID_type(const wmDrag *drag, int idcode)
   return WM_drag_get_local_ID(drag, idcode) || WM_drag_get_asset_data(drag, idcode);
 }
 
-wmDragAsset *WM_drag_create_asset_data(const AssetHandle *asset, const char *path, int import_type)
+wmDragAsset *WM_drag_create_asset_data(const AssetHandle *asset,
+                                       const char *path,
+                                       int import_type,
+                                       bContext *evil_C)
 {
   wmDragAsset *asset_drag = MEM_new<wmDragAsset>(__func__);
 
@@ -573,6 +578,7 @@ wmDragAsset *WM_drag_create_asset_data(const AssetHandle *asset, const char *pat
   asset_drag->id_type = ED_asset_handle_get_id_type(asset);
   asset_drag->import_method = import_type;
   asset_drag->use_relative_path = ED_asset_handle_get_use_relative_path(asset);
+  asset_drag->evil_C = static_cast<bContext *>(evil_C);
 
   return asset_drag;
 }
@@ -727,7 +733,7 @@ wmDragAssetCatalog *WM_drag_get_asset_catalog_data(const wmDrag *drag)
   return static_cast<wmDragAssetCatalog *>(drag->poin);
 }
 
-void WM_drag_add_asset_list_item(wmDrag *drag, const AssetHandle *asset)
+void WM_drag_add_asset_list_item(wmDrag *drag, const AssetHandle *asset, bContext *evil_C)
 {
   BLI_assert(drag->type == WM_DRAG_ASSET_LIST);
 
@@ -745,7 +751,7 @@ void WM_drag_add_asset_list_item(wmDrag *drag, const AssetHandle *asset)
     ED_asset_handle_get_full_library_path(asset, asset_blend_path);
     drag_asset->is_external = true;
     drag_asset->asset_data.external_info = WM_drag_create_asset_data(
-        asset, BLI_strdup(asset_blend_path), ASSET_IMPORT_APPEND);
+        asset, BLI_strdup(asset_blend_path), ASSET_IMPORT_APPEND, evil_C);
   }
   BLI_addtail(&drag->asset_items, drag_asset);
 }
@@ -849,6 +855,8 @@ const char *WM_drag_get_item_name(wmDrag *drag)
     }
     case WM_DRAG_NAME:
       return static_cast<const char *>(drag->poin);
+    default:
+      break;
   }
   return "";
 }

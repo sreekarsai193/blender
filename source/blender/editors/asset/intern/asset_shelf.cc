@@ -6,6 +6,8 @@
  * General asset shelf code, mostly region callbacks, drawing and context stuff.
  */
 
+#include <algorithm>
+
 #include "AS_asset_catalog_path.hh"
 
 #include "BKE_context.h"
@@ -24,6 +26,7 @@
 #include "UI_interface.hh"
 #include "UI_resources.h"
 #include "UI_tree_view.hh"
+#include "UI_view2d.h"
 
 #include "WM_api.h"
 
@@ -97,6 +100,77 @@ void ED_asset_shelf_region_listen(const wmRegionListenerParams *params)
   }
 }
 
+void ED_asset_shelf_region_init(wmWindowManager *wm, ARegion *region)
+{
+  UI_view2d_region_reinit(&region->v2d, V2D_COMMONVIEW_PANELS_UI, region->winx, region->winy);
+
+  wmKeyMap *keymap = WM_keymap_ensure(wm->defaultconf, "View2D Buttons List", 0, 0);
+  WM_event_add_keymap_handler(&region->handlers, keymap);
+
+  region->v2d.scroll = V2D_SCROLL_RIGHT;
+  region->v2d.keepzoom |= V2D_LOCKZOOM_X | V2D_LOCKZOOM_Y;
+  region->v2d.keepofs |= V2D_KEEPOFS_Y;
+  region->v2d.keeptot |= V2D_KEEPTOT_STRICT;
+
+  region->v2d.flag |= V2D_SNAP_TO_PAGESIZE_Y;
+  region->v2d.page_size_y = ED_asset_shelf_default_tile_height();
+
+  /* Ensure the view is snapped to a page still, especially for DPI changes. */
+  UI_view2d_offset_y_snap_to_closest_page(&region->v2d);
+}
+
+static int main_region_padding_y()
+{
+  const uiStyle *style = UI_style_get_dpi();
+  return style->buttonspacey / 2;
+}
+
+static int main_region_padding_x()
+{
+  const uiStyle *style = UI_style_get_dpi();
+  return style->buttonspacex;
+}
+
+int ED_asset_shelf_region_snap(const ARegion *region, const int size, const int axis)
+{
+  /* Only on Y axis. */
+  if (axis != 1) {
+    return size;
+  }
+
+  /* Using scaled values only simplifies things. Simply divide the result by the scale again. */
+  const int size_scaled = size * UI_SCALE_FAC;
+
+  const float aspect = BLI_rctf_size_y(&region->v2d.cur) /
+                       (BLI_rcti_size_y(&region->v2d.mask) + 1);
+  const float tile_height = ED_asset_shelf_default_tile_height() /
+                            (IS_EQF(aspect, 0) ? 1.0f : aspect);
+
+  const int region_padding = main_region_padding_y();
+
+  /* How many rows fit into the region (accounting for padding). */
+  const int rows = std::max(1, int((size_scaled - 2 * region_padding) / tile_height));
+
+  const int new_size_scaled = (rows * tile_height + 2 * region_padding);
+  return new_size_scaled / UI_SCALE_FAC;
+}
+
+int ED_asset_shelf_default_tile_width()
+{
+  return UI_preview_tile_size_x() * 0.65f;
+}
+
+int ED_asset_shelf_default_tile_height()
+{
+  return UI_preview_tile_size_y() * 0.65f;
+}
+
+int ED_asset_shelf_region_prefsizey()
+{
+  /* One row by default (plus padding). */
+  return ED_asset_shelf_default_tile_height() + 2 * main_region_padding_y();
+}
+
 /**
  * Check if there is any asset shelf type returning true in it's poll. If not, no asset shelf
  * region should be displayed.
@@ -106,30 +180,75 @@ static bool asset_shelf_region_header_type_poll(const bContext *C, HeaderType * 
   return asset_shelf_poll(C, CTX_wm_space_data(C));
 }
 
+/**
+ * Ensure the region height is snapped to the closest multiple of the row height.
+ */
+static void asset_shelf_region_snap_height_to_closest(ScrArea *area, ARegion *region)
+{
+  const int tile_height = ED_asset_shelf_default_tile_height();
+  /* Increase the size by half a row, the snapping below shrinks it to a multiple of the row (plus
+   * paddings), effectively rounding it. */
+  const int ceiled_size_y = region->sizey + ((tile_height / UI_SCALE_FAC) * 0.5);
+  const int new_size_y = ED_asset_shelf_region_snap(region, ceiled_size_y, 1);
+
+  if (region->sizey != new_size_y) {
+    region->sizey = new_size_y;
+    area->flag |= AREA_FLAG_REGION_SIZE_UPDATE;
+  }
+}
+
+void ED_asset_shelf_region_layout(const bContext *C,
+                                  ARegion *region,
+                                  AssetShelfSettings *shelf_settings)
+{
+  AssetLibraryReference all_library_ref = {};
+  all_library_ref.type = ASSET_LIBRARY_ALL;
+  all_library_ref.custom_library_index = -1;
+
+  uiBlock *block = UI_block_begin(C, region, __func__, UI_EMBOSS);
+
+  const uiStyle *style = UI_style_get_dpi();
+  const int padding_y = main_region_padding_y();
+  const int padding_x = main_region_padding_x();
+  uiLayout *layout = UI_block_layout(block,
+                                     UI_LAYOUT_VERTICAL,
+                                     UI_LAYOUT_PANEL,
+                                     padding_x,
+                                     -padding_y,
+                                     region->winx - 2 * padding_x,
+                                     0,
+                                     0,
+                                     style);
+
+  shelf::build_asset_view(*layout, all_library_ref, shelf_settings, *C, *region);
+
+  int layout_height;
+  UI_block_layout_resolve(block, nullptr, &layout_height);
+  BLI_assert(layout_height <= 0);
+  UI_view2d_totRect_set(&region->v2d, region->winx - 1, layout_height - padding_y);
+  UI_view2d_curRect_validate(&region->v2d);
+
+  asset_shelf_region_snap_height_to_closest(CTX_wm_area(C), region);
+
+  UI_block_end(C, block);
+}
+
 void ED_asset_shelf_region_draw(const bContext *C, ARegion *region)
 {
-  ED_region_header(C, region);
-}
+  ED_region_clear(C, region, TH_BACK);
 
-static void asset_shelf_region_draw(const bContext *C, Header *header)
-{
-  uiLayout *layout = header->layout;
-  AssetFilterSettings dummy_filter_settings{0};
+  /* Set view2d view matrix for scrolling. */
+  UI_view2d_view_ortho(&region->v2d);
 
-  uiTemplateAssetShelf(layout, C, &dummy_filter_settings);
-}
+  /* View2D matrix might have changed due to dynamic sized regions. */
+  UI_blocklist_update_window_matrix(C, &region->uiblocks);
 
-void ED_asset_shelf_region_register(ARegionType *region_type,
-                                    const char *idname,
-                                    const int space_type)
-{
-  HeaderType *ht = MEM_cnew<HeaderType>(__func__);
-  strcpy(ht->idname, idname);
-  ht->space_type = space_type;
-  ht->region_type = RGN_TYPE_ASSET_SHELF_FOOTER;
-  ht->draw = asset_shelf_region_draw;
-  ht->poll = asset_shelf_region_header_type_poll;
-  BLI_addtail(&region_type->headertypes, ht);
+  UI_blocklist_draw(C, &region->uiblocks);
+
+  /* Restore view matrix. */
+  UI_view2d_view_restore(C);
+
+  UI_view2d_scrollers_draw(&region->v2d, nullptr);
 }
 
 void ED_asset_shelf_footer_region_listen(const wmRegionListenerParams *params)
@@ -145,6 +264,12 @@ void ED_asset_shelf_footer_region_init(wmWindowManager * /*wm*/, ARegion *region
 void ED_asset_shelf_footer_region(const bContext *C, ARegion *region)
 {
   ED_region_header(C, region);
+}
+
+int ED_asset_shelf_footer_size()
+{
+  /* A little smaller than a regular header. */
+  return ED_area_headersize() * 0.85f;
 }
 
 /** \} */
@@ -177,9 +302,10 @@ int ED_asset_shelf_context(const bContext *C,
     return CTX_RESULT_OK;
   }
 
-  /* XXX hack. Get the asset from the hovered button, but needs to be the file... */
+  /* XXX hack. Get the asset from the active item, but needs to be the file... */
   if (CTX_data_equals(member, "active_file")) {
-    const uiBut *but = UI_context_active_but_get(C);
+    const ARegion *region = CTX_wm_region(C);
+    const uiBut *but = UI_region_views_find_active_item_but(region);
     if (!but) {
       return CTX_RESULT_NO_DATA;
     }
@@ -242,6 +368,7 @@ static uiBut *add_tab_button(uiBlock &block, StringRefNull name)
                         "Enable catalog, making contained assets visible in the asset shelf");
 
   UI_but_drawflag_enable(but, UI_BUT_ALIGN_TOP);
+  UI_but_flag_disable(but, UI_BUT_UNDO);
 
   return but;
 }
@@ -294,16 +421,10 @@ static void asset_shelf_footer_draw(const bContext *C, Header *header)
   const AssetLibraryReference *library_ref = CTX_wm_asset_library_ref(C);
 
   ED_assetlist_storage_fetch(library_ref, C);
-  uiDefIconBlockBut(block,
-                    shelf::catalog_selector_block_draw,
-                    nullptr,
-                    0,
-                    ICON_RIGHTARROW,
-                    0,
-                    0,
-                    UI_UNIT_X * 1.5f,
-                    UI_UNIT_Y,
-                    TIP_("Select catalogs to display"));
+
+  UI_block_emboss_set(block, UI_EMBOSS_NONE);
+  uiItemPopoverPanel(layout, C, "ASSETSHELF_PT_catalog_selector", "", ICON_COLLAPSEMENU);
+  UI_block_emboss_set(block, UI_EMBOSS);
 
   uiItemS(layout);
 
@@ -317,17 +438,17 @@ static void asset_shelf_footer_draw(const bContext *C, Header *header)
   uiItemPopoverPanel(layout, C, "ASSETSHELF_PT_display", "", ICON_IMGDISPLAY);
 }
 
-void ED_asset_shelf_footer_register(ARegionType *region_type,
-                                    const char *idname,
-                                    const int space_type)
+void ED_asset_shelf_footer_register(ARegionType *region_type, const int space_type)
 {
   HeaderType *ht = MEM_cnew<HeaderType>(__func__);
-  strcpy(ht->idname, idname);
+  STRNCPY(ht->idname, "ASSETSHELF_HT_footer");
   ht->space_type = space_type;
   ht->region_type = RGN_TYPE_ASSET_SHELF_FOOTER;
   ht->draw = asset_shelf_footer_draw;
   ht->poll = asset_shelf_region_header_type_poll;
   BLI_addtail(&region_type->headertypes, ht);
+
+  shelf::catalog_selector_panel_register(region_type);
 }
 
 /** \} */
