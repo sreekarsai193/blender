@@ -361,7 +361,7 @@ ccl_device_forceinline int lights_intersect_impl(KernelGlobals kg,
        * feature check. */
       kernel_assert(kernel_data.kernel_features & KERNEL_FEATURE_SHADOW_LINKING);
 
-      if ((isect->prim != PRIM_NONE) && (lcg_step_float(lcg_state) < 1.0f / num_hits)) {
+      if ((isect->prim != PRIM_NONE) && (lcg_step_float(lcg_state) > 1.0f / num_hits)) {
         continue;
       }
     }
