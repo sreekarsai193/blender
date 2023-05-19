@@ -204,6 +204,12 @@ ccl_device void shadow_linking_shade(KernelGlobals kg,
   IntegratorShadowState shadow_state = integrate_direct_light_shadow_init_common(
       kg, state, &ray, bsdf_spectrum, 0, light_group);
 
+  /* The light is accumulated from the shade_surface kernel, which will make the clamping decision
+   * based on the actual value of the bounce. For the dedicated shadow ray we want to follow the
+   * main path clamping rules, which subtracts one from the bounds before accumulation. */
+  INTEGRATOR_STATE_WRITE(
+      shadow_state, shadow_path, bounce) = INTEGRATOR_STATE(shadow_state, shadow_path, bounce) - 1;
+
   /* No need to update the volume stack as the surface bounce already performed enter-exit check.
    */
 
