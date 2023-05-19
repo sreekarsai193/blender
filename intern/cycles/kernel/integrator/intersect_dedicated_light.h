@@ -26,6 +26,7 @@ CCL_NAMESPACE_BEGIN
 ccl_device int shadow_linking_pick_mesh_intersection(KernelGlobals kg,
                                                      IntegratorState state,
                                                      ccl_private Ray *ccl_restrict ray,
+                                                     const int object_receiver,
                                                      ccl_private Intersection *ccl_restrict
                                                          linked_isect,
                                                      ccl_private uint *lcg_state,
@@ -47,13 +48,22 @@ ccl_device int shadow_linking_pick_mesh_intersection(KernelGlobals kg,
       break;
     }
 
-    const uint64_t set_membership =
-        kernel_data_fetch(objects, current_isect.object).shadow_set_membership;
-    if (set_membership != LIGHT_LINK_MASK_ALL) {
-      ++num_hits;
+    /* Only record primitives that potentially have emission.
+     * TODO: optimize with a dedicated ray visiblity flag, which could then also be
+     * used once lights are in the BVH as geometry? */
+    const int shader = intersection_get_shader(kg, &current_isect);
+    const int shader_flags = kernel_data_fetch(shaders, shader).flags;
+    if (light_link_object_match(kg, object_receiver, current_isect.object) &&
+        (shader_flags & SD_HAS_EMISSION))
+    {
+      const uint64_t set_membership =
+          kernel_data_fetch(objects, current_isect.object).shadow_set_membership;
+      if (set_membership != LIGHT_LINK_MASK_ALL) {
+        ++num_hits;
 
-      if ((linked_isect->prim == PRIM_NONE) && (lcg_step_float(lcg_state) < 1.0f / num_hits)) {
-        *linked_isect = current_isect;
+        if ((linked_isect->prim == PRIM_NONE) && (lcg_step_float(lcg_state) < 1.0f / num_hits)) {
+          *linked_isect = current_isect;
+        }
       }
     }
 
@@ -86,9 +96,11 @@ ccl_device bool shadow_linking_pick_light_intersection(KernelGlobals kg,
                                                        ccl_private Intersection *ccl_restrict
                                                            linked_isect)
 {
-  uint32_t path_flag = INTEGRATOR_STATE(state, path, flag);
+  const uint32_t path_flag = INTEGRATOR_STATE(state, path, flag);
 
   const int last_type = INTEGRATOR_STATE(state, isect, type);
+
+  const int object_receiver = light_link_receiver_forward(kg, state);
 
   uint lcg_state = lcg_state_init(INTEGRATOR_STATE(state, path, rng_hash),
                                   INTEGRATOR_STATE(state, path, rng_offset),
@@ -106,9 +118,8 @@ ccl_device bool shadow_linking_pick_light_intersection(KernelGlobals kg,
   // tracing potentially expensive ray.
 
   num_hits = shadow_linking_pick_mesh_intersection(
-      kg, state, ray, linked_isect, &lcg_state, num_hits);
+      kg, state, ray, object_receiver, linked_isect, &lcg_state, num_hits);
 
-  const int receiver_forward = light_link_receiver_forward(kg, state);
   num_hits = lights_intersect_shadow_linked(kg,
                                             ray,
                                             linked_isect,
@@ -116,7 +127,7 @@ ccl_device bool shadow_linking_pick_light_intersection(KernelGlobals kg,
                                             ray->self.object,
                                             last_type,
                                             path_flag,
-                                            receiver_forward,
+                                            object_receiver,
                                             &lcg_state,
                                             num_hits);
 
