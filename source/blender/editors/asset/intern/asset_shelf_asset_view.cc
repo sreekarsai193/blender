@@ -54,6 +54,7 @@ class AssetView : public ui::AbstractGridView {
 
 class AssetViewItem : public ui::PreviewGridItem {
   AssetHandle asset_;
+  bool allow_asset_drag_ = true;
 
  public:
   AssetViewItem(const AssetHandle &asset,
@@ -61,7 +62,9 @@ class AssetViewItem : public ui::PreviewGridItem {
                 StringRef label,
                 int preview_icon_id);
 
+  void disable_asset_drag();
   void build_grid_tile(uiLayout &layout) const override;
+  void build_context_menu(bContext &C, uiLayout &column) const override;
 
   std::unique_ptr<ui::AbstractViewItemDragController> create_drag_controller() const override;
 };
@@ -86,19 +89,34 @@ AssetView::AssetView(const AssetLibraryReference &library_ref,
 /* TODO calling a (.py defined) callback for every asset isn't exactly great. Should be a temporary
  * solution until there is proper filtering by asset traits. */
 /**
- * Returns true if the asset should be visible. That is, if any of the visible asset shelves has no
- * poll function (all assets should be displayed), or its #AssetShelfType.asset_poll function
- * returns true.
+ * Returns a vector of all asset shelf types displaying the given asset. That is, any asset shelf
+ * type that has no poll function (all assets should be displayed), or whose
+ * #AssetShelfType.asset_poll() function returns true.
+ *
+ * If the returned vector is not empty, the asset should be visible.
  */
-static bool asset_shelf_asset_poll(const SpaceType &space_type,
-                                   const bContext &C,
-                                   const AssetHandle &asset)
+static Vector<AssetShelfType *> asset_shelf_types_showing_asset(const SpaceType &space_type,
+                                                                const bContext &C,
+                                                                const AssetHandle &asset)
 {
+  Vector<AssetShelfType *> shelf_types;
+
   LISTBASE_FOREACH (AssetShelfType *, shelf_type, &space_type.asset_shelf_types) {
     if (!shelf_type->poll || !shelf_type->poll(&C, shelf_type)) {
       continue;
     }
     if (!shelf_type->asset_poll || shelf_type->asset_poll(shelf_type, &asset)) {
+      shelf_types.append(shelf_type);
+    }
+  }
+
+  return shelf_types;
+}
+
+static bool shelves_is_any_no_asset_drag(const Vector<AssetShelfType *> &shelves)
+{
+  for (AssetShelfType *shelf_type : shelves) {
+    if (shelf_type->flag & ASSET_SHELF_TYPE_NO_ASSET_DRAG) {
       return true;
     }
   }
@@ -117,7 +135,10 @@ void AssetView::build_items()
   const SpaceType *space_type = BKE_spacetype_from_id(space_link->spacetype);
 
   ED_assetlist_iterate(library_ref_, [&](AssetHandle asset) {
-    if (!asset_shelf_asset_poll(*space_type, evil_C_, asset)) {
+    Vector<AssetShelfType *> shelves_showing_asset = asset_shelf_types_showing_asset(
+        *space_type, evil_C_, asset);
+
+    if (shelves_showing_asset.is_empty()) {
       return true;
     }
 
@@ -135,7 +156,13 @@ void AssetView::build_items()
     const StringRef name = show_names ? ED_asset_handle_get_name(&asset) : "";
     const int preview_id = ED_asset_handle_get_preview_icon_id(&asset);
 
-    add_item<AssetViewItem>(asset, identifier, name, preview_id);
+    AssetViewItem &item = add_item<AssetViewItem>(asset, identifier, name, preview_id);
+    /* Disable asset dragging if any of the shelves requested it to be disabled. They often
+     * override the drag behavior with custom operators. */
+    if (shelves_is_any_no_asset_drag(shelves_showing_asset)) {
+      item.disable_asset_drag();
+    }
+
     return true;
   });
 }
@@ -177,6 +204,11 @@ AssetViewItem::AssetViewItem(const AssetHandle &asset,
 {
 }
 
+void AssetViewItem::disable_asset_drag()
+{
+  allow_asset_drag_ = false;
+}
+
 void AssetViewItem::build_grid_tile(uiLayout &layout) const
 {
   PointerRNA file_ptr;
@@ -193,9 +225,21 @@ void AssetViewItem::build_grid_tile(uiLayout &layout) const
   ui::PreviewGridItem::build_grid_tile(layout);
 }
 
+void AssetViewItem::build_context_menu(bContext &C, uiLayout &column) const
+{
+  const SpaceLink *space_link = CTX_wm_space_data(&C);
+  const SpaceType *space_type = BKE_spacetype_from_id(space_link->spacetype);
+  Vector<AssetShelfType *> shelves_showing_asset = asset_shelf_types_showing_asset(
+      *space_type, C, asset_);
+
+  for (AssetShelfType *shelf : shelves_showing_asset) {
+    shelf->draw_context_menu(&C, shelf, &asset_, &column);
+  }
+}
+
 std::unique_ptr<ui::AbstractViewItemDragController> AssetViewItem::create_drag_controller() const
 {
-  return std::make_unique<AssetDragController>(get_view(), asset_);
+  return allow_asset_drag_ ? std::make_unique<AssetDragController>(get_view(), asset_) : nullptr;
 }
 
 /* ---------------------------------------------------------------------- */

@@ -2444,19 +2444,21 @@ static void ui_apply_but(
 /** \name Button Copy & Paste
  * \{ */
 
-static void ui_but_get_pasted_text_from_clipboard(char **buf_paste, int *buf_len)
+static void ui_but_get_pasted_text_from_clipboard(const bool ensure_utf8,
+                                                  char **r_buf_paste,
+                                                  int *r_buf_len)
 {
   /* get only first line even if the clipboard contains multiple lines */
   int length;
-  char *text = WM_clipboard_text_get_firstline(false, &length);
+  char *text = WM_clipboard_text_get_firstline(false, ensure_utf8, &length);
 
   if (text) {
-    *buf_paste = text;
-    *buf_len = length;
+    *r_buf_paste = text;
+    *r_buf_len = length;
   }
   else {
-    *buf_paste = static_cast<char *>(MEM_callocN(sizeof(char), __func__));
-    *buf_len = 0;
+    *r_buf_paste = static_cast<char *>(MEM_callocN(sizeof(char), __func__));
+    *r_buf_len = 0;
   }
 }
 
@@ -2840,7 +2842,7 @@ static void ui_but_paste(bContext *C, uiBut *but, uiHandleButtonData *data, cons
 
   int buf_paste_len = 0;
   char *buf_paste;
-  ui_but_get_pasted_text_from_clipboard(&buf_paste, &buf_paste_len);
+  ui_but_get_pasted_text_from_clipboard(UI_but_is_utf8(but), &buf_paste, &buf_paste_len);
 
   const bool has_required_data = !(but->poin == nullptr && but->rnapoin.data == nullptr);
 
@@ -3319,13 +3321,9 @@ static bool ui_textedit_copypaste(uiBut *but, uiHandleButtonData *data, const in
   if (mode == UI_TEXTEDIT_PASTE) {
     /* extract the first line from the clipboard */
     int buf_len;
-    char *pbuf = WM_clipboard_text_get_firstline(false, &buf_len);
+    char *pbuf = WM_clipboard_text_get_firstline(false, UI_but_is_utf8(but), &buf_len);
 
     if (pbuf) {
-      if (UI_but_is_utf8(but)) {
-        buf_len -= BLI_str_utf8_invalid_strip(pbuf, size_t(buf_len));
-      }
-
       ui_textedit_insert_buf(but, data, pbuf, buf_len);
 
       changed = true;
@@ -3517,9 +3515,12 @@ static void ui_textedit_end(bContext *C, uiBut *but, uiHandleButtonData *data)
   if (but) {
     if (UI_but_is_utf8(but)) {
       const int strip = BLI_str_utf8_invalid_strip(but->editstr, strlen(but->editstr));
-      /* not a file?, strip non utf-8 chars */
+      /* Strip non-UTF8 characters unless buttons support this.
+       * This should never happen as all text input should be valid UTF8,
+       * there is a small chance existing data contains invalid sequences.
+       * This could check could be made into an assertion if `but->editstr`
+       * is valid UTF8 when #ui_textedit_begin assigns the string. */
       if (strip) {
-        /* won't happen often so isn't that annoying to keep it here for a while */
         printf("%s: invalid utf8 - stripped chars %d\n", __func__, strip);
       }
     }
@@ -3741,9 +3742,9 @@ static void ui_do_but_textedit(
       if (event->val == KM_DBL_CLICK && had_selection == false) {
         int selsta, selend;
         BLI_str_cursor_step_bounds_utf8(data->str, strlen(data->str), but->pos, &selsta, &selend);
-        but->pos = (short)selend;
-        but->selsta = (short)selsta;
-        but->selend = (short)selend;
+        but->pos = short(selend);
+        but->selsta = short(selsta);
+        but->selend = short(selend);
         retval = WM_UI_HANDLER_BREAK;
         changed = true;
       }
@@ -4816,11 +4817,17 @@ static int ui_do_but_VIEW_ITEM(bContext *C,
           if (ui_but_extra_operator_icon_mouse_over_get(but, data->region, event)) {
             return WM_UI_HANDLER_BREAK;
           }
-          button_activate_state(C, but, BUTTON_STATE_WAIT_DRAG);
-          data->dragstartx = event->xy[0];
-          data->dragstarty = event->xy[1];
-          return WM_UI_HANDLER_CONTINUE;
 
+          if (UI_view_item_supports_drag(view_item_but->view_item)) {
+            button_activate_state(C, but, BUTTON_STATE_WAIT_DRAG);
+            data->dragstartx = event->xy[0];
+            data->dragstarty = event->xy[1];
+          }
+          else {
+            button_activate_state(C, but, BUTTON_STATE_EXIT);
+          }
+
+          return WM_UI_HANDLER_CONTINUE;
         case KM_DBL_CLICK:
           data->cancel = true;
           UI_view_item_begin_rename(view_item_but->view_item);
@@ -7975,12 +7982,16 @@ static int ui_do_button(bContext *C, uiBlock *block, uiBut *but, const wmEvent *
         (event->modifier & (KM_SHIFT | KM_CTRL | KM_ALT | KM_OSKEY)) == 0 &&
         (event->val == KM_PRESS))
     {
+      ARegion *region = CTX_wm_region(C);
       /* For some button types that are typically representing entire sets of data, right-clicking
        * to spawn the context menu should also activate the item. This makes it clear which item
        * will be operated on.
        * Apply the button immediately, so context menu polls get the right active item. */
-      if (ELEM(but->type, UI_BTYPE_VIEW_ITEM)) {
-        ui_apply_but(C, but->block, but, but->active, true);
+      uiBut *clicked_view_item_but = but->type == UI_BTYPE_VIEW_ITEM ?
+                                         but :
+                                         ui_view_item_find_mouse_over(region, event->xy);
+      if (clicked_view_item_but) {
+        UI_but_execute(C, region, clicked_view_item_but);
       }
 
       /* RMB has two options now */
