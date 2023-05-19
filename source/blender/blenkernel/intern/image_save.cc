@@ -8,6 +8,7 @@
 #include <cerrno>
 #include <cstring>
 
+#include "BLI_fileops.h"
 #include "BLI_listbase.h"
 #include "BLI_path_util.h"
 #include "BLI_string.h"
@@ -41,7 +42,7 @@ static char imtype_best_depth(ImBuf *ibuf, const char imtype)
 {
   const char depth_ok = BKE_imtype_valid_depths(imtype);
 
-  if (ibuf->rect_float) {
+  if (ibuf->float_buffer.data) {
     if (depth_ok & R_IMF_CHAN_DEPTH_32) {
       return R_IMF_CHAN_DEPTH_32;
     }
@@ -166,7 +167,7 @@ bool BKE_image_save_options_init(ImageSaveOptions *opts,
       const bool is_prev_save = !STREQ(G.ima, "//");
       if (opts->save_as_render) {
         if (is_prev_save) {
-          BLI_strncpy(opts->filepath, G.ima, sizeof(opts->filepath));
+          STRNCPY(opts->filepath, G.ima);
         }
         else {
           BLI_path_join(opts->filepath, sizeof(opts->filepath), "//", DATA_("untitled"));
@@ -217,7 +218,8 @@ void BKE_image_save_options_update(ImageSaveOptions *opts, const Image *image)
     }
     else if (opts->im_format.imtype != opts->prev_imtype &&
              !IMB_colormanagement_space_name_is_data(
-                 opts->im_format.linear_colorspace_settings.name)) {
+                 opts->im_format.linear_colorspace_settings.name))
+    {
       const bool linear_float_output = BKE_imtype_requires_linear_float(opts->im_format.imtype);
 
       /* TODO: detect if the colorspace is linear, not just equal to scene linear. */
@@ -250,7 +252,7 @@ static void image_save_update_filepath(Image *ima,
                                        const ImageSaveOptions *opts)
 {
   if (opts->do_newpath) {
-    BLI_strncpy(ima->filepath, filepath, sizeof(ima->filepath));
+    STRNCPY(ima->filepath, filepath);
 
     /* only image path, never ibuf */
     if (opts->relative) {
@@ -265,7 +267,7 @@ static void image_save_post(ReportList *reports,
                             ImBuf *ibuf,
                             int ok,
                             const ImageSaveOptions *opts,
-                            int save_copy,
+                            const bool save_copy,
                             const char *filepath,
                             bool *r_colorspace_changed)
 {
@@ -279,7 +281,7 @@ static void image_save_post(ReportList *reports,
   }
 
   if (opts->do_newpath) {
-    BLI_strncpy(ibuf->name, filepath, sizeof(ibuf->name));
+    STRNCPY(ibuf->filepath, filepath);
   }
 
   /* The tiled image code-path must call this on its own. */
@@ -296,18 +298,10 @@ static void image_save_post(ReportList *reports,
     /* workaround to ensure the render result buffer is no longer used
      * by this image, otherwise can crash when a new render result is
      * created. */
-    if (ibuf->rect && !(ibuf->mall & IB_rect)) {
-      imb_freerectImBuf(ibuf);
-    }
-    if (ibuf->rect_float && !(ibuf->mall & IB_rectfloat)) {
-      imb_freerectfloatImBuf(ibuf);
-    }
-    if (ibuf->zbuf && !(ibuf->mall & IB_zbuf)) {
-      IMB_freezbufImBuf(ibuf);
-    }
-    if (ibuf->zbuf_float && !(ibuf->mall & IB_zbuffloat)) {
-      IMB_freezbuffloatImBuf(ibuf);
-    }
+    imb_freerectImBuf(ibuf);
+    imb_freerectfloatImBuf(ibuf);
+    IMB_freezbufImBuf(ibuf);
+    IMB_freezbuffloatImBuf(ibuf);
   }
   if (ELEM(ima->source, IMA_SRC_GENERATED, IMA_SRC_VIEWER)) {
     ima->source = IMA_SRC_FILE;
@@ -321,8 +315,9 @@ static void image_save_post(ReportList *reports,
 
   if (!opts->save_as_render || linear_float_output) {
     if (opts->im_format.linear_colorspace_settings.name[0] &&
-        !BKE_color_managed_colorspace_settings_equals(
-            &ima->colorspace_settings, &opts->im_format.linear_colorspace_settings)) {
+        !BKE_color_managed_colorspace_settings_equals(&ima->colorspace_settings,
+                                                      &opts->im_format.linear_colorspace_settings))
+    {
       BKE_color_managed_colorspace_settings_copy(&ima->colorspace_settings,
                                                  &opts->im_format.linear_colorspace_settings);
       *r_colorspace_changed = true;
@@ -347,7 +342,8 @@ static void imbuf_save_post(ImBuf *ibuf, ImBuf *colormanaged_ibuf)
 
 /**
  * \return success.
- * \note `ima->filepath` and `ibuf->name` should end up the same.
+ * \note `ima->filepath` and `ibuf->filepath` will reference the same path
+ * (although `ima->filepath` may be blend-file relative).
  * \note for multi-view the first `ibuf` is important to get the settings.
  */
 static bool image_save_single(ReportList *reports,
@@ -361,7 +357,8 @@ static bool image_save_single(ReportList *reports,
   RenderResult *rr = nullptr;
   bool ok = false;
 
-  if (ibuf == nullptr || (ibuf->rect == nullptr && ibuf->rect_float == nullptr)) {
+  if (ibuf == nullptr || (ibuf->byte_buffer.data == nullptr && ibuf->float_buffer.data == nullptr))
+  {
     BKE_image_release_ibuf(ima, ibuf, lock);
     return ok;
   }
@@ -384,7 +381,8 @@ static bool image_save_single(ReportList *reports,
     /* TODO: better solution, if a 24bit image is painted onto it may contain alpha. */
     if ((opts->im_format.planes == R_IMF_PLANES_RGBA) &&
         /* it has been painted onto */
-        (ibuf->userflags & IB_BITMAPDIRTY)) {
+        (ibuf->userflags & IB_BITMAPDIRTY))
+    {
       /* checks each pixel, not ideal */
       ibuf->planes = BKE_imbuf_alpha_test(ibuf) ? R_IMF_PLANES_RGBA : R_IMF_PLANES_RGB;
     }
@@ -422,7 +420,8 @@ static bool image_save_single(ReportList *reports,
 
       /* It shouldn't ever happen. */
       if ((BLI_findstring(&rr->views, STEREO_LEFT_NAME, offsetof(RenderView, name)) == nullptr) ||
-          (BLI_findstring(&rr->views, STEREO_RIGHT_NAME, offsetof(RenderView, name)) == nullptr)) {
+          (BLI_findstring(&rr->views, STEREO_RIGHT_NAME, offsetof(RenderView, name)) == nullptr))
+      {
         BKE_reportf(reports,
                     RPT_ERROR,
                     R"(Did not write, the image doesn't have a "%s" and "%s" views)",
@@ -770,7 +769,7 @@ bool BKE_image_render_write_exr(ReportList *reports,
 
         if (multi_layer) {
           RE_render_result_full_channel_name(passname, nullptr, "Combined", nullptr, chan_id, a);
-          BLI_strncpy(layname, "Composite", sizeof(layname));
+          STRNCPY(layname, "Composite");
         }
         else {
           passname[0] = chan_id[a];
@@ -802,7 +801,8 @@ bool BKE_image_render_write_exr(ReportList *reports,
     LISTBASE_FOREACH (RenderPass *, rp, &rl->passes) {
       /* Skip non-RGBA and Z passes if not using multi layer. */
       if (!multi_layer && !(STREQ(rp->name, RE_PASSNAME_COMBINED) || STREQ(rp->name, "") ||
-                            (STREQ(rp->name, RE_PASSNAME_Z) && write_z))) {
+                            (STREQ(rp->name, RE_PASSNAME_Z) && write_z)))
+      {
         continue;
       }
 
@@ -835,7 +835,7 @@ bool BKE_image_render_write_exr(ReportList *reports,
 
         if (multi_layer) {
           RE_render_result_full_channel_name(passname, nullptr, rp->name, nullptr, rp->chan_id, a);
-          BLI_strncpy(layname, rl->name, sizeof(layname));
+          STRNCPY(layname, rl->name);
         }
         else {
           passname[0] = rp->chan_id[a];
@@ -857,7 +857,7 @@ bool BKE_image_render_write_exr(ReportList *reports,
 
   errno = 0;
 
-  BLI_make_existing_file(filepath);
+  BLI_file_ensure_parent_dir_exists(filepath);
 
   int compress = (imf ? imf->exr_codec : 0);
   bool success = IMB_exr_begin_write(
@@ -881,15 +881,19 @@ bool BKE_image_render_write_exr(ReportList *reports,
 
 /* Render output. */
 
-static void image_render_print_save_message(ReportList *reports, const char *name, int ok, int err)
+static void image_render_print_save_message(ReportList *reports,
+                                            const char *filepath,
+                                            int ok,
+                                            int err)
 {
   if (ok) {
     /* no need to report, just some helpful console info */
-    printf("Saved: '%s'\n", name);
+    printf("Saved: '%s'\n", filepath);
   }
   else {
     /* report on error since users will want to know what failed */
-    BKE_reportf(reports, RPT_ERROR, "Render error (%s) cannot save: '%s'", strerror(err), name);
+    BKE_reportf(
+        reports, RPT_ERROR, "Render error (%s) cannot save: '%s'", strerror(err), filepath);
   }
 }
 
@@ -897,7 +901,7 @@ static int image_render_write_stamp_test(ReportList *reports,
                                          const Scene *scene,
                                          const RenderResult *rr,
                                          ImBuf *ibuf,
-                                         const char *name,
+                                         const char *filepath,
                                          const ImageFormatData *imf,
                                          const bool stamp)
 {
@@ -905,13 +909,13 @@ static int image_render_write_stamp_test(ReportList *reports,
 
   if (stamp) {
     /* writes the name of the individual cameras */
-    ok = BKE_imbuf_write_stamp(scene, rr, ibuf, name, imf);
+    ok = BKE_imbuf_write_stamp(scene, rr, ibuf, filepath, imf);
   }
   else {
-    ok = BKE_imbuf_write(ibuf, name, imf);
+    ok = BKE_imbuf_write(ibuf, filepath, imf);
   }
 
-  image_render_print_save_message(reports, name, ok, errno);
+  image_render_print_save_message(reports, filepath, ok, errno);
 
   return ok;
 }
@@ -945,8 +949,8 @@ bool BKE_image_render_write(ReportList *reports,
   /* mono, legacy code */
   else if (is_mono || (image_format.views_format == R_IMF_VIEWS_INDIVIDUAL)) {
     int view_id = 0;
-    for (const RenderView *rv = (const RenderView *)rr->views.first; rv;
-         rv = rv->next, view_id++) {
+    for (const RenderView *rv = (const RenderView *)rr->views.first; rv; rv = rv->next, view_id++)
+    {
       char filepath[FILE_MAX];
       if (is_mono) {
         STRNCPY(filepath, filepath_basis);
@@ -967,7 +971,7 @@ bool BKE_image_render_write(ReportList *reports,
           if (BLI_path_extension_check(filepath, ".exr")) {
             filepath[strlen(filepath) - 4] = 0;
           }
-          BKE_image_path_ensure_ext_from_imformat(filepath, &image_format);
+          BKE_image_path_ext_from_imformat_ensure(filepath, sizeof(filepath), &image_format);
 
           ImBuf *ibuf = RE_render_result_rect_to_ibuf(rr, &image_format, dither, view_id);
           ibuf->planes = 24;
@@ -1026,7 +1030,7 @@ bool BKE_image_render_write(ReportList *reports,
           filepath[strlen(filepath) - 4] = 0;
         }
 
-        BKE_image_path_ensure_ext_from_imformat(filepath, &image_format);
+        BKE_image_path_ext_from_imformat_ensure(filepath, sizeof(filepath), &image_format);
         ibuf_arr[2]->planes = 24;
 
         ok = image_render_write_stamp_test(

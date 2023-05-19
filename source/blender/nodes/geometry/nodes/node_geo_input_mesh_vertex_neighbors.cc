@@ -11,23 +11,24 @@ namespace blender::nodes::node_geo_input_mesh_vertex_neighbors_cc {
 
 static void node_declare(NodeDeclarationBuilder &b)
 {
-  b.add_output<decl::Int>(N_("Vertex Count"))
+  b.add_output<decl::Int>("Vertex Count")
       .field_source()
-      .description(N_("The number of vertices connected to this vertex with an edge, "
-                      "equal to the number of connected edges"));
-  b.add_output<decl::Int>(N_("Face Count"))
+      .description(
+          "The number of vertices connected to this vertex with an edge, "
+          "equal to the number of connected edges");
+  b.add_output<decl::Int>("Face Count")
       .field_source()
-      .description(N_("Number of faces that contain the vertex"));
+      .description("Number of faces that contain the vertex");
 }
 
 static VArray<int> construct_vertex_count_gvarray(const Mesh &mesh, const eAttrDomain domain)
 {
-  const Span<MEdge> edges = mesh.edges();
+  const Span<int2> edges = mesh.edges();
   if (domain == ATTR_DOMAIN_POINT) {
     Array<int> counts(mesh.totvert, 0);
     for (const int i : edges.index_range()) {
-      counts[edges[i].v1]++;
-      counts[edges[i].v2]++;
+      counts[edges[i][0]]++;
+      counts[edges[i][1]]++;
     }
     return VArray<int>::ForContainer(std::move(counts));
   }

@@ -319,16 +319,16 @@ static void calculate_cone_verts(const ConeConfig &config, MutableSpan<float3> p
   }
 }
 
-static void calculate_cone_edges(const ConeConfig &config, MutableSpan<MEdge> edges)
+static void calculate_cone_edges(const ConeConfig &config, MutableSpan<int2> edges)
 {
   int edge_index = 0;
 
   /* Edges for top cone tip or triangle fan */
   if (config.top_has_center_vert) {
     for (const int i : IndexRange(config.circle_segments)) {
-      MEdge &edge = edges[edge_index++];
-      edge.v1 = config.first_vert;
-      edge.v2 = config.first_ring_verts_start + i;
+      int2 &edge = edges[edge_index++];
+      edge[0] = config.first_vert;
+      edge[1] = config.first_ring_verts_start + i;
     }
   }
 
@@ -338,9 +338,9 @@ static void calculate_cone_edges(const ConeConfig &config, MutableSpan<MEdge> ed
     const int next_ring_vert_start = this_ring_vert_start + config.circle_segments;
     /* Edge rings. */
     for (const int j : IndexRange(config.circle_segments)) {
-      MEdge &edge = edges[edge_index++];
-      edge.v1 = this_ring_vert_start + j;
-      edge.v2 = this_ring_vert_start + ((j + 1) % config.circle_segments);
+      int2 &edge = edges[edge_index++];
+      edge[0] = this_ring_vert_start + j;
+      edge[1] = this_ring_vert_start + ((j + 1) % config.circle_segments);
     }
     if (i == config.tot_edge_rings - 1) {
       /* There is one fewer ring of connecting edges. */
@@ -348,18 +348,18 @@ static void calculate_cone_edges(const ConeConfig &config, MutableSpan<MEdge> ed
     }
     /* Connecting edges. */
     for (const int j : IndexRange(config.circle_segments)) {
-      MEdge &edge = edges[edge_index++];
-      edge.v1 = this_ring_vert_start + j;
-      edge.v2 = next_ring_vert_start + j;
+      int2 &edge = edges[edge_index++];
+      edge[0] = this_ring_vert_start + j;
+      edge[1] = next_ring_vert_start + j;
     }
   }
 
   /* Edges for bottom triangle fan or tip. */
   if (config.bottom_has_center_vert) {
     for (const int i : IndexRange(config.circle_segments)) {
-      MEdge &edge = edges[edge_index++];
-      edge.v1 = config.last_ring_verts_start + i;
-      edge.v2 = config.last_vert;
+      int2 &edge = edges[edge_index++];
+      edge[0] = config.last_ring_verts_start + i;
+      edge[1] = config.last_vert;
     }
   }
 }
@@ -704,11 +704,11 @@ Mesh *create_cylinder_or_cone_mesh(const float radius_top,
   }
 
   Mesh *mesh = BKE_mesh_new_nomain(
-      config.tot_verts, config.tot_edges, config.tot_corners, config.tot_faces);
+      config.tot_verts, config.tot_edges, config.tot_faces, config.tot_corners);
   BKE_id_material_eval_ensure_default_slot(&mesh->id);
 
   MutableSpan<float3> positions = mesh->vert_positions_for_write();
-  MutableSpan<MEdge> edges = mesh->edges_for_write();
+  MutableSpan<int2> edges = mesh->edges_for_write();
   MutableSpan<int> poly_offsets = mesh->poly_offsets_for_write();
   MutableSpan<int> corner_verts = mesh->corner_verts_for_write();
   MutableSpan<int> corner_edges = mesh->corner_edges_for_write();
@@ -723,7 +723,8 @@ Mesh *create_cylinder_or_cone_mesh(const float radius_top,
   }
   calculate_selection_outputs(config, attribute_outputs, mesh->attributes_for_write());
 
-  mesh->loose_edges_tag_none();
+  mesh->tag_loose_verts_none();
+  mesh->tag_loose_edges_none();
   mesh->bounds_set_eager(calculate_bounds_cylinder(config));
 
   return mesh;
@@ -737,40 +738,40 @@ NODE_STORAGE_FUNCS(NodeGeometryMeshCone)
 
 static void node_declare(NodeDeclarationBuilder &b)
 {
-  b.add_input<decl::Int>(N_("Vertices"))
+  b.add_input<decl::Int>("Vertices")
       .default_value(32)
       .min(3)
       .max(512)
-      .description(N_("Number of points on the circle at the top and bottom"));
-  b.add_input<decl::Int>(N_("Side Segments"))
+      .description("Number of points on the circle at the top and bottom");
+  b.add_input<decl::Int>("Side Segments")
       .default_value(1)
       .min(1)
       .max(512)
-      .description(N_("The number of edges running vertically along the side of the cone"));
-  b.add_input<decl::Int>(N_("Fill Segments"))
+      .description("The number of edges running vertically along the side of the cone");
+  b.add_input<decl::Int>("Fill Segments")
       .default_value(1)
       .min(1)
       .max(512)
-      .description(N_("Number of concentric rings used to fill the round face"));
-  b.add_input<decl::Float>(N_("Radius Top"))
+      .description("Number of concentric rings used to fill the round face");
+  b.add_input<decl::Float>("Radius Top")
       .min(0.0f)
       .subtype(PROP_DISTANCE)
-      .description(N_("Radius of the top circle of the cone"));
-  b.add_input<decl::Float>(N_("Radius Bottom"))
+      .description("Radius of the top circle of the cone");
+  b.add_input<decl::Float>("Radius Bottom")
       .default_value(1.0f)
       .min(0.0f)
       .subtype(PROP_DISTANCE)
-      .description(N_("Radius of the bottom circle of the cone"));
-  b.add_input<decl::Float>(N_("Depth"))
+      .description("Radius of the bottom circle of the cone");
+  b.add_input<decl::Float>("Depth")
       .default_value(2.0f)
       .min(0.0f)
       .subtype(PROP_DISTANCE)
-      .description(N_("Height of the generated cone"));
-  b.add_output<decl::Geometry>(N_("Mesh"));
-  b.add_output<decl::Bool>(N_("Top")).field_on_all();
-  b.add_output<decl::Bool>(N_("Bottom")).field_on_all();
-  b.add_output<decl::Bool>(N_("Side")).field_on_all();
-  b.add_output<decl::Vector>(N_("UV Map")).field_on_all();
+      .description("Height of the generated cone");
+  b.add_output<decl::Geometry>("Mesh");
+  b.add_output<decl::Bool>("Top").field_on_all();
+  b.add_output<decl::Bool>("Bottom").field_on_all();
+  b.add_output<decl::Bool>("Side").field_on_all();
+  b.add_output<decl::Vector>("UV Map").field_on_all();
 }
 
 static void node_init(bNodeTree * /*tree*/, bNode *node)
@@ -791,7 +792,7 @@ static void node_update(bNodeTree *ntree, bNode *node)
   const NodeGeometryMeshCone &storage = node_storage(*node);
   const GeometryNodeMeshCircleFillType fill = (GeometryNodeMeshCircleFillType)storage.fill_type;
   const bool has_fill = fill != GEO_NODE_MESH_CIRCLE_FILL_NONE;
-  nodeSetSocketAvailability(ntree, fill_subdiv_socket, has_fill);
+  bke::nodeSetSocketAvailability(ntree, fill_subdiv_socket, has_fill);
 }
 
 static void node_layout(uiLayout *layout, bContext * /*C*/, PointerRNA *ptr)
@@ -849,29 +850,6 @@ static void node_geo_exec(GeoNodeExecParams params)
 
   /* Transform the mesh so that the base of the cone is at the origin. */
   BKE_mesh_translate(mesh, float3(0.0f, 0.0f, depth * 0.5f), false);
-
-  if (attribute_outputs.top_id) {
-    params.set_output("Top",
-                      AnonymousAttributeFieldInput::Create<bool>(
-                          std::move(attribute_outputs.top_id), params.attribute_producer_name()));
-  }
-  if (attribute_outputs.bottom_id) {
-    params.set_output(
-        "Bottom",
-        AnonymousAttributeFieldInput::Create<bool>(std::move(attribute_outputs.bottom_id),
-                                                   params.attribute_producer_name()));
-  }
-  if (attribute_outputs.side_id) {
-    params.set_output("Side",
-                      AnonymousAttributeFieldInput::Create<bool>(
-                          std::move(attribute_outputs.side_id), params.attribute_producer_name()));
-  }
-  if (attribute_outputs.uv_map_id) {
-    params.set_output(
-        "UV Map",
-        AnonymousAttributeFieldInput::Create<float3>(std::move(attribute_outputs.uv_map_id),
-                                                     params.attribute_producer_name()));
-  }
 
   params.set_output("Mesh", GeometrySet::create_with_mesh(mesh));
 }

@@ -150,7 +150,7 @@ enum ModSide {
 /** \} */
 
 /* -------------------------------------------------------------------- */
-/** \name Window Open & Close
+/** \name Window Open
  * \{ */
 
 static void wm_window_set_drawable(wmWindowManager *wm, wmWindow *win, bool activate);
@@ -359,7 +359,7 @@ wmWindow *wm_window_copy_test(bContext *C,
 /** \} */
 
 /* -------------------------------------------------------------------- */
-/** \name Quit Confirmation Dialog
+/** \name Window Quit Confirmation Dialog
  * \{ */
 
 static void wm_save_file_on_quit_dialog_callback(bContext *C, void *UNUSED(user_data))
@@ -388,7 +388,8 @@ void wm_quit_with_optional_confirmation_prompt(bContext *C, wmWindow *win)
 
   if (U.uiflag & USER_SAVE_PROMPT) {
     if (wm_file_or_session_data_has_unsaved_changes(CTX_data_main(C), CTX_wm_manager(C)) &&
-        !G.background) {
+        !G.background)
+    {
       wm_window_raise(win);
       wm_confirm_quit(C);
     }
@@ -404,6 +405,10 @@ void wm_quit_with_optional_confirmation_prompt(bContext *C, wmWindow *win)
 }
 
 /** \} */
+
+/* -------------------------------------------------------------------- */
+/** \name Window Close
+ * \{ */
 
 void wm_window_close(bContext *C, wmWindowManager *wm, wmWindow *win)
 {
@@ -436,6 +441,7 @@ void wm_window_close(bContext *C, wmWindowManager *wm, wmWindow *win)
 
   CTX_wm_window_set(C, win); /* needed by handlers */
   WM_event_remove_handlers(C, &win->handlers);
+
   WM_event_remove_handlers(C, &win->modalhandlers);
 
   /* for regular use this will _never_ be NULL,
@@ -467,12 +473,11 @@ void wm_window_title(wmWindowManager *wm, wmWindow *win)
     const char *blendfile_path = BKE_main_blendfile_path_from_global();
     if (blendfile_path[0] != '\0') {
       char str[sizeof(((Main *)NULL)->filepath) + 24];
-      BLI_snprintf(str,
-                   sizeof(str),
-                   "Blender%s [%s%s]",
-                   wm->file_saved ? "" : "*",
-                   blendfile_path,
-                   G_MAIN->recovered ? " (Recovered)" : "");
+      SNPRINTF(str,
+               "Blender%s [%s%s]",
+               wm->file_saved ? "" : "*",
+               blendfile_path,
+               G_MAIN->recovered ? " (Recovered)" : "");
       GHOST_SetTitle(win->ghostwin, str);
     }
     else {
@@ -1645,6 +1650,8 @@ void wm_window_process_events(const bContext *C)
   }
 }
 
+/** \} */
+
 /* -------------------------------------------------------------------- */
 /** \name Ghost Init/Exit
  * \{ */
@@ -1852,6 +1859,9 @@ eWM_CapabilitiesFlag WM_capabilities_flag(void)
   if (ghost_flag & GHOST_kCapabilityGPUReadFrontBuffer) {
     flag |= WM_CAPABILITY_GPU_FRONT_BUFFER_READ;
   }
+  if (ghost_flag & GHOST_kCapabilityClipboardImages) {
+    flag |= WM_CAPABILITY_CLIPBOARD_IMAGES;
+  }
 
   return flag;
 }
@@ -1973,7 +1983,10 @@ void WM_event_remove_timer_notifier(wmWindowManager *wm, wmWindow *win, wmTimer 
 /** \name Clipboard
  * \{ */
 
-static char *wm_clipboard_text_get_ex(bool selection, int *r_len, bool firstline)
+static char *wm_clipboard_text_get_ex(bool selection,
+                                      int *r_len,
+                                      const bool ensure_utf8,
+                                      const bool firstline)
 {
   if (G.background) {
     *r_len = 0;
@@ -1986,8 +1999,18 @@ static char *wm_clipboard_text_get_ex(bool selection, int *r_len, bool firstline
     return NULL;
   }
 
+  int buf_len = strlen(buf);
+
+  if (ensure_utf8) {
+    /* TODO(@ideasman42): It would be good if unexpected byte sequences could be interpreted
+     * instead of stripped - so mixed in characters (typically Latin1) aren't ignored.
+     * Check on how Python bytes this, see: #PyC_UnicodeFromBytesAndSize,
+     * there are clever ways to handle this although they increase the size of the buffer. */
+    buf_len -= BLI_str_utf8_invalid_strip(buf, buf_len);
+  }
+
   /* always convert from \r\n to \n */
-  char *newbuf = MEM_mallocN(strlen(buf) + 1, __func__);
+  char *newbuf = MEM_mallocN(buf_len + 1, __func__);
   char *p2 = newbuf;
 
   if (firstline) {
@@ -2018,14 +2041,14 @@ static char *wm_clipboard_text_get_ex(bool selection, int *r_len, bool firstline
   return newbuf;
 }
 
-char *WM_clipboard_text_get(bool selection, int *r_len)
+char *WM_clipboard_text_get(bool selection, bool ensure_utf8, int *r_len)
 {
-  return wm_clipboard_text_get_ex(selection, r_len, false);
+  return wm_clipboard_text_get_ex(selection, r_len, ensure_utf8, false);
 }
 
-char *WM_clipboard_text_get_firstline(bool selection, int *r_len)
+char *WM_clipboard_text_get_firstline(bool selection, bool ensure_utf8, int *r_len)
 {
-  return wm_clipboard_text_get_ex(selection, r_len, true);
+  return wm_clipboard_text_get_ex(selection, r_len, ensure_utf8, true);
 }
 
 void WM_clipboard_text_set(const char *buf, bool selection)
@@ -2069,14 +2092,21 @@ void WM_clipboard_text_set(const char *buf, bool selection)
 
 bool WM_clipboard_image_available(void)
 {
+  if (G.background) {
+    return false;
+  }
   return (bool)GHOST_hasClipboardImage();
 }
 
 ImBuf *WM_clipboard_image_get(void)
 {
+  if (G.background) {
+    return NULL;
+  }
+
   int width, height;
 
-  uint *rgba = GHOST_getClipboardImage(&width, &height);
+  uint8_t *rgba = (uint8_t *)GHOST_getClipboardImage(&width, &height);
   if (!rgba) {
     return NULL;
   }
@@ -2089,14 +2119,18 @@ ImBuf *WM_clipboard_image_get(void)
 
 bool WM_clipboard_image_set(ImBuf *ibuf)
 {
+  if (G.background) {
+    return false;
+  }
+
   bool free_byte_buffer = false;
-  if (ibuf->rect == NULL) {
+  if (ibuf->byte_buffer.data == NULL) {
     /* Add a byte buffer if it does not have one. */
     IMB_rect_from_float(ibuf);
     free_byte_buffer = true;
   }
 
-  bool success = (bool)GHOST_putClipboardImage(ibuf->rect, ibuf->x, ibuf->y);
+  bool success = (bool)GHOST_putClipboardImage((uint *)ibuf->byte_buffer.data, ibuf->x, ibuf->y);
 
   if (free_byte_buffer) {
     /* Remove the byte buffer if we added it. */
@@ -2218,75 +2252,6 @@ wmWindow *WM_window_find_by_area(wmWindowManager *wm, const struct ScrArea *area
     }
   }
   return NULL;
-}
-
-/** \} */
-
-/* -------------------------------------------------------------------- */
-/** \name Window Screen Shot Utility
- *
- * Include here since it can involve low level buffer switching.
- *
- * \{ */
-
-uint *WM_window_pixels_read(wmWindowManager *wm, wmWindow *win, int r_size[2])
-{
-  BLI_assert(WM_capabilities_flag() & WM_CAPABILITY_GPU_FRONT_BUFFER_READ);
-
-  /* WARNING: Reading from the front-buffer immediately after drawing may fail,
-   * for a slower but more reliable version of this function #WM_window_pixels_read_offscreen
-   * should be preferred. See it's comments for details on why it's needed, see also #98462. */
-  bool setup_context = wm->windrawable != win;
-
-  if (setup_context) {
-    GHOST_ActivateWindowDrawingContext(win->ghostwin);
-    GPU_context_active_set(win->gpuctx);
-  }
-
-  r_size[0] = WM_window_pixels_x(win);
-  r_size[1] = WM_window_pixels_y(win);
-  const uint rect_len = r_size[0] * r_size[1];
-  uint *rect = MEM_mallocN(sizeof(*rect) * rect_len, __func__);
-
-  GPU_frontbuffer_read_color(0, 0, r_size[0], r_size[1], 4, GPU_DATA_UBYTE, rect);
-
-  if (setup_context) {
-    if (wm->windrawable) {
-      GHOST_ActivateWindowDrawingContext(wm->windrawable->ghostwin);
-      GPU_context_active_set(wm->windrawable->gpuctx);
-    }
-  }
-
-  /* Clear alpha, it is not set to a meaningful value in OpenGL. */
-  uchar *cp = (uchar *)rect;
-  uint i;
-  for (i = 0, cp += 3; i < rect_len; i++, cp += 4) {
-    *cp = 0xff;
-  }
-  return (uint *)rect;
-}
-
-void WM_window_pixels_read_sample(const wmWindowManager *wm,
-                                  const wmWindow *win,
-                                  const int pos[2],
-                                  float r_col[3])
-{
-  BLI_assert(WM_capabilities_flag() & WM_CAPABILITY_GPU_FRONT_BUFFER_READ);
-  bool setup_context = wm->windrawable != win;
-
-  if (setup_context) {
-    GHOST_ActivateWindowDrawingContext(win->ghostwin);
-    GPU_context_active_set(win->gpuctx);
-  }
-
-  GPU_frontbuffer_read_color(pos[0], pos[1], 1, 1, 3, GPU_DATA_FLOAT, r_col);
-
-  if (setup_context) {
-    if (wm->windrawable) {
-      GHOST_ActivateWindowDrawingContext(wm->windrawable->ghostwin);
-      GPU_context_active_set(wm->windrawable->gpuctx);
-    }
-  }
 }
 
 /** \} */
@@ -2678,6 +2643,8 @@ void *WM_opengl_context_create(void)
   BLI_assert(GPU_framebuffer_active_get() == GPU_framebuffer_back_get());
 
   GHOST_GLSettings glSettings = {0};
+  const eGPUBackendType gpu_backend = GPU_backend_type_selection_get();
+  glSettings.context_type = wm_ghost_drawing_context_type(gpu_backend);
   if (G.debug & G_DEBUG_GPU) {
     glSettings.flags |= GHOST_glDebugContext;
   }

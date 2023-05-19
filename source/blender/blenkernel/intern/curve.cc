@@ -270,19 +270,19 @@ static void curve_blend_read_lib(BlendLibReader *reader, ID *id)
 {
   Curve *cu = (Curve *)id;
   for (int a = 0; a < cu->totcol; a++) {
-    BLO_read_id_address(reader, cu->id.lib, &cu->mat[a]);
+    BLO_read_id_address(reader, id, &cu->mat[a]);
   }
 
-  BLO_read_id_address(reader, cu->id.lib, &cu->bevobj);
-  BLO_read_id_address(reader, cu->id.lib, &cu->taperobj);
-  BLO_read_id_address(reader, cu->id.lib, &cu->textoncurve);
-  BLO_read_id_address(reader, cu->id.lib, &cu->vfont);
-  BLO_read_id_address(reader, cu->id.lib, &cu->vfontb);
-  BLO_read_id_address(reader, cu->id.lib, &cu->vfonti);
-  BLO_read_id_address(reader, cu->id.lib, &cu->vfontbi);
+  BLO_read_id_address(reader, id, &cu->bevobj);
+  BLO_read_id_address(reader, id, &cu->taperobj);
+  BLO_read_id_address(reader, id, &cu->textoncurve);
+  BLO_read_id_address(reader, id, &cu->vfont);
+  BLO_read_id_address(reader, id, &cu->vfontb);
+  BLO_read_id_address(reader, id, &cu->vfonti);
+  BLO_read_id_address(reader, id, &cu->vfontbi);
 
-  BLO_read_id_address(reader, cu->id.lib, &cu->ipo); /* XXX deprecated - old animation system */
-  BLO_read_id_address(reader, cu->id.lib, &cu->key);
+  BLO_read_id_address(reader, id, &cu->ipo); /* XXX deprecated - old animation system */
+  BLO_read_id_address(reader, id, &cu->key);
 }
 
 static void curve_blend_read_expand(BlendExpander *expander, ID *id)
@@ -558,7 +558,8 @@ void BKE_curve_texspace_calc(Curve *cu)
 void BKE_curve_texspace_ensure(Curve *cu)
 {
   if ((cu->texspace_flag & CU_TEXSPACE_FLAG_AUTO) &&
-      (cu->texspace_flag & CU_TEXSPACE_FLAG_AUTO_EVALUATED) == 0) {
+      (cu->texspace_flag & CU_TEXSPACE_FLAG_AUTO_EVALUATED) == 0)
+  {
     BKE_curve_texspace_calc(cu);
   }
 }
@@ -3290,7 +3291,8 @@ static void calchandleNurb_intern(BezTriple *bezt,
       /* When one handle is free, aligning makes no sense, see: #35952 */
       ELEM(HD_FREE, bezt->h1, bezt->h2) ||
       /* Also when no handles are aligned, skip this step. */
-      (!ELEM(HD_ALIGN, bezt->h1, bezt->h2) && !ELEM(HD_ALIGN_DOUBLESIDE, bezt->h1, bezt->h2))) {
+      (!ELEM(HD_ALIGN, bezt->h1, bezt->h2) && !ELEM(HD_ALIGN_DOUBLESIDE, bezt->h1, bezt->h2)))
+  {
     /* Handles need to be updated during animation and applying stuff like hooks,
      * but in such situations it's quite difficult to distinguish in which order
      * align handles should be aligned so skip them for now. */

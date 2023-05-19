@@ -109,7 +109,7 @@
 #include "BKE_mesh_wrapper.h"
 #include "BKE_modifier.h"
 #include "BKE_multires.h"
-#include "BKE_node.h"
+#include "BKE_node.hh"
 #include "BKE_object.h"
 #include "BKE_object_facemap.h"
 #include "BKE_paint.h"
@@ -216,7 +216,7 @@ static void object_copy_data(Main *bmain, ID *id_dst, const ID *id_src, const in
   BLI_listbase_clear(&ob_dst->shader_fx);
   LISTBASE_FOREACH (ShaderFxData *, fx, &ob_src->shader_fx) {
     ShaderFxData *nfx = BKE_shaderfx_new(fx->type);
-    BLI_strncpy(nfx->name, fx->name, sizeof(nfx->name));
+    STRNCPY(nfx->name, fx->name);
     BKE_shaderfx_copydata_ex(fx, nfx, flag_subdata);
     BLI_addtail(&ob_dst->shader_fx, nfx);
   }
@@ -266,6 +266,18 @@ static void object_copy_data(Main *bmain, ID *id_dst, const ID *id_src, const in
 
   if (ob_src->lightgroup) {
     ob_dst->lightgroup = (LightgroupMembership *)MEM_dupallocN(ob_src->lightgroup);
+  }
+
+  if ((flag & LIB_ID_COPY_SET_COPIED_ON_WRITE) != 0) {
+    if (ob_src->lightprobe_cache) {
+      /* Reference the original object data. */
+      ob_dst->lightprobe_cache = (LightProbeObjectCache *)MEM_dupallocN(ob_src->lightprobe_cache);
+      ob_dst->lightprobe_cache->shared = true;
+    }
+  }
+  else {
+    /* Do not copy lightprobe's cache. */
+    ob_dst->lightprobe_cache = nullptr;
   }
 }
 
@@ -319,6 +331,8 @@ static void object_free_data(ID *id)
   BKE_previewimg_free(&ob->preview);
 
   MEM_SAFE_FREE(ob->lightgroup);
+
+  BKE_lightprobe_cache_free(ob);
 }
 
 static void library_foreach_modifiersForeachIDLink(void *user_data,
@@ -597,6 +611,11 @@ static void object_blend_write(BlendWriter *writer, ID *id, const void *id_addre
   if (ob->lightgroup) {
     BLO_write_struct(writer, LightgroupMembership, ob->lightgroup);
   }
+
+  if (ob->lightprobe_cache) {
+    BLO_write_struct(writer, LightProbeObjectCache, ob->lightprobe_cache);
+    BKE_lightprobe_cache_blend_write(writer, ob->lightprobe_cache);
+  }
 }
 
 /* XXX deprecated - old animation system */
@@ -815,17 +834,22 @@ static void object_blend_read_data(BlendDataReader *reader, ID *id)
   BKE_previewimg_blend_read(reader, ob->preview);
 
   BLO_read_data_address(reader, &ob->lightgroup);
+
+  BLO_read_data_address(reader, &ob->lightprobe_cache);
+  if (ob->lightprobe_cache) {
+    BKE_lightprobe_cache_blend_read(reader, ob->lightprobe_cache);
+  }
 }
 
 /* XXX deprecated - old animation system */
 static void lib_link_nlastrips(BlendLibReader *reader, ID *id, ListBase *striplist)
 {
   LISTBASE_FOREACH (bActionStrip *, strip, striplist) {
-    BLO_read_id_address(reader, id->lib, &strip->object);
-    BLO_read_id_address(reader, id->lib, &strip->act);
-    BLO_read_id_address(reader, id->lib, &strip->ipo);
+    BLO_read_id_address(reader, id, &strip->object);
+    BLO_read_id_address(reader, id, &strip->act);
+    BLO_read_id_address(reader, id, &strip->ipo);
     LISTBASE_FOREACH (bActionModifier *, amod, &strip->modifiers) {
-      BLO_read_id_address(reader, id->lib, &amod->ob);
+      BLO_read_id_address(reader, id, &amod->ob);
     }
   }
 }
@@ -834,7 +858,7 @@ static void lib_link_nlastrips(BlendLibReader *reader, ID *id, ListBase *stripli
 static void lib_link_constraint_channels(BlendLibReader *reader, ID *id, ListBase *chanbase)
 {
   LISTBASE_FOREACH (bConstraintChannel *, chan, chanbase) {
-    BLO_read_id_address(reader, id->lib, &chan->ipo);
+    BLO_read_id_address(reader, id, &chan->ipo);
   }
 }
 
@@ -846,23 +870,24 @@ static void object_blend_read_lib(BlendLibReader *reader, ID *id)
   BlendFileReadReport *reports = BLO_read_lib_reports(reader);
 
   /* XXX deprecated - old animation system <<< */
-  BLO_read_id_address(reader, ob->id.lib, &ob->ipo);
-  BLO_read_id_address(reader, ob->id.lib, &ob->action);
+  BLO_read_id_address(reader, id, &ob->ipo);
+  BLO_read_id_address(reader, id, &ob->action);
   /* >>> XXX deprecated - old animation system */
 
-  BLO_read_id_address(reader, ob->id.lib, &ob->parent);
-  BLO_read_id_address(reader, ob->id.lib, &ob->track);
+  BLO_read_id_address(reader, id, &ob->parent);
+  BLO_read_id_address(reader, id, &ob->track);
 
   /* XXX deprecated - old pose library, deprecated in Blender 3.5. */
-  BLO_read_id_address(reader, ob->id.lib, &ob->poselib);
+  BLO_read_id_address(reader, id, &ob->poselib);
 
   /* 2.8x drops support for non-empty dupli instances. */
   if (ob->type == OB_EMPTY) {
-    BLO_read_id_address(reader, ob->id.lib, &ob->instance_collection);
+    BLO_read_id_address(reader, id, &ob->instance_collection);
   }
   else {
     if (ob->instance_collection != nullptr) {
-      ID *new_id = BLO_read_get_new_id_address(reader, ob->id.lib, &ob->instance_collection->id);
+      ID *new_id = BLO_read_get_new_id_address(
+          reader, id, ID_IS_LINKED(id), &ob->instance_collection->id);
       BLO_reportf_wrap(reports,
                        RPT_INFO,
                        TIP_("Non-Empty object '%s' cannot duplicate collection '%s' "
@@ -874,7 +899,7 @@ static void object_blend_read_lib(BlendLibReader *reader, ID *id)
     ob->transflag &= ~OB_DUPLICOLLECTION;
   }
 
-  BLO_read_id_address(reader, ob->id.lib, &ob->proxy);
+  BLO_read_id_address(reader, id, &ob->proxy);
   if (ob->proxy) {
     /* paranoia check, actually a proxy_from pointer should never be written... */
     if (!ID_IS_LINKED(ob->proxy)) {
@@ -899,10 +924,10 @@ static void object_blend_read_lib(BlendLibReader *reader, ID *id)
       ob->proxy->proxy_from = ob;
     }
   }
-  BLO_read_id_address(reader, ob->id.lib, &ob->proxy_group);
+  BLO_read_id_address(reader, id, &ob->proxy_group);
 
   void *poin = ob->data;
-  BLO_read_id_address(reader, ob->id.lib, &ob->data);
+  BLO_read_id_address(reader, id, &ob->data);
 
   if (ob->data == nullptr && poin != nullptr) {
     ob->type = OB_EMPTY;
@@ -925,17 +950,17 @@ static void object_blend_read_lib(BlendLibReader *reader, ID *id)
     if (ob->id.lib) {
       BLO_reportf_wrap(reports,
                        RPT_INFO,
-                       TIP_("Can't find object data of %s lib %s\n"),
+                       TIP_("Can't find object data of %s lib %s"),
                        ob->id.name + 2,
                        ob->id.lib->filepath);
     }
     else {
-      BLO_reportf_wrap(reports, RPT_INFO, TIP_("Object %s lost data\n"), ob->id.name + 2);
+      BLO_reportf_wrap(reports, RPT_INFO, TIP_("Object %s lost data"), ob->id.name + 2);
     }
     reports->count.missing_obdata++;
   }
   for (int a = 0; a < ob->totcol; a++) {
-    BLO_read_id_address(reader, ob->id.lib, &ob->mat[a]);
+    BLO_read_id_address(reader, id, &ob->mat[a]);
   }
 
   /* When the object is local and the data is library its possible
@@ -944,7 +969,7 @@ static void object_blend_read_lib(BlendLibReader *reader, ID *id)
     BKE_object_materials_test(bmain, ob, (ID *)ob->data);
   }
 
-  BLO_read_id_address(reader, ob->id.lib, &ob->gpd);
+  BLO_read_id_address(reader, id, &ob->gpd);
 
   /* if id.us==0 a new base will be created later on */
 
@@ -959,7 +984,7 @@ static void object_blend_read_lib(BlendLibReader *reader, ID *id)
 
   LISTBASE_FOREACH (PartEff *, paf, &ob->effect) {
     if (paf->type == EFF_PARTICLE) {
-      BLO_read_id_address(reader, ob->id.lib, &paf->group);
+      BLO_read_id_address(reader, id, &paf->group);
     }
   }
 
@@ -969,7 +994,7 @@ static void object_blend_read_lib(BlendLibReader *reader, ID *id)
 
     if (fluidmd && fluidmd->fss) {
       /* XXX: deprecated - old animation system. */
-      BLO_read_id_address(reader, ob->id.lib, &fluidmd->fss->ipo);
+      BLO_read_id_address(reader, id, &fluidmd->fss->ipo);
     }
   }
 
@@ -995,9 +1020,9 @@ static void object_blend_read_lib(BlendLibReader *reader, ID *id)
   }
 
   if (ob->soft) {
-    BLO_read_id_address(reader, ob->id.lib, &ob->soft->collision_group);
+    BLO_read_id_address(reader, id, &ob->soft->collision_group);
 
-    BLO_read_id_address(reader, ob->id.lib, &ob->soft->effector_weights->group);
+    BLO_read_id_address(reader, id, &ob->soft->effector_weights->group);
   }
 
   BKE_particle_system_blend_read_lib(reader, ob, &ob->id, &ob->particlesystem);
@@ -1006,8 +1031,8 @@ static void object_blend_read_lib(BlendLibReader *reader, ID *id)
   BKE_shaderfx_blend_read_lib(reader, ob);
 
   if (ob->rigidbody_constraint) {
-    BLO_read_id_address(reader, ob->id.lib, &ob->rigidbody_constraint->ob1);
-    BLO_read_id_address(reader, ob->id.lib, &ob->rigidbody_constraint->ob2);
+    BLO_read_id_address(reader, id, &ob->rigidbody_constraint->ob1);
+    BLO_read_id_address(reader, id, &ob->rigidbody_constraint->ob2);
   }
 }
 
@@ -1153,14 +1178,16 @@ static void object_lib_override_apply_post(ID *id_dst, ID *id_src)
   PTCacheID *pid_src, *pid_dst;
   for (pid_dst = (PTCacheID *)pidlist_dst.first, pid_src = (PTCacheID *)pidlist_src.first;
        pid_dst != nullptr;
-       pid_dst = pid_dst->next, pid_src = (pid_src != nullptr) ? pid_src->next : nullptr) {
+       pid_dst = pid_dst->next, pid_src = (pid_src != nullptr) ? pid_src->next : nullptr)
+  {
     /* If pid's do not match, just tag info of caches in dst as dirty and continue. */
     if (pid_src == nullptr) {
       continue;
     }
     if (pid_dst->type != pid_src->type || pid_dst->file_type != pid_src->file_type ||
         pid_dst->default_step != pid_src->default_step || pid_dst->max_step != pid_src->max_step ||
-        pid_dst->data_types != pid_src->data_types || pid_dst->info_types != pid_src->info_types) {
+        pid_dst->data_types != pid_src->data_types || pid_dst->info_types != pid_src->info_types)
+    {
       LISTBASE_FOREACH (PointCache *, point_cache_src, pid_src->ptcaches) {
         point_cache_src->flag |= PTCACHE_FLAG_INFO_DIRTY;
       }
@@ -1172,7 +1199,8 @@ static void object_lib_override_apply_post(ID *id_dst, ID *id_src)
         point_cache_src = (PointCache *)pid_src->ptcaches->first;
          point_cache_dst != nullptr;
          point_cache_dst = point_cache_dst->next,
-        point_cache_src = (point_cache_src != nullptr) ? point_cache_src->next : nullptr) {
+        point_cache_src = (point_cache_src != nullptr) ? point_cache_src->next : nullptr)
+    {
       /* Always force updating info about caches of applied lib-overrides. */
       point_cache_dst->flag |= PTCACHE_FLAG_INFO_DIRTY;
       if (point_cache_src == nullptr || !STREQ(point_cache_dst->name, point_cache_src->name)) {
@@ -1437,7 +1465,8 @@ bool BKE_object_support_modifier_type_check(const Object *ob, int modifier_type)
     }
 
     if (!((mti->flags & eModifierTypeFlag_AcceptsCVs) ||
-          (ob->type == OB_MESH && (mti->flags & eModifierTypeFlag_AcceptsMesh)))) {
+          (ob->type == OB_MESH && (mti->flags & eModifierTypeFlag_AcceptsMesh))))
+    {
       return false;
     }
 
@@ -1546,7 +1575,7 @@ bool BKE_object_copy_modifier(
   else {
     md_dst = BKE_modifier_new(md_src->type);
 
-    BLI_strncpy(md_dst->name, md_src->name, sizeof(md_dst->name));
+    STRNCPY(md_dst->name, md_src->name);
 
     if (md_src->type == eModifierType_Multires) {
       /* Has to be done after mod creation, but *before* we actually copy its settings! */
@@ -1590,7 +1619,7 @@ bool BKE_object_copy_gpencil_modifier(struct Object *ob_dst, GpencilModifierData
   BLI_assert(ob_dst->type == OB_GPENCIL_LEGACY);
 
   GpencilModifierData *gmd_dst = BKE_gpencil_modifier_new(gmd_src->type);
-  BLI_strncpy(gmd_dst->name, gmd_src->name, sizeof(gmd_dst->name));
+  STRNCPY(gmd_dst->name, gmd_src->name);
 
   const GpencilModifierTypeInfo *mti = BKE_gpencil_modifier_get_info(
       (GpencilModifierType)gmd_src->type);
@@ -1614,7 +1643,8 @@ bool BKE_object_modifier_stack_copy(Object *ob_dst,
   }
 
   if (!BLI_listbase_is_empty(&ob_dst->modifiers) ||
-      !BLI_listbase_is_empty(&ob_dst->greasepencil_modifiers)) {
+      !BLI_listbase_is_empty(&ob_dst->greasepencil_modifiers))
+  {
     BLI_assert(
         !"Trying to copy a modifier stack into an object having a non-empty modifier stack.");
     return false;
@@ -1634,7 +1664,7 @@ bool BKE_object_modifier_stack_copy(Object *ob_dst,
 
   LISTBASE_FOREACH (GpencilModifierData *, gmd_src, &ob_src->greasepencil_modifiers) {
     GpencilModifierData *gmd_dst = BKE_gpencil_modifier_new(gmd_src->type);
-    BLI_strncpy(gmd_dst->name, gmd_src->name, sizeof(gmd_dst->name));
+    STRNCPY(gmd_dst->name, gmd_src->name);
     BKE_gpencil_modifier_copydata_ex(gmd_src, gmd_dst, flag_subdata);
     BLI_addtail(&ob_dst->greasepencil_modifiers, gmd_dst);
   }
@@ -1788,7 +1818,8 @@ void BKE_object_free_derived_caches(Object *ob)
   object_update_from_subsurf_ccg(ob);
 
   if (ob->runtime.editmesh_eval_cage &&
-      ob->runtime.editmesh_eval_cage != reinterpret_cast<Mesh *>(ob->runtime.data_eval)) {
+      ob->runtime.editmesh_eval_cage != reinterpret_cast<Mesh *>(ob->runtime.data_eval))
+  {
     BKE_mesh_eval_delete(ob->runtime.editmesh_eval_cage);
   }
   ob->runtime.editmesh_eval_cage = nullptr;
@@ -2694,7 +2725,10 @@ void BKE_object_transform_copy(Object *ob_tar, const Object *ob_src)
   copy_v3_v3(ob_tar->scale, ob_src->scale);
 }
 
-Object *BKE_object_duplicate(Main *bmain, Object *ob, uint dupflag, uint duplicate_options)
+Object *BKE_object_duplicate(Main *bmain,
+                             Object *ob,
+                             eDupli_ID_Flags dupflag,
+                             uint duplicate_options)
 {
   const bool is_subprocess = (duplicate_options & LIB_ID_DUPLICATE_IS_SUBPROCESS) != 0;
   const bool is_root_id = (duplicate_options & LIB_ID_DUPLICATE_IS_ROOT_ID) != 0;
@@ -3184,7 +3218,8 @@ static bool ob_parcurve(Object *ob, Object *par, float r_mat[4][4])
 
   /* vec: 4 items! */
   if (BKE_where_on_path(
-          par, ctime, vec, nullptr, (cu->flag & CU_FOLLOW) ? quat : nullptr, &radius, nullptr)) {
+          par, ctime, vec, nullptr, (cu->flag & CU_FOLLOW) ? quat : nullptr, &radius, nullptr))
+  {
     if (cu->flag & CU_FOLLOW) {
       quat_apply_track(quat, ob->trackflag, ob->upflag);
       normalize_qt(quat);
@@ -3561,7 +3596,7 @@ void BKE_object_workob_calc_parent(Depsgraph *depsgraph, Scene *scene, Object *o
    * object's local loc/rot/scale instead of after. For example, a "Copy Rotation" constraint would
    * rotate the object's local translation as well. See #82156. */
 
-  BLI_strncpy(workob->parsubstr, ob->parsubstr, sizeof(workob->parsubstr));
+  STRNCPY(workob->parsubstr, ob->parsubstr);
 
   BKE_object_where_is_calc(depsgraph, scene, workob);
 }
@@ -4911,14 +4946,16 @@ int BKE_object_is_modified(Scene *scene, Object *ob)
     /* cloth */
     for (md = BKE_modifiers_get_virtual_modifierlist(ob, &virtualModifierData);
          md && (flag != (eModifierMode_Render | eModifierMode_Realtime));
-         md = md->next) {
+         md = md->next)
+    {
       if ((flag & eModifierMode_Render) == 0 &&
           BKE_modifier_is_enabled(scene, md, eModifierMode_Render)) {
         flag |= eModifierMode_Render;
       }
 
       if ((flag & eModifierMode_Realtime) == 0 &&
-          BKE_modifier_is_enabled(scene, md, eModifierMode_Realtime)) {
+          BKE_modifier_is_enabled(scene, md, eModifierMode_Realtime))
+      {
         flag |= eModifierMode_Realtime;
       }
     }
@@ -5047,7 +5084,8 @@ int BKE_object_is_deform_modified(Scene *scene, Object *ob)
   /* cloth */
   for (md = BKE_modifiers_get_virtual_modifierlist(ob, &virtualModifierData);
        md && (flag != (eModifierMode_Render | eModifierMode_Realtime));
-       md = md->next) {
+       md = md->next)
+  {
     const ModifierTypeInfo *mti = BKE_modifier_get_info((const ModifierType)md->type);
     bool can_deform = mti->type == eModifierTypeType_OnlyDeform || is_modifier_animated;
 
@@ -5220,7 +5258,8 @@ LinkNode *BKE_object_relational_superset(const Scene *scene,
     }
     else {
       if ((objectSet == OB_SET_SELECTED && BASE_SELECTED_EDITABLE(((View3D *)nullptr), base)) ||
-          (objectSet == OB_SET_VISIBLE && BASE_EDITABLE(((View3D *)nullptr), base))) {
+          (objectSet == OB_SET_VISIBLE && BASE_EDITABLE(((View3D *)nullptr), base)))
+      {
         Object *ob = base->object;
 
         if (obrel_list_test(ob)) {
@@ -5255,7 +5294,8 @@ LinkNode *BKE_object_relational_superset(const Scene *scene,
               if (obrel_list_test(child)) {
                 if ((includeFilter & OB_REL_CHILDREN_RECURSIVE &&
                      BKE_object_is_child_recursive(ob, child)) ||
-                    (includeFilter & OB_REL_CHILDREN && child->parent && child->parent == ob)) {
+                    (includeFilter & OB_REL_CHILDREN && child->parent && child->parent == ob))
+                {
                   obrel_list_add(&links, child);
                 }
               }
@@ -5609,7 +5649,7 @@ void BKE_object_modifiers_lib_link_common(void *userData,
 {
   BlendLibReader *reader = (BlendLibReader *)userData;
 
-  BLO_read_id_address(reader, ob->id.lib, idpoin);
+  BLO_read_id_address(reader, &ob->id, idpoin);
   if (*idpoin != nullptr && (cb_flag & IDWALK_CB_USER) != 0) {
     id_us_plus_no_lib(*idpoin);
   }

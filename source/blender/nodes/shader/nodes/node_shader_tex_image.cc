@@ -10,9 +10,9 @@ namespace blender::nodes::node_shader_tex_image_cc {
 static void sh_node_tex_image_declare(NodeDeclarationBuilder &b)
 {
   b.is_function_node();
-  b.add_input<decl::Vector>(N_("Vector")).implicit_field(implicit_field_inputs::position);
-  b.add_output<decl::Color>(N_("Color")).no_muted_links();
-  b.add_output<decl::Float>(N_("Alpha")).no_muted_links();
+  b.add_input<decl::Vector>("Vector").implicit_field(implicit_field_inputs::position);
+  b.add_output<decl::Color>("Color").no_muted_links();
+  b.add_output<decl::Float>("Alpha").no_muted_links();
 }
 
 static void node_shader_init_tex_image(bNodeTree * /*ntree*/, bNode *node)
@@ -134,7 +134,8 @@ static int node_shader_gpu_tex_image(GPUMaterial *mat,
 
   if (out[0].hasoutput) {
     if (ELEM(ima->alpha_mode, IMA_ALPHA_IGNORE, IMA_ALPHA_CHANNEL_PACKED) ||
-        IMB_colormanagement_space_name_is_data(ima->colorspace_settings.name)) {
+        IMB_colormanagement_space_name_is_data(ima->colorspace_settings.name))
+    {
       /* Don't let alpha affect color output in these cases. */
       GPU_link(mat, "color_alpha_clear", out[0].link, &out[0].link);
     }
@@ -180,7 +181,7 @@ void register_node_type_sh_tex_image()
       &ntype, "NodeTexImage", node_free_standard_storage, node_copy_standard_storage);
   ntype.gpu_fn = file_ns::node_shader_gpu_tex_image;
   ntype.labelfunc = node_image_label;
-  node_type_size_preset(&ntype, NODE_SIZE_LARGE);
+  blender::bke::node_type_size_preset(&ntype, blender::bke::eNodeSizePreset::LARGE);
 
   nodeRegisterType(&ntype);
 }

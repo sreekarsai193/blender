@@ -108,7 +108,9 @@ typedef enum eCustomDataType {
   CD_MSTICKY = 1,
 #endif
   CD_MDEFORMVERT = 2, /* Array of `MDeformVert`. */
+#ifdef DNA_DEPRECATED_ALLOW
   CD_MEDGE = 3,
+#endif
   CD_MFACE = 4,
   CD_MTFACE = 5,
   CD_MCOL = 6,
@@ -180,7 +182,6 @@ typedef enum eCustomDataType {
 
 /* Bits for eCustomDataMask */
 #define CD_MASK_MDEFORMVERT (1 << CD_MDEFORMVERT)
-#define CD_MASK_MEDGE (1 << CD_MEDGE)
 #define CD_MASK_MFACE (1 << CD_MFACE)
 #define CD_MASK_MTFACE (1 << CD_MTFACE)
 #define CD_MASK_MCOL (1 << CD_MCOL)
@@ -200,7 +201,6 @@ typedef enum eCustomDataType {
 
 #define CD_MASK_SHAPE_KEYINDEX (1 << CD_SHAPE_KEYINDEX)
 #define CD_MASK_SHAPEKEY (1 << CD_SHAPEKEY)
-#define CD_MASK_BWEIGHT (1 << CD_BWEIGHT)
 #define CD_MASK_CREASE (1 << CD_CREASE)
 #define CD_MASK_ORIGSPACE_MLOOP (1LL << CD_ORIGSPACE_MLOOP)
 #define CD_MASK_PREVIEW_MLOOPCOL (1LL << CD_PREVIEW_MLOOPCOL)

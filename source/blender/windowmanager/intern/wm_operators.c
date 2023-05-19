@@ -446,7 +446,8 @@ static const char *wm_context_member_from_ptr(const bContext *C,
     { \
       const char *ctx_member = member; \
       if (RNA_struct_is_a((rna_ptr)->type, &(rna_type)) && \
-          (rna_ptr)->data == (CTX_data_pointer_get_type(C, ctx_member, &(rna_type)).data)) { \
+          (rna_ptr)->data == (CTX_data_pointer_get_type(C, ctx_member, &(rna_type)).data)) \
+      { \
         member_id = ctx_member; \
         break; \
       } \
@@ -1227,7 +1228,7 @@ bool WM_operator_filesel_ensure_ext_imtype(wmOperator *op, const struct ImageFor
   /* Don't NULL check prop, this can only run on ops with a 'filepath'. */
   PropertyRNA *prop = RNA_struct_find_property(op->ptr, "filepath");
   RNA_property_string_get(op->ptr, prop, filepath);
-  if (BKE_image_path_ensure_ext_from_imformat(filepath, im_format)) {
+  if (BKE_image_path_ext_from_imformat_ensure(filepath, sizeof(filepath), im_format)) {
     RNA_property_string_set(op->ptr, prop, filepath);
     /* NOTE: we could check for and update 'filename' here,
      * but so far nothing needs this. */
@@ -2212,33 +2213,29 @@ static void radial_control_update_header(wmOperator *op, bContext *C)
   if (hasNumInput(&rc->num_input)) {
     char num_str[NUM_STR_REP_LEN];
     outputNumInput(&rc->num_input, num_str, &scene->unit);
-    BLI_snprintf(msg, sizeof(msg), "%s: %s", RNA_property_ui_name(rc->prop), num_str);
+    SNPRINTF(msg, "%s: %s", RNA_property_ui_name(rc->prop), num_str);
   }
   else {
     const char *ui_name = RNA_property_ui_name(rc->prop);
     switch (rc->subtype) {
       case PROP_NONE:
       case PROP_DISTANCE:
-        BLI_snprintf(msg, sizeof(msg), "%s: %0.4f", ui_name, rc->current_value);
+        SNPRINTF(msg, "%s: %0.4f", ui_name, rc->current_value);
         break;
       case PROP_PIXEL:
-        BLI_snprintf(msg,
-                     sizeof(msg),
-                     "%s: %d",
-                     ui_name,
-                     (int)rc->current_value); /* XXX: round to nearest? */
+        SNPRINTF(msg, "%s: %d", ui_name, (int)rc->current_value); /* XXX: round to nearest? */
         break;
       case PROP_PERCENTAGE:
-        BLI_snprintf(msg, sizeof(msg), "%s: %3.1f%%", ui_name, rc->current_value);
+        SNPRINTF(msg, "%s: %3.1f%%", ui_name, rc->current_value);
         break;
       case PROP_FACTOR:
-        BLI_snprintf(msg, sizeof(msg), "%s: %1.3f", ui_name, rc->current_value);
+        SNPRINTF(msg, "%s: %1.3f", ui_name, rc->current_value);
         break;
       case PROP_ANGLE:
-        BLI_snprintf(msg, sizeof(msg), "%s: %3.2f", ui_name, RAD2DEGF(rc->current_value));
+        SNPRINTF(msg, "%s: %3.2f", ui_name, RAD2DEGF(rc->current_value));
         break;
       default:
-        BLI_snprintf(msg, sizeof(msg), "%s", ui_name); /* XXX: No value? */
+        SNPRINTF(msg, "%s", ui_name); /* XXX: No value? */
         break;
     }
   }
@@ -2304,7 +2301,8 @@ static void radial_control_set_tex(RadialControl *rc)
       if ((ibuf = BKE_brush_gen_radial_control_imbuf(
                rc->image_id_ptr.data,
                rc->use_secondary_tex,
-               !ELEM(rc->subtype, PROP_NONE, PROP_PIXEL, PROP_DISTANCE)))) {
+               !ELEM(rc->subtype, PROP_NONE, PROP_PIXEL, PROP_DISTANCE))))
+      {
 
         rc->texture = GPU_texture_create_2d("radial_control",
                                             ibuf->x,
@@ -2313,12 +2311,12 @@ static void radial_control_set_tex(RadialControl *rc)
                                             GPU_R8,
                                             GPU_TEXTURE_USAGE_SHADER_READ |
                                                 GPU_TEXTURE_USAGE_MIP_SWIZZLE_VIEW,
-                                            ibuf->rect_float);
+                                            ibuf->float_buffer.data);
 
         GPU_texture_filter_mode(rc->texture, true);
         GPU_texture_swizzle_set(rc->texture, "111r");
 
-        MEM_freeN(ibuf->rect_float);
+        MEM_freeN(ibuf->float_buffer.data);
         MEM_freeN(ibuf);
       }
       break;
@@ -2336,8 +2334,9 @@ static void radial_control_paint_tex(RadialControl *rc, float radius, float alph
     PointerRNA *fill_ptr;
     PropertyRNA *fill_prop;
 
-    if (rc->fill_col_override_prop && RNA_property_boolean_get(&rc->fill_col_override_test_ptr,
-                                                               rc->fill_col_override_test_prop)) {
+    if (rc->fill_col_override_prop &&
+        RNA_property_boolean_get(&rc->fill_col_override_test_ptr, rc->fill_col_override_test_prop))
+    {
       fill_ptr = &rc->fill_col_override_ptr;
       fill_prop = rc->fill_col_override_prop;
     }
@@ -2445,7 +2444,7 @@ static void radial_control_paint_cursor(bContext *UNUSED(C), int x, int y, void 
            WM_RADIAL_CONTROL_DISPLAY_MIN_SIZE;
       r2 = tex_radius = WM_RADIAL_CONTROL_DISPLAY_SIZE;
       rmin = WM_RADIAL_CONTROL_DISPLAY_MIN_SIZE;
-      BLI_snprintf(str, WM_RADIAL_MAX_STR, "%3.1f%%", rc->current_value);
+      SNPRINTF(str, "%3.1f%%", rc->current_value);
       strdrawlen = BLI_strlen_utf8(str);
       tex_radius = r1;
       alpha = 0.75;
@@ -2456,14 +2455,14 @@ static void radial_control_paint_cursor(bContext *UNUSED(C), int x, int y, void 
       r2 = tex_radius = WM_RADIAL_CONTROL_DISPLAY_SIZE;
       rmin = WM_RADIAL_CONTROL_DISPLAY_MIN_SIZE;
       alpha = rc->current_value / 2.0f + 0.5f;
-      BLI_snprintf(str, WM_RADIAL_MAX_STR, "%1.3f", rc->current_value);
+      SNPRINTF(str, "%1.3f", rc->current_value);
       strdrawlen = BLI_strlen_utf8(str);
       break;
     case PROP_ANGLE:
       r1 = r2 = tex_radius = WM_RADIAL_CONTROL_DISPLAY_SIZE;
       alpha = 0.75;
       rmin = WM_RADIAL_CONTROL_DISPLAY_MIN_SIZE;
-      BLI_snprintf(str, WM_RADIAL_MAX_STR, "%3.2f", RAD2DEGF(rc->current_value));
+      SNPRINTF(str, "%3.2f", RAD2DEGF(rc->current_value));
       strdrawlen = BLI_strlen_utf8(str);
       break;
     default:
@@ -2631,7 +2630,8 @@ static int radial_control_get_path(PointerRNA *ctx_ptr,
     PropertyType prop_type = RNA_property_type(*r_prop);
 
     if (((flags & RC_PROP_REQUIRE_BOOL) && (prop_type != PROP_BOOLEAN)) ||
-        ((flags & RC_PROP_REQUIRE_FLOAT) && (prop_type != PROP_FLOAT))) {
+        ((flags & RC_PROP_REQUIRE_FLOAT) && (prop_type != PROP_FLOAT)))
+    {
       MEM_freeN(str);
       BKE_reportf(op->reports, RPT_ERROR, "Property from path '%s' is not a float", name);
       return 0;
@@ -2673,7 +2673,8 @@ static int radial_control_get_properties(bContext *C, wmOperator *op)
                                &use_secondary_ptr,
                                &use_secondary_prop,
                                0,
-                               (RC_PROP_ALLOW_MISSING | RC_PROP_REQUIRE_BOOL))) {
+                               (RC_PROP_ALLOW_MISSING | RC_PROP_REQUIRE_BOOL)))
+  {
     return 0;
   }
 
@@ -2695,12 +2696,14 @@ static int radial_control_get_properties(bContext *C, wmOperator *op)
   }
 
   if (!radial_control_get_path(
-          &ctx_ptr, op, "rotation_path", &rc->rot_ptr, &rc->rot_prop, 0, RC_PROP_REQUIRE_FLOAT)) {
+          &ctx_ptr, op, "rotation_path", &rc->rot_ptr, &rc->rot_prop, 0, RC_PROP_REQUIRE_FLOAT))
+  {
     return 0;
   }
 
   if (!radial_control_get_path(
-          &ctx_ptr, op, "color_path", &rc->col_ptr, &rc->col_prop, 4, RC_PROP_REQUIRE_FLOAT)) {
+          &ctx_ptr, op, "color_path", &rc->col_ptr, &rc->col_prop, 4, RC_PROP_REQUIRE_FLOAT))
+  {
     return 0;
   }
 
@@ -2710,7 +2713,8 @@ static int radial_control_get_properties(bContext *C, wmOperator *op)
                                &rc->fill_col_ptr,
                                &rc->fill_col_prop,
                                3,
-                               RC_PROP_REQUIRE_FLOAT)) {
+                               RC_PROP_REQUIRE_FLOAT))
+  {
     return 0;
   }
 
@@ -2720,7 +2724,8 @@ static int radial_control_get_properties(bContext *C, wmOperator *op)
                                &rc->fill_col_override_ptr,
                                &rc->fill_col_override_prop,
                                3,
-                               RC_PROP_REQUIRE_FLOAT)) {
+                               RC_PROP_REQUIRE_FLOAT))
+  {
     return 0;
   }
   if (!radial_control_get_path(&ctx_ptr,
@@ -2729,7 +2734,8 @@ static int radial_control_get_properties(bContext *C, wmOperator *op)
                                &rc->fill_col_override_test_ptr,
                                &rc->fill_col_override_test_prop,
                                0,
-                               RC_PROP_REQUIRE_BOOL)) {
+                               RC_PROP_REQUIRE_BOOL))
+  {
     return 0;
   }
 
@@ -2742,7 +2748,8 @@ static int radial_control_get_properties(bContext *C, wmOperator *op)
                                &rc->zoom_ptr,
                                &rc->zoom_prop,
                                2,
-                               RC_PROP_REQUIRE_FLOAT | RC_PROP_ALLOW_MISSING)) {
+                               RC_PROP_REQUIRE_FLOAT | RC_PROP_ALLOW_MISSING))
+  {
     return 0;
   }
 
@@ -2821,7 +2828,8 @@ static int radial_control_invoke(bContext *C, wmOperator *op, const wmEvent *eve
             PROP_FACTOR,
             PROP_PERCENTAGE,
             PROP_ANGLE,
-            PROP_PIXEL)) {
+            PROP_PIXEL))
+  {
     BKE_report(op->reports,
                RPT_ERROR,
                "Property must be a none, distance, factor, percentage, angle, or pixel");
@@ -3085,7 +3093,8 @@ static int radial_control_modal(bContext *C, wmOperator *op, const wmEvent *even
   }
 
   if (!handled && (event->val == KM_RELEASE) && (rc->init_event == event->type) &&
-      RNA_boolean_get(op->ptr, "release_confirm")) {
+      RNA_boolean_get(op->ptr, "release_confirm"))
+  {
     ret = OPERATOR_FINISHED;
   }
 

@@ -323,7 +323,7 @@ int ED_buttons_search_string_length(struct SpaceProperties *sbuts)
 
 void ED_buttons_search_string_set(SpaceProperties *sbuts, const char *value)
 {
-  BLI_strncpy(sbuts->runtime->search_string, value, sizeof(sbuts->runtime->search_string));
+  STRNCPY(sbuts->runtime->search_string, value);
 }
 
 bool ED_buttons_tab_has_search_result(SpaceProperties *sbuts, const int index)
@@ -860,7 +860,8 @@ static void buttons_id_remap(ScrArea *UNUSED(area),
   SpaceProperties *sbuts = (SpaceProperties *)slink;
 
   if (BKE_id_remapper_apply(mappings, &sbuts->pinid, ID_REMAP_APPLY_DEFAULT) ==
-      ID_REMAP_RESULT_SOURCE_UNASSIGNED) {
+      ID_REMAP_RESULT_SOURCE_UNASSIGNED)
+  {
     sbuts->flag &= ~SB_PIN_CONTEXT;
   }
 
@@ -907,7 +908,7 @@ static void buttons_id_remap(ScrArea *UNUSED(area),
   }
 }
 
-static void buttons_blend_read_data(BlendDataReader *UNUSED(reader), SpaceLink *sl)
+static void buttons_space_blend_read_data(BlendDataReader *UNUSED(reader), SpaceLink *sl)
 {
   SpaceProperties *sbuts = (SpaceProperties *)sl;
 
@@ -918,16 +919,16 @@ static void buttons_blend_read_data(BlendDataReader *UNUSED(reader), SpaceLink *
   sbuts->runtime = NULL;
 }
 
-static void buttons_blend_read_lib(BlendLibReader *reader, ID *parent_id, SpaceLink *sl)
+static void buttons_space_blend_read_lib(BlendLibReader *reader, ID *parent_id, SpaceLink *sl)
 {
   SpaceProperties *sbuts = (SpaceProperties *)sl;
-  BLO_read_id_address(reader, parent_id->lib, &sbuts->pinid);
+  BLO_read_id_address(reader, parent_id, &sbuts->pinid);
   if (sbuts->pinid == NULL) {
     sbuts->flag &= ~SB_PIN_CONTEXT;
   }
 }
 
-static void buttons_blend_write(BlendWriter *writer, SpaceLink *sl)
+static void buttons_space_blend_write(BlendWriter *writer, SpaceLink *sl)
 {
   BLO_write_struct(writer, SpaceProperties, sl);
 }
@@ -955,9 +956,9 @@ void ED_spacetype_buttons(void)
   st->listener = buttons_area_listener;
   st->context = buttons_context;
   st->id_remap = buttons_id_remap;
-  st->blend_read_data = buttons_blend_read_data;
-  st->blend_read_lib = buttons_blend_read_lib;
-  st->blend_write = buttons_blend_write;
+  st->blend_read_data = buttons_space_blend_read_data;
+  st->blend_read_lib = buttons_space_blend_read_lib;
+  st->blend_write = buttons_space_blend_write;
 
   /* regions: main window */
   art = MEM_callocN(sizeof(ARegionType), "spacetype buttons region");

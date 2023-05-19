@@ -290,13 +290,14 @@ typedef struct bPoseChannel {
   char _pad[2];
 
   /**
-   * Matrix result of location/rotation/scale components & constraints.
+   * Matrix result of location/rotation/scale components, and evaluation of
+   * animation data and constraints.
+   *
    * This is the dynamic component of `pose_mat` (without #Bone.arm_mat).
    */
   float chan_mat[4][4];
   /**
-   * Constraints accumulate here. in the end, `pose_mat = bone->arm_mat * chan_mat`
-   * this matrix is object space.
+   * Channel matrix in the armature object space, i.e. `pose_mat = bone->arm_mat * chan_mat`.
    */
   float pose_mat[4][4];
   /** For display, pose_mat with bone length applied. */
@@ -566,6 +567,10 @@ typedef enum eItasc_Flags {
   ITASC_INITIAL_REITERATION = (1 << 1),
   ITASC_REITERATION = (1 << 2),
   ITASC_SIMULATION = (1 << 3),
+
+  /* Set this flag to always translate root bones (i.e. bones without a parent) to (0, 0, 0).
+   * This was the pre-3.6 behaviour, and this flag was introduced for backward compatibility. */
+  ITASC_TRANSLATE_ROOT_BONES = (1 << 4),
 } eItasc_Flags;
 
 /* bItasc->solver */
@@ -933,6 +938,7 @@ typedef enum eTimeline_Cache_Flag {
   TIME_CACHE_SMOKE = (1 << 4),
   TIME_CACHE_DYNAMICPAINT = (1 << 5),
   TIME_CACHE_RIGIDBODY = (1 << 6),
+  TIME_CACHE_SIMULATION_NODES = (1 << 7),
 } eTimeline_Cache_Flag;
 
 /* ************************************************ */

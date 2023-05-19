@@ -87,7 +87,7 @@ ListBase *WM_dropboxmap_find(const char *idname, int spaceid, int regionid)
   }
 
   wmDropBoxMap *dm = MEM_cnew<wmDropBoxMap>(__func__);
-  BLI_strncpy(dm->idname, idname, KMAP_MAX_NAME);
+  STRNCPY(dm->idname, idname);
   dm->spaceid = spaceid;
   dm->regionid = regionid;
   BLI_addtail(&dropboxes, dm);
@@ -177,7 +177,8 @@ static void wm_dropbox_invoke(bContext *C, wmDrag *drag)
   }
 }
 
-wmDrag *WM_drag_data_create(bContext *C, int icon, int type, void *poin, double value, uint flags)
+wmDrag *WM_drag_data_create(
+    bContext *C, int icon, eWM_DragDataType type, void *poin, double value, uint flags)
 {
   wmDrag *drag = MEM_cnew<wmDrag>(__func__);
 
@@ -232,7 +233,8 @@ void WM_event_start_prepared_drag(bContext *C, wmDrag *drag)
   wm_dropbox_invoke(C, drag);
 }
 
-void WM_event_start_drag(bContext *C, int icon, int type, void *poin, double value, uint flags)
+void WM_event_start_drag(
+    bContext *C, int icon, eWM_DragDataType type, void *poin, double value, uint flags)
 {
   wmDrag *drag = WM_drag_data_create(C, icon, type, poin, value, flags);
   WM_event_start_prepared_drag(C, drag);
@@ -288,7 +290,7 @@ void WM_event_drag_image(wmDrag *drag, ImBuf *imb, float scale)
   drag->imbuf_scale = scale;
 }
 
-void WM_drag_data_free(int dragtype, void *poin)
+void WM_drag_data_free(eWM_DragDataType dragtype, void *poin)
 {
   /* Don't require all the callers to have a nullptr-check, just allow passing nullptr. */
   if (!poin) {
@@ -431,8 +433,8 @@ static void wm_drop_update_active(bContext *C, wmDrag *drag, const wmEvent *even
   const int winsize_y = WM_window_pixels_y(win);
 
   /* for multiwin drags, we only do this if mouse inside */
-  if (event->xy[0] < 0 || event->xy[1] < 0 || event->xy[0] > winsize_x ||
-      event->xy[1] > winsize_y) {
+  if (event->xy[0] < 0 || event->xy[1] < 0 || event->xy[0] > winsize_x || event->xy[1] > winsize_y)
+  {
     return;
   }
 
@@ -567,11 +569,12 @@ wmDragAsset *WM_drag_create_asset_data(const AssetHandle *asset, const char *pat
 {
   wmDragAsset *asset_drag = MEM_new<wmDragAsset>(__func__);
 
-  BLI_strncpy(asset_drag->name, ED_asset_handle_get_name(asset), sizeof(asset_drag->name));
+  STRNCPY(asset_drag->name, ED_asset_handle_get_name(asset));
   asset_drag->metadata = ED_asset_handle_get_metadata(asset);
   asset_drag->path = path;
   asset_drag->id_type = ED_asset_handle_get_id_type(asset);
   asset_drag->import_method = import_type;
+  asset_drag->use_relative_path = ED_asset_handle_get_use_relative_path(asset);
 
   return asset_drag;
 }
@@ -625,10 +628,18 @@ ID *WM_drag_asset_id_import(wmDragAsset *asset_drag, const int flag_extra)
   ViewLayer *view_layer = CTX_data_view_layer(asset_drag->evil_C);
   View3D *view3d = CTX_wm_view3d(asset_drag->evil_C);
 
+  const bool use_relative_path = asset_drag->use_relative_path;
+
   switch (eAssetImportMethod(asset_drag->import_method)) {
     case ASSET_IMPORT_LINK:
-      return WM_file_link_datablock(
-          bmain, scene, view_layer, view3d, asset_drag->path, idtype, name, flag);
+      return WM_file_link_datablock(bmain,
+                                    scene,
+                                    view_layer,
+                                    view3d,
+                                    asset_drag->path,
+                                    idtype,
+                                    name,
+                                    flag | (use_relative_path ? FILE_RELPATH : 0));
     case ASSET_IMPORT_APPEND:
       return WM_file_append_datablock(bmain,
                                       scene,
@@ -640,16 +651,16 @@ ID *WM_drag_asset_id_import(wmDragAsset *asset_drag, const int flag_extra)
                                       flag | BLO_LIBLINK_APPEND_RECURSIVE |
                                           BLO_LIBLINK_APPEND_ASSET_DATA_CLEAR);
     case ASSET_IMPORT_APPEND_REUSE:
-      return WM_file_append_datablock(G_MAIN,
-                                      scene,
-                                      view_layer,
-                                      view3d,
-                                      asset_drag->path,
-                                      idtype,
-                                      name,
-                                      flag | BLO_LIBLINK_APPEND_RECURSIVE |
-                                          BLO_LIBLINK_APPEND_ASSET_DATA_CLEAR |
-                                          BLO_LIBLINK_APPEND_LOCAL_ID_REUSE);
+      return WM_file_append_datablock(
+          G_MAIN,
+          scene,
+          view_layer,
+          view3d,
+          asset_drag->path,
+          idtype,
+          name,
+          flag | BLO_LIBLINK_APPEND_RECURSIVE | BLO_LIBLINK_APPEND_ASSET_DATA_CLEAR |
+              BLO_LIBLINK_APPEND_LOCAL_ID_REUSE | (use_relative_path ? FILE_RELPATH : 0));
   }
 
   BLI_assert_unreachable();
@@ -840,6 +851,8 @@ const char *WM_drag_get_item_name(wmDrag *drag)
     }
     case WM_DRAG_NAME:
       return static_cast<const char *>(drag->poin);
+    default:
+      break;
   }
   return "";
 }
@@ -876,7 +889,7 @@ static void wm_drag_draw_icon(bContext * /*C*/, wmWindow * /*win*/, wmDrag *drag
                                   drag->imb->y,
                                   GPU_RGBA8,
                                   false,
-                                  drag->imb->rect,
+                                  drag->imb->byte_buffer.data,
                                   drag->imbuf_scale,
                                   drag->imbuf_scale,
                                   1.0f,

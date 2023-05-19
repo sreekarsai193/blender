@@ -91,7 +91,7 @@ set(SRC
   intern/draw_manager.cc
   intern/draw_manager_data.cc
   intern/draw_manager_exec.c
-  intern/draw_manager_profiling.c
+  intern/draw_manager_profiling.cc
   intern/draw_manager_shader.c
   intern/draw_manager_text.cc
   intern/draw_manager_texture.c
@@ -180,6 +180,7 @@ set(SRC
   engines/workbench/workbench_state.cc
   engines/workbench/workbench_transparent.c
   engines/workbench/workbench_volume.c
+  engines/workbench/workbench_volume_next.cc
   engines/external/external_engine.c
   engines/gpencil/gpencil_antialiasing.c
   engines/gpencil/gpencil_cache_utils.c
@@ -242,7 +243,7 @@ set(SRC
   intern/draw_instance_data.h
   intern/draw_manager.h
   intern/draw_manager.hh
-  intern/draw_manager_profiling.h
+  intern/draw_manager_profiling.hh
   intern/draw_manager_testing.h
   intern/draw_manager_text.h
   intern/draw_pass.hh
@@ -272,6 +273,7 @@ set(SRC
   engines/eevee_next/eevee_depth_of_field.hh
   engines/eevee_next/eevee_engine.h
   engines/eevee_next/eevee_film.hh
+  engines/eevee_next/eevee_gbuffer.hh
   engines/eevee_next/eevee_hizbuffer.hh
   engines/eevee_next/eevee_instance.hh
   engines/eevee_next/eevee_irradiance_cache.hh
@@ -397,6 +399,7 @@ set(GLSL_SRC
   engines/eevee/shaders/bsdf_sampling_lib.glsl
   engines/eevee/shaders/random_lib.glsl
   engines/eevee/shaders/raytrace_lib.glsl
+  engines/eevee/shaders/renderpass_accumulate_frag.glsl
   engines/eevee/shaders/renderpass_lib.glsl
   engines/eevee/shaders/renderpass_postprocess_frag.glsl
   engines/eevee/shaders/cryptomatte_frag.glsl

@@ -377,7 +377,7 @@ void BKE_animdata_copy_id_action(Main *bmain, ID *id)
 
 void BKE_animdata_duplicate_id_action(struct Main *bmain,
                                       struct ID *id,
-                                      const eDupli_ID_Flags duplicate_flags)
+                                      const /*eDupli_ID_Flags*/ uint duplicate_flags)
 {
   if (duplicate_flags & USER_DUP_ACT) {
     animdata_copy_id_action(bmain, id, true, (duplicate_flags & USER_DUP_LINKED_ID) != 0);
@@ -767,7 +767,7 @@ static bool fcurves_path_rename_fix(ID *owner_id,
       bActionGroup *agrp = fcu->grp;
       is_changed = true;
       if (oldName != NULL && (agrp != NULL) && STREQ(oldName, agrp->name)) {
-        BLI_strncpy(agrp->name, newName, sizeof(agrp->name));
+        STRNCPY(agrp->name, newName);
       }
     }
   }
@@ -816,9 +816,10 @@ static bool drivers_path_rename_fix(ID *owner_id,
         if (strstr(prefix, "bones")) {
           if (((dtar->id) && (GS(dtar->id->name) == ID_OB) &&
                (!ref_id || ((Object *)(dtar->id))->data == ref_id)) &&
-              (dtar->pchan_name[0]) && STREQ(oldName, dtar->pchan_name)) {
+              (dtar->pchan_name[0]) && STREQ(oldName, dtar->pchan_name))
+          {
             is_changed = true;
-            BLI_strncpy(dtar->pchan_name, newName, sizeof(dtar->pchan_name));
+            STRNCPY(dtar->pchan_name, newName);
           }
         }
       }
@@ -992,13 +993,15 @@ void BKE_animdata_fix_paths_rename(ID *owner_id,
   /* Active action and temp action. */
   if (adt->action != NULL) {
     if (fcurves_path_rename_fix(
-            owner_id, prefix, oldName, newName, oldN, newN, &adt->action->curves, verify_paths)) {
+            owner_id, prefix, oldName, newName, oldN, newN, &adt->action->curves, verify_paths))
+    {
       DEG_id_tag_update(&adt->action->id, ID_RECALC_COPY_ON_WRITE);
     }
   }
   if (adt->tmpact) {
     if (fcurves_path_rename_fix(
-            owner_id, prefix, oldName, newName, oldN, newN, &adt->tmpact->curves, verify_paths)) {
+            owner_id, prefix, oldName, newName, oldN, newN, &adt->tmpact->curves, verify_paths))
+    {
       DEG_id_tag_update(&adt->tmpact->id, ID_RECALC_COPY_ON_WRITE);
     }
   }
@@ -1476,8 +1479,8 @@ void BKE_animdata_blend_read_lib(BlendLibReader *reader, ID *id, AnimData *adt)
   }
 
   /* link action data */
-  BLO_read_id_address(reader, id->lib, &adt->action);
-  BLO_read_id_address(reader, id->lib, &adt->tmpact);
+  BLO_read_id_address(reader, id, &adt->action);
+  BLO_read_id_address(reader, id, &adt->tmpact);
 
   /* link drivers */
   BKE_fcurve_blend_read_lib(reader, id, &adt->drivers);

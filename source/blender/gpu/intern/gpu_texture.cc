@@ -25,7 +25,7 @@ namespace blender::gpu {
 Texture::Texture(const char *name)
 {
   if (name) {
-    BLI_strncpy(name_, name, sizeof(name_));
+    STRNCPY(name_, name);
   }
   else {
     name_[0] = '\0';
@@ -132,7 +132,7 @@ bool Texture::init_buffer(GPUVertBuf *vbo, eGPUTextureFormat format)
   return this->init_internal(vbo);
 }
 
-bool Texture::init_view(const GPUTexture *src_,
+bool Texture::init_view(GPUTexture *src_,
                         eGPUTextureFormat format,
                         eGPUTextureType type,
                         int mip_start,
@@ -178,6 +178,9 @@ bool Texture::init_view(const GPUTexture *src_,
 void Texture::usage_set(eGPUTextureUsage usage_flags)
 {
   gpu_image_usage_flags_ = usage_flags;
+  /* Metal: Texture clearing is done using framebuffer clear. This has no performance impact. */
+  /* TODO(fclem): Move this to metal backend instead to avoid side effects in other backends. */
+  gpu_image_usage_flags_ |= GPU_TEXTURE_USAGE_ATTACHMENT;
 }
 
 /** \} */
@@ -448,7 +451,7 @@ GPUTexture *GPU_texture_create_error(int dimension, bool is_array)
 }
 
 GPUTexture *GPU_texture_create_view(const char *name,
-                                    const GPUTexture *src,
+                                    GPUTexture *src,
                                     eGPUTextureFormat format,
                                     int mip_start,
                                     int mip_len,
@@ -458,6 +461,9 @@ GPUTexture *GPU_texture_create_view(const char *name,
 {
   BLI_assert(mip_len > 0);
   BLI_assert(layer_len > 0);
+  BLI_assert_msg(
+      GPU_texture_usage(src) & GPU_TEXTURE_USAGE_MIP_SWIZZLE_VIEW,
+      "Source texture of TextureView must have GPU_TEXTURE_USAGE_MIP_SWIZZLE_VIEW usage flag.");
   Texture *view = GPUBackend::get()->texture_alloc(name);
   view->init_view(src,
                   format,

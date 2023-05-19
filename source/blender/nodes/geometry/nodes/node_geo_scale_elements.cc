@@ -21,20 +21,21 @@ namespace blender::nodes::node_geo_scale_elements_cc {
 
 static void node_declare(NodeDeclarationBuilder &b)
 {
-  b.add_input<decl::Geometry>(N_("Geometry")).supported_type(GEO_COMPONENT_TYPE_MESH);
-  b.add_input<decl::Bool>(N_("Selection")).default_value(true).hide_value().field_on_all();
-  b.add_input<decl::Float>(N_("Scale"), "Scale").default_value(1.0f).min(0.0f).field_on_all();
-  b.add_input<decl::Vector>(N_("Center"))
+  b.add_input<decl::Geometry>("Geometry").supported_type(GEO_COMPONENT_TYPE_MESH);
+  b.add_input<decl::Bool>("Selection").default_value(true).hide_value().field_on_all();
+  b.add_input<decl::Float>("Scale", "Scale").default_value(1.0f).min(0.0f).field_on_all();
+  b.add_input<decl::Vector>("Center")
       .subtype(PROP_TRANSLATION)
       .implicit_field_on_all(implicit_field_inputs::position)
-      .description(N_("Origin of the scaling for each element. If multiple elements are "
-                      "connected, their center is averaged"));
-  b.add_input<decl::Vector>(N_("Axis"))
+      .description(
+          "Origin of the scaling for each element. If multiple elements are connected, their "
+          "center is averaged");
+  b.add_input<decl::Vector>("Axis")
       .default_value({1.0f, 0.0f, 0.0f})
       .field_on_all()
-      .description(N_("Direction in which to scale the element"))
+      .description("Direction in which to scale the element")
       .make_available([](bNode &node) { node.custom2 = GEO_NODE_SCALE_ELEMENTS_SINGLE_AXIS; });
-  b.add_output<decl::Geometry>(N_("Geometry")).propagate_all();
+  b.add_output<decl::Geometry>("Geometry").propagate_all();
 };
 
 static void node_layout(uiLayout *layout, bContext * /*C*/, PointerRNA *ptr)
@@ -60,7 +61,7 @@ static void node_update(bNodeTree *ntree, bNode *node)
   const GeometryNodeScaleElementsMode mode = GeometryNodeScaleElementsMode(node->custom2);
   const bool use_single_axis = mode == GEO_NODE_SCALE_ELEMENTS_SINGLE_AXIS;
 
-  nodeSetSocketAvailability(ntree, axis_socket, use_single_axis);
+  bke::nodeSetSocketAvailability(ntree, axis_socket, use_single_axis);
 }
 
 struct UniformScaleFields {
@@ -147,7 +148,7 @@ static float4x4 create_single_axis_transform(const float3 &center,
   return transform;
 }
 
-using GetVertexIndicesFn = FunctionRef<void(Span<MEdge> edges,
+using GetVertexIndicesFn = FunctionRef<void(Span<int2> edges,
                                             OffsetIndices<int> polys,
                                             Span<int> corner_verts,
                                             int element_index,
@@ -159,7 +160,7 @@ static void scale_vertex_islands_uniformly(Mesh &mesh,
                                            const GetVertexIndicesFn get_vertex_indices)
 {
   MutableSpan<float3> positions = mesh.vert_positions_for_write();
-  const Span<MEdge> edges = mesh.edges();
+  const Span<int2> edges = mesh.edges();
   const OffsetIndices polys = mesh.polys();
   const Span<int> corner_verts = mesh.corner_verts();
 
@@ -197,7 +198,7 @@ static void scale_vertex_islands_on_axis(Mesh &mesh,
                                          const GetVertexIndicesFn get_vertex_indices)
 {
   MutableSpan<float3> positions = mesh.vert_positions_for_write();
-  const Span<MEdge> edges = mesh.edges();
+  const Span<int2> edges = mesh.edges();
   const OffsetIndices polys = mesh.polys();
   const Span<int> corner_verts = mesh.corner_verts();
 
@@ -274,7 +275,7 @@ static Vector<ElementIsland> prepare_face_islands(const Mesh &mesh, const IndexM
   return islands;
 }
 
-static void get_face_verts(const Span<MEdge> /*edges*/,
+static void get_face_verts(const Span<int2> /*edges*/,
                            const OffsetIndices<int> polys,
                            const Span<int> corner_verts,
                            int face_index,
@@ -298,7 +299,7 @@ static AxisScaleParams evaluate_axis_scale_fields(FieldEvaluator &evaluator,
 
 static void scale_faces_on_axis(Mesh &mesh, const AxisScaleFields &fields)
 {
-  bke::MeshFieldContext field_context{mesh, ATTR_DOMAIN_FACE};
+  const bke::MeshFieldContext field_context{mesh, ATTR_DOMAIN_FACE};
   FieldEvaluator evaluator{field_context, mesh.totpoly};
   AxisScaleParams params = evaluate_axis_scale_fields(evaluator, fields);
 
@@ -320,7 +321,7 @@ static UniformScaleParams evaluate_uniform_scale_fields(FieldEvaluator &evaluato
 
 static void scale_faces_uniformly(Mesh &mesh, const UniformScaleFields &fields)
 {
-  bke::MeshFieldContext field_context{mesh, ATTR_DOMAIN_FACE};
+  const bke::MeshFieldContext field_context{mesh, ATTR_DOMAIN_FACE};
   FieldEvaluator evaluator{field_context, mesh.totpoly};
   UniformScaleParams params = evaluate_uniform_scale_fields(evaluator, fields);
 
@@ -330,13 +331,13 @@ static void scale_faces_uniformly(Mesh &mesh, const UniformScaleFields &fields)
 
 static Vector<ElementIsland> prepare_edge_islands(const Mesh &mesh, const IndexMask edge_selection)
 {
-  const Span<MEdge> edges = mesh.edges();
+  const Span<int2> edges = mesh.edges();
 
   /* Use the disjoint set data structure to determine which vertices have to be scaled together. */
   DisjointSet<int> disjoint_set(mesh.totvert);
   for (const int edge_index : edge_selection) {
-    const MEdge &edge = edges[edge_index];
-    disjoint_set.join(edge.v1, edge.v2);
+    const int2 &edge = edges[edge_index];
+    disjoint_set.join(edge[0], edge[1]);
   }
 
   VectorSet<int> island_ids;
@@ -346,8 +347,8 @@ static Vector<ElementIsland> prepare_edge_islands(const Mesh &mesh, const IndexM
 
   /* Gather all of the edge indices in each island into separate vectors. */
   for (const int edge_index : edge_selection) {
-    const MEdge &edge = edges[edge_index];
-    const int island_id = disjoint_set.find_root(edge.v1);
+    const int2 &edge = edges[edge_index];
+    const int island_id = disjoint_set.find_root(edge[0]);
     const int island_index = island_ids.index_of_or_add(island_id);
     if (island_index == islands.size()) {
       islands.append_as();
@@ -359,20 +360,20 @@ static Vector<ElementIsland> prepare_edge_islands(const Mesh &mesh, const IndexM
   return islands;
 }
 
-static void get_edge_verts(const Span<MEdge> edges,
+static void get_edge_verts(const Span<int2> edges,
                            const OffsetIndices<int> /*polys*/,
                            const Span<int> /*corner_verts*/,
                            int edge_index,
                            VectorSet<int> &r_vertex_indices)
 {
-  const MEdge &edge = edges[edge_index];
-  r_vertex_indices.add(edge.v1);
-  r_vertex_indices.add(edge.v2);
+  const int2 &edge = edges[edge_index];
+  r_vertex_indices.add(edge[0]);
+  r_vertex_indices.add(edge[1]);
 }
 
 static void scale_edges_uniformly(Mesh &mesh, const UniformScaleFields &fields)
 {
-  bke::MeshFieldContext field_context{mesh, ATTR_DOMAIN_EDGE};
+  const bke::MeshFieldContext field_context{mesh, ATTR_DOMAIN_EDGE};
   FieldEvaluator evaluator{field_context, mesh.totedge};
   UniformScaleParams params = evaluate_uniform_scale_fields(evaluator, fields);
 
@@ -382,7 +383,7 @@ static void scale_edges_uniformly(Mesh &mesh, const UniformScaleFields &fields)
 
 static void scale_edges_on_axis(Mesh &mesh, const AxisScaleFields &fields)
 {
-  bke::MeshFieldContext field_context{mesh, ATTR_DOMAIN_EDGE};
+  const bke::MeshFieldContext field_context{mesh, ATTR_DOMAIN_EDGE};
   FieldEvaluator evaluator{field_context, mesh.totedge};
   AxisScaleParams params = evaluate_axis_scale_fields(evaluator, fields);
 

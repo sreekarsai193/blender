@@ -508,6 +508,7 @@ set(ICON_NAMES
   ipo_ease_out
   ipo_ease_in_out
   normalize_fcurves
+  orientation_parent
   vertexsel
   edgesel
   facesel
@@ -808,11 +809,14 @@ set_property(GLOBAL PROPERTY ICON_GEOM_NAMES
   ops.gpencil.primitive_line
   ops.gpencil.primitive_polyline
   ops.gpencil.radius
+  ops.gpencil.sculpt_average
+  ops.gpencil.sculpt_blur
   ops.gpencil.sculpt_clone
   ops.gpencil.sculpt_grab
   ops.gpencil.sculpt_pinch
   ops.gpencil.sculpt_push
   ops.gpencil.sculpt_randomize
+  ops.gpencil.sculpt_smear
   ops.gpencil.sculpt_smooth
   ops.gpencil.sculpt_strength
   ops.gpencil.sculpt_thickness

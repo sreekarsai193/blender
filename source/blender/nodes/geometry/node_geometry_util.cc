@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 
 #include "node_geometry_util.hh"
-#include "node_util.h"
+#include "node_util.hh"
 
 #include "DNA_mesh_types.h"
 #include "DNA_meshdata_types.h"
@@ -55,7 +55,7 @@ bool geo_node_poll_default(const bNodeType * /*ntype*/,
 
 void geo_node_type_base(bNodeType *ntype, int type, const char *name, short nclass)
 {
-  node_type_base(ntype, type, name, nclass);
+  blender::bke::node_type_base(ntype, type, name, nclass);
   ntype->poll = geo_node_poll_default;
   ntype->insert_link = node_insert_link_default;
   ntype->gather_link_search_ops = blender::nodes::search_link_ops_for_basic_node;

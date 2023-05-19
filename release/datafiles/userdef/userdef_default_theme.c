@@ -567,6 +567,7 @@ const bTheme U_theme_default = {
     .handle_vertex_size = 4,
     .anim_active = RGBA(0x4d272766),
     .anim_preview_range = RGBA(0xa14d0066),
+    .simulated_frames = RGBA(0x721e65ff),
   },
   .space_nla = {
     .back = RGBA(0x30303000),
@@ -869,6 +870,7 @@ const bTheme U_theme_default = {
     .nodeclass_layout = RGBA(0x6c696fff),
     .nodeclass_geometry = RGBA(0x00d6a3ff),
     .nodeclass_attribute = RGBA(0x001566ff),
+    .node_zone_simulation = RGBA(0x66416233),
     .movie = RGBA(0x0f0f0fcc),
     .gp_vertex_size = 3,
     .gp_vertex = RGBA(0x97979700),

@@ -17,10 +17,10 @@ namespace blender::nodes::node_geo_triangulate_cc {
 
 static void node_declare(NodeDeclarationBuilder &b)
 {
-  b.add_input<decl::Geometry>(N_("Mesh")).supported_type(GEO_COMPONENT_TYPE_MESH);
-  b.add_input<decl::Bool>(N_("Selection")).default_value(true).field_on_all().hide_value();
-  b.add_input<decl::Int>(N_("Minimum Vertices")).default_value(4).min(4).max(10000);
-  b.add_output<decl::Geometry>(N_("Mesh")).propagate_all();
+  b.add_input<decl::Geometry>("Mesh").supported_type(GEO_COMPONENT_TYPE_MESH);
+  b.add_input<decl::Bool>("Selection").default_value(true).field_on_all().hide_value();
+  b.add_input<decl::Int>("Minimum Vertices").default_value(4).min(4).max(10000);
+  b.add_output<decl::Geometry>("Mesh").propagate_all();
 }
 
 static void node_layout(uiLayout *layout, bContext * /*C*/, PointerRNA *ptr)
@@ -81,7 +81,7 @@ static void node_geo_exec(GeoNodeExecParams params)
     }
     const Mesh &mesh_in = *geometry_set.get_mesh_for_read();
 
-    bke::MeshFieldContext context{mesh_in, ATTR_DOMAIN_FACE};
+    const bke::MeshFieldContext context{mesh_in, ATTR_DOMAIN_FACE};
     FieldEvaluator evaluator{context, mesh_in.totpoly};
     evaluator.add(selection_field);
     evaluator.evaluate();

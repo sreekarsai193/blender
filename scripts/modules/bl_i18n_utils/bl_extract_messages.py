@@ -204,7 +204,7 @@ def dump_rna_messages(msgs, reports, settings, verbose=False):
     def class_blacklist():
         blacklist_rna_class = {getattr(bpy.types, cls_id) for cls_id in (
             # core classes
-            "Context", "Event", "Function", "UILayout", "UnknownType", "Property", "Struct",
+            "Context", "Event", "Function", "UILayout", "UnknownType", "Struct",
             # registerable classes
             "Panel", "Menu", "Header", "RenderEngine", "Operator", "OperatorMacro", "Macro", "KeyingSetInfo",
         )
@@ -340,7 +340,7 @@ def dump_rna_messages(msgs, reports, settings, verbose=False):
         msgctxt = bl_rna.translation_context or default_context
 
         if bl_rna.name and (bl_rna.name != bl_rna.identifier or
-                            (msgctxt != default_context and not hasattr(bl_rna, 'bl_label'))):
+                            (msgctxt != default_context and not hasattr(bl_rna, "bl_label"))):
             process_msg(msgs, msgctxt, bl_rna.name, msgsrc, reports, check_ctxt_rna, settings)
 
         if bl_rna.description:
@@ -349,14 +349,14 @@ def dump_rna_messages(msgs, reports, settings, verbose=False):
             process_msg(msgs, default_context, cls.__doc__, msgsrc, reports, check_ctxt_rna_tip, settings)
 
         # Panels' "tabs" system.
-        if hasattr(bl_rna, 'bl_category') and bl_rna.bl_category:
+        if hasattr(bl_rna, "bl_category") and bl_rna.bl_category:
             process_msg(msgs, default_context, bl_rna.bl_category, msgsrc, reports, check_ctxt_rna, settings)
 
-        if hasattr(bl_rna, 'bl_label') and bl_rna.bl_label:
+        if hasattr(bl_rna, "bl_label") and bl_rna.bl_label:
             process_msg(msgs, msgctxt, bl_rna.bl_label, msgsrc, reports, check_ctxt_rna, settings)
 
         # Tools Panels definitions.
-        if hasattr(bl_rna, 'tools_all') and bl_rna.tools_all:
+        if hasattr(bl_rna, "tools_all") and bl_rna.tools_all:
             walk_tools_definitions(cls)
 
         walk_properties(cls)
@@ -384,7 +384,6 @@ def dump_rna_messages(msgs, reports, settings, verbose=False):
                 walk_keymap_hierarchy(lvl[3], msgsrc)
 
     # Dump Messages
-    operator_categories = {}
 
     def process_cls_list(cls_list):
         if not cls_list:
@@ -411,15 +410,6 @@ def dump_rna_messages(msgs, reports, settings, verbose=False):
                 bl_rna = bl_rna.base
             return cls_id
 
-        def operator_category(cls):
-            """Extract operators' categories, as displayed in 'search' space menu."""
-            # NOTE: keep in sync with C code in ui_searchbox_region_draw_cb__operator().
-            if issubclass(cls, bpy.types.OperatorProperties) and "_OT_" in cls.__name__:
-                cat_id = cls.__name__.split("_OT_")[0]
-                if cat_id not in operator_categories:
-                    cat_str = cat_id.capitalize() + ":"
-                    operator_categories[cat_id] = cat_str
-
         if verbose:
             print(cls_list)
         cls_list.sort(key=full_class_id)
@@ -431,7 +421,6 @@ def dump_rna_messages(msgs, reports, settings, verbose=False):
             if (cls in blacklist_rna_class) or issubclass(cls, bpy.types.Operator):
                 reports["rna_structs_skipped"].append(cls)
             else:
-                operator_category(cls)
                 walk_class(cls)
             # Recursively process subclasses.
             process_cls_list(cls.__subclasses__())
@@ -445,11 +434,6 @@ def dump_rna_messages(msgs, reports, settings, verbose=False):
 
     # Parse everything (recursively parsing from bpy_struct "class"...).
     process_cls_list(bpy.types.ID.__base__.__subclasses__())
-
-    # Finalize generated 'operator categories' messages.
-    for cat_str in operator_categories.values():
-        process_msg(msgs, bpy.app.translations.contexts.operator_default, cat_str, "Generated operator category",
-                    reports, check_ctxt_rna, settings)
 
     # Parse keymap preset preferences
     for preset_filename in sorted(
@@ -472,7 +456,7 @@ def dump_rna_messages(msgs, reports, settings, verbose=False):
 ##### Python source code #####
 def dump_py_messages_from_files(msgs, reports, files, settings):
     """
-    Dump text inlined in the python files given, e.g. 'My Name' in:
+    Dump text inlined in the python files given, e.g. "My Name" in:
         layout.prop("someprop", text="My Name")
     """
     import ast

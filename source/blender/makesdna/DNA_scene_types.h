@@ -23,6 +23,7 @@
 #include "DNA_customdata_types.h" /* Scene's runtime custom-data masks. */
 #include "DNA_layer_types.h"
 #include "DNA_listBase.h"
+#include "DNA_scene_enums.h"
 #include "DNA_vec_types.h"
 #include "DNA_view3d_types.h"
 
@@ -177,6 +178,8 @@ typedef struct AudioData {
   char _pad2[4];
 } AudioData;
 
+/** \} */
+
 /* -------------------------------------------------------------------- */
 /** \name Render Layers
  * \{ */
@@ -309,6 +312,7 @@ typedef enum eScenePassType {
 #define RE_PASSNAME_FREESTYLE "Freestyle"
 #define RE_PASSNAME_BLOOM "BloomCol"
 #define RE_PASSNAME_VOLUME_LIGHT "VolumeDir"
+#define RE_PASSNAME_TRANSPARENT "Transp"
 
 #define RE_PASSNAME_CRYPTOMATTE_OBJECT "CryptoObject"
 #define RE_PASSNAME_CRYPTOMATTE_ASSET "CryptoAsset"
@@ -1692,6 +1696,13 @@ typedef struct ToolSettings {
 
   struct SequencerToolSettings *sequencer_tool_settings;
 
+  short snap_mode_tools; /* If SCE_SNAP_MODE_NONE, use #ToolSettings::snap_mode. #eSnapMode. */
+  char plane_axis;       /* X, Y or Z. */
+  char plane_depth;      /* #eV3DPlaceDepth. */
+  char plane_orient;     /* #eV3DPlaceOrient. */
+  char use_plane_axis_auto;
+  char _pad7[2];
+
 } ToolSettings;
 
 /** \} */
@@ -1979,6 +1990,7 @@ typedef struct Scene {
 
   struct PreviewImage *preview;
 
+  /** ViewLayer, defined in DNA_layer_types.h */
   ListBase view_layers;
   /** Not an actual data-block, but memory owned by scene. */
   struct Collection *master_collection;
@@ -2189,7 +2201,7 @@ extern const char *RE_engine_id_CYCLES;
 #define BASE_EDITABLE(v3d, base) \
   (BASE_VISIBLE(v3d, base) && !ID_IS_LINKED((base)->object) && \
    (!ID_IS_OVERRIDE_LIBRARY_REAL((base)->object) || \
-    ((base)->object->id.override_library->flag & IDOVERRIDE_LIBRARY_FLAG_SYSTEM_DEFINED) == 0))
+    ((base)->object->id.override_library->flag & LIBOVERRIDE_FLAG_SYSTEM_DEFINED) == 0))
 #define BASE_SELECTED_EDITABLE(v3d, base) \
   (BASE_EDITABLE(v3d, base) && (((base)->flag & BASE_SELECTED) != 0))
 
@@ -2373,15 +2385,6 @@ enum {
 };
 
 /* object_vgroup.cc */
-
-/** #ToolSettings.vgroupsubset */
-typedef enum eVGroupSelect {
-  WT_VGROUP_ALL = 0,
-  WT_VGROUP_ACTIVE = 1,
-  WT_VGROUP_BONE_SELECT = 2,
-  WT_VGROUP_BONE_DEFORM = 3,
-  WT_VGROUP_BONE_DEFORM_OFF = 4,
-} eVGroupSelect;
 
 #define WT_VGROUP_MASK_ALL \
   ((1 << WT_VGROUP_ACTIVE) | (1 << WT_VGROUP_BONE_SELECT) | (1 << WT_VGROUP_BONE_DEFORM) | \

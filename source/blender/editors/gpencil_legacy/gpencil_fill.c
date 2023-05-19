@@ -516,7 +516,8 @@ static void gpencil_stroke_collision(
                                gps_a->boundbox_max,
                                gps_b->boundbox_min,
                                gps_b->boundbox_max,
-                               1.1f)) {
+                               1.1f))
+    {
       continue;
     }
 
@@ -524,7 +525,8 @@ static void gpencil_stroke_collision(
     for (int i = 0; i < gps_b->totpoints - 1; i++) {
       /* Skip segments over same pixel. */
       if (((int)a1xy[0] == (int)stroke->points2d[i + 1][0]) &&
-          ((int)a1xy[1] == (int)stroke->points2d[i + 1][1])) {
+          ((int)a1xy[1] == (int)stroke->points2d[i + 1][1]))
+      {
         continue;
       }
 
@@ -624,7 +626,8 @@ static void gpencil_cut_extensions(tGPDfill *tgpf)
                                    gps_a->boundbox_max,
                                    gps_b->boundbox_min,
                                    gps_b->boundbox_max,
-                                   1.1f)) {
+                                   1.1f))
+        {
           continue;
         }
 
@@ -791,7 +794,8 @@ static void gpencil_create_extensions_radius(tGPDfill *tgpf)
       BLI_gset_add(connected_endpoints, stroke1_end);
     }
     for (bGPDstroke *gps2 = (bGPDstroke *)(((Link *)gps)->next); gps2 != NULL;
-         gps2 = (bGPDstroke *)(((Link *)gps2)->next)) {
+         gps2 = (bGPDstroke *)(((Link *)gps2)->next))
+    {
       /* Don't check distance to temporary extensions. */
       if ((gps2->flag & GP_STROKE_NOFILL) && (gps2->flag & GP_STROKE_TAG)) {
         continue;
@@ -803,7 +807,8 @@ static void gpencil_create_extensions_radius(tGPDfill *tgpf)
                                  gps->boundbox_max,
                                  gps2->boundbox_min,
                                  gps2->boundbox_max,
-                                 connection_dist)) {
+                                 connection_dist))
+      {
         continue;
       }
 
@@ -867,8 +872,8 @@ static bool gpencil_stroke_is_drawable(tGPDfill *tgpf, bGPDstroke *gps)
   const bool is_help_stroke = (gps->flag & GP_STROKE_NOFILL) && (gps->flag & GP_STROKE_HELP);
   const bool stroke_collide = (gps->flag & GP_STROKE_COLLIDE) != 0;
 
-  if (is_line_mode && is_extend_stroke && tgpf->is_render && use_stroke_collide &&
-      !stroke_collide) {
+  if (is_line_mode && is_extend_stroke && tgpf->is_render && use_stroke_collide && !stroke_collide)
+  {
     return false;
   }
 
@@ -1171,7 +1176,8 @@ static void gpencil_draw_datablock(tGPDfill *tgpf, const float ink[4])
       /* Normal strokes. */
       if (ELEM(tgpf->fill_draw_mode, GP_FILL_DMODE_STROKE, GP_FILL_DMODE_BOTH)) {
         if (gpencil_stroke_is_drawable(tgpf, gps) && ((gps->flag & GP_STROKE_TAG) == 0) &&
-            ((gps->flag & GP_STROKE_HELP) == 0)) {
+            ((gps->flag & GP_STROKE_HELP) == 0))
+        {
           ED_gpencil_draw_fill(&tgpw);
         }
         /* In stroke mode, still must draw the extend lines. */
@@ -1316,13 +1322,13 @@ static bool gpencil_render_offscreen(tGPDfill *tgpf)
   GPU_matrix_pop();
 
   /* create a image to see result of template */
-  if (ibuf->rect_float) {
-    GPU_offscreen_read_color(offscreen, GPU_DATA_FLOAT, ibuf->rect_float);
+  if (ibuf->float_buffer.data) {
+    GPU_offscreen_read_color(offscreen, GPU_DATA_FLOAT, ibuf->float_buffer.data);
   }
-  else if (ibuf->rect) {
-    GPU_offscreen_read_color(offscreen, GPU_DATA_UBYTE, ibuf->rect);
+  else if (ibuf->byte_buffer.data) {
+    GPU_offscreen_read_color(offscreen, GPU_DATA_UBYTE, ibuf->byte_buffer.data);
   }
-  if (ibuf->rect_float && ibuf->rect) {
+  if (ibuf->float_buffer.data && ibuf->byte_buffer.data) {
     IMB_rect_from_float(ibuf);
   }
 
@@ -1341,22 +1347,22 @@ static bool gpencil_render_offscreen(tGPDfill *tgpf)
 /* Return pixel data (RGBA) at index. */
 static void get_pixel(const ImBuf *ibuf, const int idx, float r_col[4])
 {
-  BLI_assert(ibuf->rect_float != NULL);
-  memcpy(r_col, &ibuf->rect_float[idx * 4], sizeof(float[4]));
+  BLI_assert(ibuf->float_buffer.data != NULL);
+  memcpy(r_col, &ibuf->float_buffer.data[idx * 4], sizeof(float[4]));
 }
 
 /* Set pixel data (RGBA) at index. */
 static void set_pixel(ImBuf *ibuf, int idx, const float col[4])
 {
-  BLI_assert(ibuf->rect_float != NULL);
-  float *rrectf = &ibuf->rect_float[idx * 4];
+  BLI_assert(ibuf->float_buffer.data != NULL);
+  float *rrectf = &ibuf->float_buffer.data[idx * 4];
   copy_v4_v4(rrectf, col);
 }
 
 /* Helper: Check if one image row is empty. */
 static bool is_row_filled(const ImBuf *ibuf, const int row_index)
 {
-  float *row = &ibuf->rect_float[ibuf->x * 4 * row_index];
+  float *row = &ibuf->float_buffer.data[ibuf->x * 4 * row_index];
   return (row[0] == 0.0f && memcmp(row, row + 1, ((ibuf->x * 4) - 1) * sizeof(float)) != 0);
 }
 
@@ -2017,7 +2023,8 @@ static void gpencil_get_outline_points(tGPDfill *tgpf, const bool dilate)
     }
     /* Current pixel is equal to starting or first pixel. */
     if ((boundary_co[0] == start_co[0] && boundary_co[1] == start_co[1]) ||
-        (boundary_co[0] == first_co[0] && boundary_co[1] == first_co[1])) {
+        (boundary_co[0] == first_co[0] && boundary_co[1] == first_co[1]))
+    {
       BLI_stack_pop(tgpf->stack, &v);
       break;
     }
@@ -2072,7 +2079,8 @@ static void gpencil_get_depth_array(tGPDfill *tgpf)
 
       if ((ED_view3d_depth_read_cached(depths, mval_i, depth_margin, tgpf->depth_arr + i) == 0) &&
           (i && (ED_view3d_depth_read_cached_seg(
-                     depths, mval_i, mval_prev, depth_margin + 1, tgpf->depth_arr + i) == 0))) {
+                     depths, mval_i, mval_prev, depth_margin + 1, tgpf->depth_arr + i) == 0)))
+      {
         interp_depth = true;
       }
       else {
@@ -2283,14 +2291,13 @@ static void gpencil_fill_status_indicators(tGPDfill *tgpf)
   const bool use_stroke_collide = (tgpf->flag & GP_BRUSH_FILL_STROKE_COLLIDE) != 0;
 
   char status_str[UI_MAX_DRAW_STR];
-  BLI_snprintf(status_str,
-               sizeof(status_str),
-               TIP_("Fill: ESC/RMB cancel, LMB Fill, Shift Draw on Back, MMB Adjust Extend, S: "
-                    "Switch Mode, D: "
-                    "Stroke Collision | %s %s (%.3f)"),
-               (is_extend) ? TIP_("Extend") : TIP_("Radius"),
-               (is_extend && use_stroke_collide) ? TIP_("Stroke: ON") : TIP_("Stroke: OFF"),
-               tgpf->fill_extend_fac);
+  SNPRINTF(status_str,
+           TIP_("Fill: ESC/RMB cancel, LMB Fill, Shift Draw on Back, MMB Adjust Extend, S: "
+                "Switch Mode, D: "
+                "Stroke Collision | %s %s (%.3f)"),
+           (is_extend) ? TIP_("Extend") : TIP_("Radius"),
+           (is_extend && use_stroke_collide) ? TIP_("Stroke: ON") : TIP_("Stroke: OFF"),
+           tgpf->fill_extend_fac);
 
   ED_workspace_status_text(tgpf->C, status_str);
 }
@@ -2326,7 +2333,8 @@ static bool gpencil_fill_poll(bContext *C)
     ScrArea *area = CTX_wm_area(C);
     if (area->spacetype == SPACE_VIEW3D) {
       if ((obact == NULL) || (obact->type != OB_GPENCIL_LEGACY) ||
-          (obact->mode != OB_MODE_PAINT_GPENCIL)) {
+          (obact->mode != OB_MODE_PAINT_GPENCIL))
+      {
         return false;
       }
 

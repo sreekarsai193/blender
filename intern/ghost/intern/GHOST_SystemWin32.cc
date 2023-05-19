@@ -267,7 +267,7 @@ GHOST_IContext *GHOST_SystemWin32::createOffscreenContext(GHOST_GLSettings glSet
 #ifdef WITH_VULKAN_BACKEND
   /* Vulkan does not need a window. */
   if (glSettings.context_type == GHOST_kDrawingContextTypeVulkan) {
-    context = new GHOST_ContextVK(false, (HWND)0, 1, 0, debug_context);
+    context = new GHOST_ContextVK(false, (HWND)0, 1, 2, debug_context);
 
     if (!context->initializeDrawingContext()) {
       delete context;
@@ -958,7 +958,8 @@ void GHOST_SystemWin32::processWintabEvent(GHOST_WindowWin32 *window)
          * event queue. */
         MSG msg;
         if (PeekMessage(&msg, window->getHWND(), message, message, PM_REMOVE | PM_NOYIELD) &&
-            msg.message != WM_QUIT) {
+            msg.message != WM_QUIT)
+        {
 
           WINTAB_PRINTF(" ... associated to system button\n");
           window->updateMouseCapture(MouseReleased);
@@ -2311,7 +2312,8 @@ void GHOST_SystemWin32::putClipboard(const char *buffer, bool selection) const
 GHOST_TSuccess GHOST_SystemWin32::hasClipboardImage(void) const
 {
   if (IsClipboardFormatAvailable(CF_DIBV5) ||
-      IsClipboardFormatAvailable(RegisterClipboardFormat("PNG"))) {
+      IsClipboardFormatAvailable(RegisterClipboardFormat("PNG")))
+  {
     return GHOST_kSuccess;
   }
 
@@ -2420,7 +2422,7 @@ static uint *getClipboardImageImBuf(int *r_width, int *r_height, UINT format)
     *r_width = ibuf->x;
     *r_height = ibuf->y;
     rgba = (uint *)malloc(4 * ibuf->x * ibuf->y);
-    memcpy(rgba, ibuf->rect, 4 * ibuf->x * ibuf->y);
+    memcpy(rgba, ibuf->byte_buffer.data, 4 * ibuf->x * ibuf->y);
     IMB_freeImBuf(ibuf);
   }
 
@@ -2511,7 +2513,7 @@ static bool putClipboardImagePNG(uint *rgba, int width, int height)
   UINT cf = RegisterClipboardFormat("PNG");
 
   /* Load buffer into ImBuf, convert to PNG. */
-  ImBuf *ibuf = IMB_allocFromBuffer(rgba, nullptr, width, height, 32);
+  ImBuf *ibuf = IMB_allocFromBuffer(reinterpret_cast<uint8_t *>(rgba), nullptr, width, height, 32);
   ibuf->ftype = IMB_FTYPE_PNG;
   ibuf->foptions.quality = 15;
   if (!IMB_saveiff(ibuf, "<memory>", IB_rect | IB_mem)) {
@@ -2519,7 +2521,7 @@ static bool putClipboardImagePNG(uint *rgba, int width, int height)
     return false;
   }
 
-  HGLOBAL hMem = GlobalAlloc(GHND, ibuf->encodedbuffersize);
+  HGLOBAL hMem = GlobalAlloc(GHND, ibuf->encoded_buffer_size);
   if (!hMem) {
     IMB_freeImBuf(ibuf);
     return false;
@@ -2532,7 +2534,7 @@ static bool putClipboardImagePNG(uint *rgba, int width, int height)
     return false;
   }
 
-  memcpy(pMem, ibuf->encodedbuffer, ibuf->encodedbuffersize);
+  memcpy(pMem, ibuf->encoded_buffer.data, ibuf->encoded_buffer_size);
 
   GlobalUnlock(hMem);
   IMB_freeImBuf(ibuf);

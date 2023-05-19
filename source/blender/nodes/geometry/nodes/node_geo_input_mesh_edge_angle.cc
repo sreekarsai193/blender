@@ -14,13 +14,13 @@ namespace blender::nodes::node_geo_input_mesh_edge_angle_cc {
 
 static void node_declare(NodeDeclarationBuilder &b)
 {
-  b.add_output<decl::Float>(N_("Unsigned Angle"))
+  b.add_output<decl::Float>("Unsigned Angle")
       .field_source()
       .description(
           "The shortest angle in radians between two faces where they meet at an edge. Flat edges "
           "and Non-manifold edges have an angle of zero. Computing this value is faster than the "
           "signed angle");
-  b.add_output<decl::Float>(N_("Signed Angle"))
+  b.add_output<decl::Float>("Signed Angle")
       .field_source()
       .description(
           "The signed angle in radians between two faces where they meet at an edge. Flat edges "
@@ -117,7 +117,7 @@ class SignedAngleFieldInput final : public bke::MeshFieldInput {
                                  const IndexMask /*mask*/) const final
   {
     const Span<float3> positions = mesh.vert_positions();
-    const Span<MEdge> edges = mesh.edges();
+    const Span<int2> edges = mesh.edges();
     const OffsetIndices polys = mesh.polys();
     const Span<int> corner_verts = mesh.corner_verts();
     const Span<int> corner_edges = mesh.corner_edges();
@@ -138,7 +138,7 @@ class SignedAngleFieldInput final : public bke::MeshFieldInput {
                                                                corner_verts.slice(poly_2));
 
       /* Find the centerpoint of the axis edge */
-      const float3 edge_centerpoint = (positions[edges[i].v1] + positions[edges[i].v2]) * 0.5f;
+      const float3 edge_centerpoint = (positions[edges[i][0]] + positions[edges[i][1]]) * 0.5f;
 
       /* Get the centerpoint of poly 2 and subtract the edge centerpoint to get a tangent
        * normal for poly 2. */

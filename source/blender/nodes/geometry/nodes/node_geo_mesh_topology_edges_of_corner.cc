@@ -11,18 +11,17 @@ namespace blender::nodes::node_geo_mesh_topology_edges_of_corner_cc {
 
 static void node_declare(NodeDeclarationBuilder &b)
 {
-  b.add_input<decl::Int>(N_("Corner Index"))
+  b.add_input<decl::Int>("Corner Index")
       .implicit_field(implicit_field_inputs::index)
-      .description(
-          N_("The corner to retrieve data from. Defaults to the corner from the context"));
-  b.add_output<decl::Int>(N_("Next Edge Index"))
+      .description("The corner to retrieve data from. Defaults to the corner from the context");
+  b.add_output<decl::Int>("Next Edge Index")
       .field_source_reference_all()
       .description(
-          N_("The edge after the corner in the face, in the direction of increasing indices"));
-  b.add_output<decl::Int>(N_("Previous Edge Index"))
+          "The edge after the corner in the face, in the direction of increasing indices");
+  b.add_output<decl::Int>("Previous Edge Index")
       .field_source_reference_all()
       .description(
-          N_("The edge before the corner in the face, in the direction of decreasing indices"));
+          "The edge before the corner in the face, in the direction of decreasing indices");
 }
 
 class CornerNextEdgeFieldInput final : public bke::MeshFieldInput {
@@ -110,14 +109,14 @@ static void node_geo_exec(GeoNodeExecParams params)
   const Field<int> corner_index = params.extract_input<Field<int>>("Corner Index");
   if (params.output_is_required("Next Edge Index")) {
     params.set_output("Next Edge Index",
-                      Field<int>(std::make_shared<FieldAtIndexInput>(
+                      Field<int>(std::make_shared<EvaluateAtIndexInput>(
                           corner_index,
                           Field<int>(std::make_shared<CornerNextEdgeFieldInput>()),
                           ATTR_DOMAIN_CORNER)));
   }
   if (params.output_is_required("Previous Edge Index")) {
     params.set_output("Previous Edge Index",
-                      Field<int>(std::make_shared<FieldAtIndexInput>(
+                      Field<int>(std::make_shared<EvaluateAtIndexInput>(
                           corner_index,
                           Field<int>(std::make_shared<CornerPreviousEdgeFieldInput>()),
                           ATTR_DOMAIN_CORNER)));

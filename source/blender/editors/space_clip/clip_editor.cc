@@ -243,7 +243,7 @@ ImBuf *ED_space_clip_get_buffer(const SpaceClip *sc)
 
     ibuf = BKE_movieclip_get_postprocessed_ibuf(sc->clip, &sc->user, sc->postproc_flag);
 
-    if (ibuf && (ibuf->rect || ibuf->rect_float)) {
+    if (ibuf && (ibuf->byte_buffer.data || ibuf->float_buffer.data)) {
       return ibuf;
     }
 
@@ -266,7 +266,7 @@ ImBuf *ED_space_clip_get_stable_buffer(const SpaceClip *sc,
     ibuf = BKE_movieclip_get_stable_ibuf(
         sc->clip, &sc->user, loc, scale, angle, sc->postproc_flag);
 
-    if (ibuf && (ibuf->rect || ibuf->rect_float)) {
+    if (ibuf && (ibuf->byte_buffer.data || ibuf->float_buffer.data)) {
       return ibuf;
     }
 
@@ -323,13 +323,13 @@ bool ED_space_clip_color_sample(const SpaceClip *sc,
     CLAMP(x, 0, ibuf->x - 1);
     CLAMP(y, 0, ibuf->y - 1);
 
-    if (ibuf->rect_float) {
-      fp = (ibuf->rect_float + (ibuf->channels) * (y * ibuf->x + x));
+    if (ibuf->float_buffer.data) {
+      fp = (ibuf->float_buffer.data + (ibuf->channels) * (y * ibuf->x + x));
       copy_v3_v3(r_col, fp);
       ret = true;
     }
-    else if (ibuf->rect) {
-      cp = (uchar *)(ibuf->rect + y * ibuf->x + x);
+    else if (ibuf->byte_buffer.data) {
+      cp = ibuf->byte_buffer.data + 4 * (y * ibuf->x + x);
       rgb_uchar_to_float(r_col, cp);
       IMB_colormanagement_colorspace_to_scene_linear_v3(r_col, ibuf->rect_colorspace);
       ret = true;
@@ -779,7 +779,8 @@ static uchar *prefetch_thread_next_frame(PrefetchQueue *queue,
 
   BLI_spin_lock(&queue->spin);
   if (!*queue->stop && !check_prefetch_break() &&
-      IN_RANGE_INCL(queue->current_frame, queue->start_frame, queue->end_frame)) {
+      IN_RANGE_INCL(queue->current_frame, queue->start_frame, queue->end_frame))
+  {
     int current_frame;
 
     if (queue->forward) {
@@ -1163,7 +1164,8 @@ void ED_clip_view_lock_state_store(const bContext *C, ClipViewLockState *state)
   }
 
   if (!clip_view_calculate_view_selection(
-          C, false, &state->offset_x, &state->offset_y, &state->zoom)) {
+          C, false, &state->offset_x, &state->offset_y, &state->zoom))
+  {
     return;
   }
 

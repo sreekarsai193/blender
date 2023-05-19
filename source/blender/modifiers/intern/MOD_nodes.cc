@@ -54,6 +54,8 @@
 #include "BKE_pointcloud.h"
 #include "BKE_screen.h"
 #include "BKE_simulation.h"
+#include "BKE_simulation_state.hh"
+#include "BKE_simulation_state_serialize.hh"
 #include "BKE_workspace.h"
 
 #include "BLO_read_write.h"
@@ -73,9 +75,9 @@
 #include "DEG_depsgraph_build.h"
 #include "DEG_depsgraph_query.h"
 
-#include "MOD_modifiertypes.h"
+#include "MOD_modifiertypes.hh"
 #include "MOD_nodes.h"
-#include "MOD_ui_common.h"
+#include "MOD_ui_common.hh"
 
 #include "ED_object.h"
 #include "ED_screen.h"
@@ -119,8 +121,8 @@ static void add_used_ids_from_sockets(const ListBase &sockets, Set<ID *> &ids)
         break;
       }
       case SOCK_COLLECTION: {
-        if (Collection *collection =
-                ((bNodeSocketValueCollection *)socket->default_value)->value) {
+        if (Collection *collection = ((bNodeSocketValueCollection *)socket->default_value)->value)
+        {
           ids.add(&collection->id);
         }
         break;
@@ -305,6 +307,9 @@ static bool check_tree_for_time_node(const bNodeTree &tree, Set<const bNodeTree 
   if (!tree.nodes_by_type("GeometryNodeInputSceneTime").is_empty()) {
     return true;
   }
+  if (!tree.nodes_by_type("GeometryNodeSimulationInput").is_empty()) {
+    return true;
+  }
   for (const bNode *node : tree.group_nodes()) {
     if (const bNodeTree *sub_tree = reinterpret_cast<const bNodeTree *>(node->id)) {
       if (check_tree_for_time_node(*sub_tree, checked_groups)) {
@@ -414,7 +419,8 @@ namespace blender {
 static const lf::FunctionNode *find_viewer_lf_node(const bNode &viewer_bnode)
 {
   if (const nodes::GeometryNodesLazyFunctionGraphInfo *lf_graph_info =
-          nodes::ensure_geometry_nodes_lazy_function_graph(viewer_bnode.owner_tree())) {
+          nodes::ensure_geometry_nodes_lazy_function_graph(viewer_bnode.owner_tree()))
+  {
     return lf_graph_info->mapping.viewer_node_map.lookup_default(&viewer_bnode, nullptr);
   }
   return nullptr;
@@ -422,7 +428,8 @@ static const lf::FunctionNode *find_viewer_lf_node(const bNode &viewer_bnode)
 static const lf::FunctionNode *find_group_lf_node(const bNode &group_bnode)
 {
   if (const nodes::GeometryNodesLazyFunctionGraphInfo *lf_graph_info =
-          nodes::ensure_geometry_nodes_lazy_function_graph(group_bnode.owner_tree())) {
+          nodes::ensure_geometry_nodes_lazy_function_graph(group_bnode.owner_tree()))
+  {
     return lf_graph_info->mapping.group_node_map.lookup_default(&group_bnode, nullptr);
   }
   return nullptr;
@@ -537,7 +544,8 @@ static void find_socket_log_contexts(const NodesModifierData &nmd,
         const SpaceNode &snode = *reinterpret_cast<const SpaceNode *>(sl);
         if (const std::optional<ComputeContextHash> hash =
                 geo_log::GeoModifierLog::get_compute_context_hash_for_node_editor(
-                    snode, nmd.modifier.name)) {
+                    snode, nmd.modifier.name))
+        {
           r_socket_log_contexts.add(*hash);
         }
       }
@@ -552,10 +560,6 @@ static void clear_runtime_data(NodesModifierData *nmd)
     nmd->runtime_eval_log = nullptr;
   }
 }
-
-/**
- * Evaluate a node group to compute the output geometry.
- */
 
 /**
  * \note This could be done in #initialize_group_input, though that would require adding the
@@ -833,7 +837,7 @@ static void attribute_search_exec_fn(bContext *C, void *data_v, void *item_v)
   const std::string attribute_prop_name = data.socket_identifier + attribute_name_suffix;
   IDProperty &name_property = *IDP_GetPropertyFromGroup(nmd->settings.properties,
                                                         attribute_prop_name.c_str());
-  IDP_AssignString(&name_property, item.name.c_str(), 0);
+  IDP_AssignString(&name_property, item.name.c_str());
 
   ED_undo_push(C, "Assign Attribute Name");
 }
@@ -984,7 +988,7 @@ static void draw_property_for_socket(const bContext &C,
   BLI_str_escape(socket_id_esc, socket.identifier, sizeof(socket_id_esc));
 
   char rna_path[sizeof(socket_id_esc) + 4];
-  BLI_snprintf(rna_path, ARRAY_SIZE(rna_path), "[\"%s\"]", socket_id_esc);
+  SNPRINTF(rna_path, "[\"%s\"]", socket_id_esc);
 
   uiLayout *row = uiLayoutRow(layout, true);
   uiLayoutSetPropDecorate(row, true);
@@ -1263,6 +1267,7 @@ static void blendRead(BlendDataReader *reader, ModifierData *md)
     IDP_BlendDataRead(reader, &nmd->settings.properties);
   }
   nmd->runtime_eval_log = nullptr;
+  nmd->simulation_cache = nullptr;
 }
 
 static void copyData(const ModifierData *md, ModifierData *target, const int flag)
@@ -1273,6 +1278,7 @@ static void copyData(const ModifierData *md, ModifierData *target, const int fla
   BKE_modifier_copydata_generic(md, target, flag);
 
   tnmd->runtime_eval_log = nullptr;
+  tnmd->simulation_cache = nullptr;
 
   if (nmd->settings.properties != nullptr) {
     tnmd->settings.properties = IDP_CopyProperty_ex(nmd->settings.properties, flag);
@@ -1286,6 +1292,8 @@ static void freeData(ModifierData *md)
     IDP_FreeProperty_ex(nmd->settings.properties, false);
     nmd->settings.properties = nullptr;
   }
+
+  MEM_delete(nmd->simulation_cache);
 
   clear_runtime_data(nmd);
 }

@@ -137,9 +137,9 @@ static void curves_blend_read_lib(BlendLibReader *reader, ID *id)
 {
   Curves *curves = (Curves *)id;
   for (int a = 0; a < curves->totcol; a++) {
-    BLO_read_id_address(reader, curves->id.lib, &curves->mat[a]);
+    BLO_read_id_address(reader, id, &curves->mat[a]);
   }
-  BLO_read_id_address(reader, curves->id.lib, &curves->surface);
+  BLO_read_id_address(reader, id, &curves->surface);
 }
 
 static void curves_blend_read_expand(BlendExpander *expander, ID *id)
@@ -220,16 +220,10 @@ bool BKE_curves_attribute_required(const Curves * /*curves*/, const char *name)
   return STREQ(name, ATTR_POSITION);
 }
 
-Curves *BKE_curves_copy_for_eval(Curves *curves_src, bool reference)
+Curves *BKE_curves_copy_for_eval(Curves *curves_src)
 {
-  int flags = LIB_ID_COPY_LOCALIZE;
-
-  if (reference) {
-    flags |= LIB_ID_COPY_CD_REFERENCE;
-  }
-
-  Curves *result = (Curves *)BKE_id_copy_ex(nullptr, &curves_src->id, nullptr, flags);
-  return result;
+  return reinterpret_cast<Curves *>(
+      BKE_id_copy_ex(nullptr, &curves_src->id, nullptr, LIB_ID_COPY_LOCALIZE));
 }
 
 static void curves_evaluate_modifiers(struct Depsgraph *depsgraph,

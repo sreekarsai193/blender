@@ -365,10 +365,10 @@ static void particle_settings_blend_read_data(BlendDataReader *reader, ID *id)
 void BKE_particle_partdeflect_blend_read_lib(BlendLibReader *reader, ID *id, PartDeflect *pd)
 {
   if (pd && pd->tex) {
-    BLO_read_id_address(reader, id->lib, &pd->tex);
+    BLO_read_id_address(reader, id, &pd->tex);
   }
   if (pd && pd->f_source) {
-    BLO_read_id_address(reader, id->lib, &pd->f_source);
+    BLO_read_id_address(reader, id, &pd->f_source);
   }
 }
 
@@ -377,19 +377,19 @@ static void particle_settings_blend_read_lib(BlendLibReader *reader, ID *id)
   ParticleSettings *part = (ParticleSettings *)id;
 
   /* XXX: deprecated - old animation system. */
-  BLO_read_id_address(reader, part->id.lib, &part->ipo);
+  BLO_read_id_address(reader, id, &part->ipo);
 
-  BLO_read_id_address(reader, part->id.lib, &part->instance_object);
-  BLO_read_id_address(reader, part->id.lib, &part->instance_collection);
-  BLO_read_id_address(reader, part->id.lib, &part->force_group);
-  BLO_read_id_address(reader, part->id.lib, &part->bb_ob);
-  BLO_read_id_address(reader, part->id.lib, &part->collision_group);
+  BLO_read_id_address(reader, id, &part->instance_object);
+  BLO_read_id_address(reader, id, &part->instance_collection);
+  BLO_read_id_address(reader, id, &part->force_group);
+  BLO_read_id_address(reader, id, &part->bb_ob);
+  BLO_read_id_address(reader, id, &part->collision_group);
 
-  BKE_particle_partdeflect_blend_read_lib(reader, &part->id, part->pd);
-  BKE_particle_partdeflect_blend_read_lib(reader, &part->id, part->pd2);
+  BKE_particle_partdeflect_blend_read_lib(reader, id, part->pd);
+  BKE_particle_partdeflect_blend_read_lib(reader, id, part->pd2);
 
   if (part->effector_weights) {
-    BLO_read_id_address(reader, part->id.lib, &part->effector_weights->group);
+    BLO_read_id_address(reader, id, &part->effector_weights->group);
   }
   else {
     part->effector_weights = BKE_effector_add_weights(part->force_group);
@@ -397,7 +397,7 @@ static void particle_settings_blend_read_lib(BlendLibReader *reader, ID *id)
 
   if (part->instance_weights.first && part->instance_collection) {
     LISTBASE_FOREACH (ParticleDupliWeight *, dw, &part->instance_weights) {
-      BLO_read_id_address(reader, part->id.lib, &dw->ob);
+      BLO_read_id_address(reader, id, &dw->ob);
     }
   }
   else {
@@ -411,12 +411,12 @@ static void particle_settings_blend_read_lib(BlendLibReader *reader, ID *id)
           case eBoidRuleType_Goal:
           case eBoidRuleType_Avoid: {
             BoidRuleGoalAvoid *brga = (BoidRuleGoalAvoid *)rule;
-            BLO_read_id_address(reader, part->id.lib, &brga->ob);
+            BLO_read_id_address(reader, id, &brga->ob);
             break;
           }
           case eBoidRuleType_FollowLeader: {
             BoidRuleFollowLeader *brfl = (BoidRuleFollowLeader *)rule;
-            BLO_read_id_address(reader, part->id.lib, &brfl->ob);
+            BLO_read_id_address(reader, id, &brfl->ob);
             break;
           }
         }
@@ -427,8 +427,8 @@ static void particle_settings_blend_read_lib(BlendLibReader *reader, ID *id)
   for (int a = 0; a < MAX_MTEX; a++) {
     MTex *mtex = part->mtex[a];
     if (mtex) {
-      BLO_read_id_address(reader, part->id.lib, &mtex->tex);
-      BLO_read_id_address(reader, part->id.lib, &mtex->object);
+      BLO_read_id_address(reader, id, &mtex->tex);
+      BLO_read_id_address(reader, id, &mtex->object);
     }
   }
 }
@@ -662,7 +662,8 @@ short psys_get_current_num(Object *ob)
   }
 
   for (psys = static_cast<ParticleSystem *>(ob->particlesystem.first), i = 0; psys;
-       psys = psys->next, i++) {
+       psys = psys->next, i++)
+  {
     if (psys->flag & PSYS_CURRENT) {
       return i;
     }
@@ -680,7 +681,8 @@ void psys_set_current_num(Object *ob, int index)
   }
 
   for (psys = static_cast<ParticleSystem *>(ob->particlesystem.first), i = 0; psys;
-       psys = psys->next, i++) {
+       psys = psys->next, i++)
+  {
     if (i == index) {
       psys->flag |= PSYS_CURRENT;
     }
@@ -2137,8 +2139,8 @@ void psys_particle_on_dm(Mesh *mesh_final,
   const float(*orcodata)[3];
   int mapindex;
 
-  if (!psys_map_index_on_dm(
-          mesh_final, from, index, index_dmcache, fw, foffset, &mapindex, mapfw)) {
+  if (!psys_map_index_on_dm(mesh_final, from, index, index_dmcache, fw, foffset, &mapindex, mapfw))
+  {
     if (vec) {
       vec[0] = vec[1] = vec[2] = 0.0;
     }
@@ -2246,7 +2248,8 @@ float psys_particle_value_from_verts(Mesh *mesh, short from, ParticleData *pa, f
   int mapindex;
 
   if (!psys_map_index_on_dm(
-          mesh, from, pa->num, pa->num_dmcache, pa->fuv, pa->foffset, &mapindex, mapfw)) {
+          mesh, from, pa->num, pa->num_dmcache, pa->fuv, pa->foffset, &mapindex, mapfw))
+  {
     return 0.0f;
   }
 
@@ -2487,7 +2490,8 @@ bool do_guides(Depsgraph *depsgraph,
                               guidedir,
                               nullptr,
                               &radius,
-                              &weight) == 0) {
+                              &weight) == 0)
+        {
           return 0;
         }
       }
@@ -2782,7 +2786,8 @@ static bool psys_thread_context_init_path(ParticleThreadContext *ctx,
     ParticleEditSettings *pset = &scene->toolsettings->particle;
 
     if ((use_render_params == 0) &&
-        (psys_orig_edit_get(psys) == nullptr || pset->flag & PE_DRAW_PART) == 0) {
+        (psys_orig_edit_get(psys) == nullptr || pset->flag & PE_DRAW_PART) == 0)
+    {
       totchild = 0;
     }
 
@@ -3905,7 +3910,8 @@ static void psys_face_mat(Object *ob, Mesh *mesh, ParticleData *pa, float mat[4]
       CustomData_get_for_write(&mesh->fdata, i, CD_ORIGSPACE, mesh->totface));
 
   if (orco &&
-      (orcodata = static_cast<const float(*)[3]>(CustomData_get_layer(&mesh->vdata, CD_ORCO)))) {
+      (orcodata = static_cast<const float(*)[3]>(CustomData_get_layer(&mesh->vdata, CD_ORCO))))
+  {
     copy_v3_v3(v[0], orcodata[mface->v1]);
     copy_v3_v3(v[1], orcodata[mface->v2]);
     copy_v3_v3(v[2], orcodata[mface->v3]);
@@ -3951,10 +3957,6 @@ void psys_mat_hair_to_orco(
   psys_particle_on_dm(
       mesh, from, pa->num, pa->num_dmcache, pa->fuv, pa->foffset, vec, 0, 0, 0, orco);
 
-  /* see psys_face_mat for why this function is called */
-  if (CustomData_get_layer(&mesh->vdata, CD_ORIGINDEX)) {
-    BKE_mesh_orco_verts_transform(static_cast<Mesh *>(ob->data), &orco, 1, 1);
-  }
   copy_v3_v3(hairmat[3], orco);
 }
 
@@ -4014,7 +4016,7 @@ static ModifierData *object_add_or_copy_particle_system(
     psys->part = BKE_particlesettings_add(bmain, DATA_("ParticleSettings"));
   }
   md = BKE_modifier_new(eModifierType_ParticleSystem);
-  BLI_strncpy(md->name, psys->name, sizeof(md->name));
+  STRNCPY(md->name, psys->name);
   BKE_modifier_unique_name(&ob->modifiers, md);
 
   psmd = (ParticleSystemModifierData *)md;
@@ -4078,21 +4080,24 @@ void object_remove_particle_system(Main *bmain,
                PART_FLUID_SPRAY,
                PART_FLUID_SPRAYFOAM,
                PART_FLUID_SPRAYBUBBLE,
-               PART_FLUID_SPRAYFOAMBUBBLE)) {
+               PART_FLUID_SPRAYFOAMBUBBLE))
+      {
         fmd->domain->particle_type &= ~FLUID_DOMAIN_PARTICLE_SPRAY;
       }
       if (ELEM(psys->part->type,
                PART_FLUID_FOAM,
                PART_FLUID_SPRAYFOAM,
                PART_FLUID_FOAMBUBBLE,
-               PART_FLUID_SPRAYFOAMBUBBLE)) {
+               PART_FLUID_SPRAYFOAMBUBBLE))
+      {
         fmd->domain->particle_type &= ~FLUID_DOMAIN_PARTICLE_FOAM;
       }
       if (ELEM(psys->part->type,
                PART_FLUID_BUBBLE,
                PART_FLUID_FOAMBUBBLE,
                PART_FLUID_SPRAYBUBBLE,
-               PART_FLUID_SPRAYFOAMBUBBLE)) {
+               PART_FLUID_SPRAYFOAMBUBBLE))
+      {
         fmd->domain->particle_type &= ~FLUID_DOMAIN_PARTICLE_BUBBLE;
       }
       if (psys->part->type == PART_FLUID_TRACER) {
@@ -4104,7 +4109,8 @@ void object_remove_particle_system(Main *bmain,
                PART_FLUID_SPRAYFOAM,
                PART_FLUID_SPRAYBUBBLE,
                PART_FLUID_FOAMBUBBLE,
-               PART_FLUID_SPRAYFOAMBUBBLE)) {
+               PART_FLUID_SPRAYFOAMBUBBLE))
+      {
         fmd->domain->sndparticle_combined_export = SNDPARTICLE_COMBINED_EXPORT_OFF;
       }
     }
@@ -4326,7 +4332,8 @@ static void get_cpa_texture(Mesh *mesh,
 
       if (ELEM(texco, TEXCO_UV, TEXCO_ORCO) &&
           (ELEM(part->from, PART_FROM_FACE, PART_FROM_VOLUME) == 0 ||
-           part->distr == PART_DISTR_GRID)) {
+           part->distr == PART_DISTR_GRID))
+      {
         texco = TEXCO_GLOB;
       }
 
@@ -4347,7 +4354,8 @@ static void get_cpa_texture(Mesh *mesh,
                                     fw,
                                     mtex->uvname,
                                     texvec,
-                                    (part->from == PART_FROM_VERT))) {
+                                    (part->from == PART_FROM_VERT)))
+          {
             break;
           }
           /* no break, failed to get uv's, so let's try orco's */
@@ -4414,7 +4422,8 @@ void psys_get_texture(
       short texco = mtex->texco;
 
       if (texco == TEXCO_UV && (ELEM(part->from, PART_FROM_FACE, PART_FROM_VOLUME) == 0 ||
-                                part->distr == PART_DISTR_GRID)) {
+                                part->distr == PART_DISTR_GRID))
+      {
         texco = TEXCO_GLOB;
       }
 
@@ -4435,7 +4444,8 @@ void psys_get_texture(
                               pa->fuv,
                               mtex->uvname,
                               texvec,
-                              (part->from == PART_FROM_VERT))) {
+                              (part->from == PART_FROM_VERT)))
+          {
             break;
           }
           /* no break, failed to get uv's, so let's try orco's */
@@ -4946,7 +4956,8 @@ bool psys_get_particle_state(ParticleSimulationData *sim,
 
       if (!always) {
         if ((state->time < 0.0f && !(part->flag & PART_UNBORN)) ||
-            (state->time > 1.0f && !(part->flag & PART_DIED))) {
+            (state->time > 1.0f && !(part->flag & PART_DIED)))
+        {
           return false;
         }
       }
@@ -4968,7 +4979,8 @@ bool psys_get_particle_state(ParticleSimulationData *sim,
   if (pa) {
     if (!always) {
       if ((cfra < pa->time && (part->flag & PART_UNBORN) == 0) ||
-          (cfra >= pa->dietime && (part->flag & PART_DIED) == 0)) {
+          (cfra >= pa->dietime && (part->flag & PART_DIED) == 0))
+      {
         return false;
       }
     }
@@ -5343,7 +5355,8 @@ void BKE_particle_system_blend_write(BlendWriter *writer, ListBase *particles)
       }
 
       if (psys->part->fluid && (psys->part->phystype == PART_PHYS_FLUID) &&
-          (psys->part->fluid->flag & SPH_VISCOELASTIC_SPRINGS)) {
+          (psys->part->fluid->flag & SPH_VISCOELASTIC_SPRINGS))
+      {
         BLO_write_struct_array(
             writer, ParticleSpring, psys->tot_fluidsprings, psys->fluid_springs);
       }
@@ -5461,21 +5474,21 @@ void BKE_particle_system_blend_read_lib(BlendLibReader *reader,
 {
   LISTBASE_FOREACH_MUTABLE (ParticleSystem *, psys, particles) {
 
-    BLO_read_id_address(reader, id->lib, &psys->part);
+    BLO_read_id_address(reader, id, &psys->part);
     if (psys->part) {
       LISTBASE_FOREACH (ParticleTarget *, pt, &psys->targets) {
-        BLO_read_id_address(reader, id->lib, &pt->ob);
+        BLO_read_id_address(reader, id, &pt->ob);
       }
 
-      BLO_read_id_address(reader, id->lib, &psys->parent);
-      BLO_read_id_address(reader, id->lib, &psys->target_ob);
+      BLO_read_id_address(reader, id, &psys->parent);
+      BLO_read_id_address(reader, id, &psys->target_ob);
 
       if (psys->clmd) {
         /* XXX(@ideasman42): from reading existing code this seems correct but intended usage
          * of point-cache with cloth should be added in #ParticleSystem. */
         psys->clmd->point_cache = psys->pointcache;
         psys->clmd->ptcaches.first = psys->clmd->ptcaches.last = nullptr;
-        BLO_read_id_address(reader, id->lib, &psys->clmd->coll_parms->group);
+        BLO_read_id_address(reader, id, &psys->clmd->coll_parms->group);
         psys->clmd->modifier.error = nullptr;
       }
     }

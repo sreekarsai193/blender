@@ -180,7 +180,8 @@ void ntreeCompositCryptomatteUpdateLayerNames(const Scene *scene, bNode *node)
 
   if (session) {
     for (blender::StringRef layer_name :
-         blender::bke::cryptomatte::BKE_cryptomatte_layer_names_get(*session)) {
+         blender::bke::cryptomatte::BKE_cryptomatte_layer_names_get(*session))
+    {
       CryptomatteLayer *layer = MEM_cnew<CryptomatteLayer>(__func__);
       layer_name.copy(layer->name);
       BLI_addtail(&n->runtime.layers, layer);
@@ -191,7 +192,7 @@ void ntreeCompositCryptomatteUpdateLayerNames(const Scene *scene, bNode *node)
 void ntreeCompositCryptomatteLayerPrefix(const Scene *scene,
                                          const bNode *node,
                                          char *r_prefix,
-                                         size_t prefix_len)
+                                         size_t prefix_maxncpy)
 {
   BLI_assert(node->type == CMP_NODE_CRYPTOMATTE);
   NodeCryptomatte *node_cryptomatte = (NodeCryptomatte *)node->storage;
@@ -201,20 +202,21 @@ void ntreeCompositCryptomatteLayerPrefix(const Scene *scene,
 
   if (session) {
     for (blender::StringRef layer_name :
-         blender::bke::cryptomatte::BKE_cryptomatte_layer_names_get(*session)) {
+         blender::bke::cryptomatte::BKE_cryptomatte_layer_names_get(*session))
+    {
       if (first_layer_name.empty()) {
         first_layer_name = layer_name;
       }
 
       if (layer_name == node_cryptomatte->layer_name) {
-        BLI_strncpy(r_prefix, node_cryptomatte->layer_name, prefix_len);
+        BLI_strncpy(r_prefix, node_cryptomatte->layer_name, prefix_maxncpy);
         return;
       }
     }
   }
 
   const char *cstr = first_layer_name.c_str();
-  BLI_strncpy(r_prefix, cstr, prefix_len);
+  BLI_strncpy(r_prefix, cstr, prefix_maxncpy);
 }
 
 CryptomatteSession *ntreeCompositCryptomatteSession(const Scene *scene, bNode *node)
@@ -286,7 +288,8 @@ static bool node_poll_cryptomatte(const bNodeType * /*ntype*/,
 
     /* See node_composit_poll_rlayers. */
     for (scene = static_cast<Scene *>(G.main->scenes.first); scene;
-         scene = static_cast<Scene *>(scene->id.next)) {
+         scene = static_cast<Scene *>(scene->id.next))
+    {
       if (scene->nodetree == ntree) {
         break;
       }
@@ -331,9 +334,9 @@ void register_node_type_cmp_cryptomatte()
   static bNodeType ntype;
 
   cmp_node_type_base(&ntype, CMP_NODE_CRYPTOMATTE, "Cryptomatte", NODE_CLASS_MATTE);
-  node_type_socket_templates(
+  blender::bke::node_type_socket_templates(
       &ntype, file_ns::cmp_node_cryptomatte_in, file_ns::cmp_node_cryptomatte_out);
-  node_type_size(&ntype, 240, 100, 700);
+  blender::bke::node_type_size(&ntype, 240, 100, 700);
   ntype.initfunc = file_ns::node_init_cryptomatte;
   ntype.initfunc_api = file_ns::node_init_api_cryptomatte;
   ntype.poll = file_ns::node_poll_cryptomatte;
@@ -358,7 +361,7 @@ bNodeSocket *ntreeCompositCryptomatteAddSocket(bNodeTree *ntree, bNode *node)
   NodeCryptomatte *n = static_cast<NodeCryptomatte *>(node->storage);
   char sockname[32];
   n->inputs_num++;
-  BLI_snprintf(sockname, sizeof(sockname), "Crypto %.2d", n->inputs_num - 1);
+  SNPRINTF(sockname, "Crypto %.2d", n->inputs_num - 1);
   bNodeSocket *sock = nodeAddStaticSocket(
       ntree, node, SOCK_IN, SOCK_RGBA, PROP_NONE, nullptr, sockname);
   return sock;
@@ -423,7 +426,7 @@ void register_node_type_cmp_cryptomatte_legacy()
 
   cmp_node_type_base(
       &ntype, CMP_NODE_CRYPTOMATTE_LEGACY, "Cryptomatte (Legacy)", NODE_CLASS_MATTE);
-  node_type_socket_templates(&ntype, nullptr, file_ns::cmp_node_cryptomatte_out);
+  blender::bke::node_type_socket_templates(&ntype, nullptr, file_ns::cmp_node_cryptomatte_out);
   ntype.initfunc = legacy_file_ns::node_init_cryptomatte_legacy;
   node_type_storage(
       &ntype, "NodeCryptomatte", file_ns::node_free_cryptomatte, file_ns::node_copy_cryptomatte);

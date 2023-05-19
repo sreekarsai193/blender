@@ -67,11 +67,9 @@ static SpaceLink *action_create(const ScrArea *area, const Scene *scene)
 
   saction->ads.filterflag |= ADS_FILTER_SUMMARY;
 
-  /* enable all cache display */
-  saction->cache_display |= TIME_CACHE_DISPLAY;
-  saction->cache_display |= (TIME_CACHE_SOFTBODY | TIME_CACHE_PARTICLES);
-  saction->cache_display |= (TIME_CACHE_CLOTH | TIME_CACHE_SMOKE | TIME_CACHE_DYNAMICPAINT);
-  saction->cache_display |= TIME_CACHE_RIGIDBODY;
+  saction->cache_display = TIME_CACHE_DISPLAY | TIME_CACHE_SOFTBODY | TIME_CACHE_PARTICLES |
+                           TIME_CACHE_CLOTH | TIME_CACHE_SMOKE | TIME_CACHE_DYNAMICPAINT |
+                           TIME_CACHE_RIGIDBODY | TIME_CACHE_SIMULATION_NODES;
 
   /* header */
   region = MEM_cnew<ARegion>("header for action");
@@ -549,7 +547,8 @@ static void action_listener(const wmSpaceTypeListenerParams *params)
        * (assume for now that if just adding these works, that will be fine).
        */
       else if (((wmn->data == ND_KEYFRAME) && ELEM(wmn->action, NA_ADDED, NA_REMOVED)) ||
-               ((wmn->data == ND_ANIMCHAN) && (wmn->action != NA_SELECTED))) {
+               ((wmn->data == ND_ANIMCHAN) && (wmn->action != NA_SELECTED)))
+      {
         ED_area_tag_refresh(area);
       }
       /* for simple edits to the curve data though (or just plain selections),
@@ -854,26 +853,26 @@ static void action_space_subtype_item_extend(bContext * /*C*/,
   RNA_enum_items_add(item, totitem, rna_enum_space_action_mode_items);
 }
 
-static void action_blend_read_data(BlendDataReader * /*reader*/, SpaceLink *sl)
+static void action_space_blend_read_data(BlendDataReader * /*reader*/, SpaceLink *sl)
 {
   SpaceAction *saction = (SpaceAction *)sl;
   memset(&saction->runtime, 0x0, sizeof(saction->runtime));
 }
 
-static void action_blend_read_lib(BlendLibReader *reader, ID *parent_id, SpaceLink *sl)
+static void action_space_blend_read_lib(BlendLibReader *reader, ID *parent_id, SpaceLink *sl)
 {
   SpaceAction *saction = (SpaceAction *)sl;
   bDopeSheet *ads = &saction->ads;
 
   if (ads) {
-    BLO_read_id_address(reader, parent_id->lib, &ads->source);
-    BLO_read_id_address(reader, parent_id->lib, &ads->filter_grp);
+    BLO_read_id_address(reader, parent_id, &ads->source);
+    BLO_read_id_address(reader, parent_id, &ads->filter_grp);
   }
 
-  BLO_read_id_address(reader, parent_id->lib, &saction->action);
+  BLO_read_id_address(reader, parent_id, &saction->action);
 }
 
-static void action_blend_write(BlendWriter *writer, SpaceLink *sl)
+static void action_space_blend_write(BlendWriter *writer, SpaceLink *sl)
 {
   BLO_write_struct(writer, SpaceAction, sl);
 }
@@ -905,9 +904,9 @@ void ED_spacetype_action(void)
   st->space_subtype_item_extend = action_space_subtype_item_extend;
   st->space_subtype_get = action_space_subtype_get;
   st->space_subtype_set = action_space_subtype_set;
-  st->blend_read_data = action_blend_read_data;
-  st->blend_read_lib = action_blend_read_lib;
-  st->blend_write = action_blend_write;
+  st->blend_read_data = action_space_blend_read_data;
+  st->blend_read_lib = action_space_blend_read_lib;
+  st->blend_write = action_space_blend_write;
 
   /* regions: main window */
   art = MEM_cnew<ARegionType>("spacetype action region");

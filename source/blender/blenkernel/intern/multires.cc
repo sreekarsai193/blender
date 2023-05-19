@@ -241,7 +241,7 @@ Mesh *BKE_multires_create_mesh(struct Depsgraph *depsgraph,
   Mesh *result = mti->modifyMesh(&mmd->modifier, &modifier_ctx, deformed_mesh);
 
   if (result == deformed_mesh) {
-    result = BKE_mesh_copy_for_eval(deformed_mesh, true);
+    result = BKE_mesh_copy_for_eval(deformed_mesh);
   }
   return result;
 }
@@ -412,7 +412,8 @@ void multires_flush_sculpt_updates(Object *object)
 
   SculptSession *sculpt_session = object->sculpt;
   if (BKE_pbvh_type(sculpt_session->pbvh) != PBVH_GRIDS || !sculpt_session->multires.active ||
-      sculpt_session->multires.modifier == nullptr) {
+      sculpt_session->multires.modifier == nullptr)
+  {
     return;
   }
 
@@ -1520,8 +1521,10 @@ void multires_ensure_external_read(struct Mesh *mesh, int top_level)
     return;
   }
 
-  MDisps *mdisps = static_cast<MDisps *>(
-      CustomData_get_layer_for_write(&mesh->ldata, CD_MDISPS, mesh->totloop));
+  /* Modify the data array from the original mesh, not the evaluated mesh.
+   * When multiple objects share the same mesh, this can lead to memory leaks. */
+  MDisps *mdisps = const_cast<MDisps *>(
+      static_cast<const MDisps *>(CustomData_get_layer(&mesh->ldata, CD_MDISPS)));
   if (mdisps == nullptr) {
     mdisps = static_cast<MDisps *>(
         CustomData_add_layer(&mesh->ldata, CD_MDISPS, CD_SET_DEFAULT, mesh->totloop));

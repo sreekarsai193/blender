@@ -184,7 +184,8 @@ static bool mouse_select_knot(bContext *C, const float co[2], bool extend)
 
       if (UI_view2d_view_to_region_clip(v2d, co[0], co[1], &x1, &y1) &&
           UI_view2d_view_to_region_clip(v2d, userdata.min_co[0], userdata.min_co[1], &x2, &y2) &&
-          (abs(x2 - x1) <= delta && abs(y2 - y1) <= delta)) {
+          (abs(x2 - x1) <= delta && abs(y2 - y1) <= delta))
+      {
         if (!extend) {
           SelectUserData selectdata = {SEL_DESELECT};
 
@@ -531,12 +532,13 @@ void CLIP_OT_graph_delete_curve(wmOperatorType *ot)
   ot->idname = "CLIP_OT_graph_delete_curve";
 
   /* api callbacks */
-  ot->invoke = WM_operator_confirm;
+  ot->invoke = WM_operator_confirm_or_exec;
   ot->exec = delete_curve_exec;
   ot->poll = clip_graph_knots_poll;
 
   /* flags */
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
+  WM_operator_properties_confirm_or_exec(ot);
 }
 
 /******************** delete knot operator ********************/

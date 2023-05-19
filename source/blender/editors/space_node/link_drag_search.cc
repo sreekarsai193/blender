@@ -83,7 +83,7 @@ static void add_reroute_node_fn(nodes::LinkSearchOpParams &params)
 static void add_group_input_node_fn(nodes::LinkSearchOpParams &params)
 {
   /* Add a group input based on the connected socket, and add a new group input node. */
-  bNodeSocket *interface_socket = ntreeAddSocketInterfaceFromSocket(
+  bNodeSocket *interface_socket = bke::ntreeAddSocketInterfaceFromSocket(
       &params.node_tree, &params.node, &params.socket);
   const int group_input_index = BLI_findindex(&params.node_tree.inputs, interface_socket);
 
@@ -285,7 +285,10 @@ static void gather_socket_link_operations(const bContext &C,
 {
   NODE_TYPES_BEGIN (node_type) {
     const char *disabled_hint;
-    if (!(node_type->poll && node_type->poll(node_type, &node_tree, &disabled_hint))) {
+    if (node_type->poll && !node_type->poll(node_type, &node_tree, &disabled_hint)) {
+      continue;
+    }
+    if (node_type->add_ui_poll && !node_type->add_ui_poll(&C)) {
       continue;
     }
     if (StringRefNull(node_type->ui_name).endswith("(Legacy)")) {

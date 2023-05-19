@@ -18,26 +18,22 @@ NODE_STORAGE_FUNCS(NodeGeometryUVUnwrap)
 
 static void node_declare(NodeDeclarationBuilder &b)
 {
-  b.add_input<decl::Bool>(N_("Selection"))
+  b.add_input<decl::Bool>("Selection")
       .default_value(true)
       .hide_value()
       .supports_field()
-      .description(N_("Faces to participate in the unwrap operation"));
-  b.add_input<decl::Bool>(N_("Seam"))
-      .hide_value()
-      .supports_field()
-      .description(N_("Edges to mark where the mesh is \"cut\" for the purposes of unwrapping"));
-  b.add_input<decl::Float>(N_("Margin"))
-      .default_value(0.001f)
-      .min(0.0f)
-      .max(1.0f)
-      .description(N_("Space between islands"));
-  b.add_input<decl::Bool>(N_("Fill Holes"))
+      .description("Faces to participate in the unwrap operation");
+  b.add_input<decl::Bool>("Seam").hide_value().supports_field().description(
+      "Edges to mark where the mesh is \"cut\" for the purposes of unwrapping");
+  b.add_input<decl::Float>("Margin").default_value(0.001f).min(0.0f).max(1.0f).description(
+      "Space between islands");
+  b.add_input<decl::Bool>("Fill Holes")
       .default_value(true)
-      .description(N_("Virtually fill holes in mesh before unwrapping, to better avoid overlaps "
-                      "and preserve symmetry"));
-  b.add_output<decl::Vector>(N_("UV")).field_source_reference_all().description(
-      N_("UV coordinates between 0 and 1 for each face corner in the selected faces"));
+      .description(
+          "Virtually fill holes in mesh before unwrapping, to better avoid overlaps "
+          "and preserve symmetry");
+  b.add_output<decl::Vector>("UV").field_source_reference_all().description(
+      "UV coordinates between 0 and 1 for each face corner in the selected faces");
 }
 
 static void node_layout(uiLayout *layout, bContext * /*C*/, PointerRNA *ptr)
@@ -63,11 +59,11 @@ static VArray<float3> construct_uv_gvarray(const Mesh &mesh,
                                            const eAttrDomain domain)
 {
   const Span<float3> positions = mesh.vert_positions();
-  const Span<MEdge> edges = mesh.edges();
+  const Span<int2> edges = mesh.edges();
   const OffsetIndices polys = mesh.polys();
   const Span<int> corner_verts = mesh.corner_verts();
 
-  bke::MeshFieldContext face_context{mesh, ATTR_DOMAIN_FACE};
+  const bke::MeshFieldContext face_context{mesh, ATTR_DOMAIN_FACE};
   FieldEvaluator face_evaluator{face_context, polys.size()};
   face_evaluator.add(selection_field);
   face_evaluator.evaluate();
@@ -76,7 +72,7 @@ static VArray<float3> construct_uv_gvarray(const Mesh &mesh,
     return {};
   }
 
-  bke::MeshFieldContext edge_context{mesh, ATTR_DOMAIN_EDGE};
+  const bke::MeshFieldContext edge_context{mesh, ATTR_DOMAIN_EDGE};
   FieldEvaluator edge_evaluator{edge_context, edges.size()};
   edge_evaluator.add(seam_field);
   edge_evaluator.evaluate();
@@ -111,8 +107,7 @@ static VArray<float3> construct_uv_gvarray(const Mesh &mesh,
                                        mp_select.data());
   }
   for (const int i : seam) {
-    const MEdge &edge = edges[i];
-    geometry::ParamKey vkeys[2]{edge.v1, edge.v2};
+    geometry::ParamKey vkeys[2]{uint(edges[i][0]), uint(edges[i][1])};
     geometry::uv_parametrizer_edge_set_seam(handle, vkeys);
   }
   /* TODO: once field input nodes are able to emit warnings (#94039), emit a

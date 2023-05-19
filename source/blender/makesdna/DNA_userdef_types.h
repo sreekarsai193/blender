@@ -344,6 +344,9 @@ typedef struct ThemeSpace {
   unsigned char nodeclass_pattern[4], nodeclass_layout[4];
   unsigned char nodeclass_geometry[4], nodeclass_attribute[4];
 
+  unsigned char node_zone_simulation[4];
+  unsigned char simulated_frames[4];
+
   /** For sequence editor. */
   unsigned char movie[4], movieclip[4], mask[4], image[4], scene[4], audio[4];
   unsigned char effect[4], transition[4], meta[4], text_strip[4], color_strip[4];
@@ -562,6 +565,7 @@ typedef struct bUserMenuItem_Op {
   bUserMenuItem item;
   char op_idname[64];
   struct IDProperty *prop;
+  char op_prop_enum[64];
   char opcontext; /* #wmOperatorCallContext */
   char _pad0[7];
 } bUserMenuItem_Op;
@@ -593,7 +597,8 @@ typedef struct bUserAssetLibrary {
   char path[1024]; /* FILE_MAX */
 
   short import_method; /* eAssetImportMethod */
-  char _pad0[6];
+  short flag;          /* eAssetLibrary_Flag */
+  char _pad0[4];
 } bUserAssetLibrary;
 
 typedef struct SolidLight {

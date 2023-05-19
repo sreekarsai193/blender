@@ -637,12 +637,11 @@ static void apply_watertight_check(PBVH *pbvh, Image *image, ImageUser *image_us
         int pixel_offset = pixel_row.start_image_coordinate.y * image_buffer->x +
                            pixel_row.start_image_coordinate.x;
         for (int x = 0; x < pixel_row.num_pixels; x++) {
-          if (image_buffer->rect_float) {
-            copy_v4_fl(&image_buffer->rect_float[pixel_offset * 4], 1.0);
+          if (image_buffer->float_buffer.data) {
+            copy_v4_fl(&image_buffer->float_buffer.data[pixel_offset * 4], 1.0);
           }
-          if (image_buffer->rect) {
-            uint8_t *dest = static_cast<uint8_t *>(
-                static_cast<void *>(&image_buffer->rect[pixel_offset]));
+          if (image_buffer->byte_buffer.data) {
+            uint8_t *dest = &image_buffer->byte_buffer.data[pixel_offset * 4];
             copy_v4_uchar(dest, 255);
           }
           pixel_offset += 1;
@@ -668,7 +667,7 @@ static bool update_pixels(PBVH *pbvh, Mesh *mesh, Image *image, ImageUser *image
   }
 
   const AttributeAccessor attributes = mesh->attributes();
-  const VArraySpan<float2> uv_map = attributes.lookup<float2>(active_uv_name, ATTR_DOMAIN_CORNER);
+  const VArraySpan uv_map = *attributes.lookup<float2>(active_uv_name, ATTR_DOMAIN_CORNER);
 
   uv_islands::MeshData mesh_data(
       {pbvh->looptri, pbvh->totprim},

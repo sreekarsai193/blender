@@ -113,6 +113,15 @@ void WM_exit(struct bContext *C) ATTR_NORETURN;
 
 void WM_main(struct bContext *C) ATTR_NORETURN;
 
+/**
+ * Show the splash screen as needed on startup.
+ *
+ * The splash may not show depending on a file being loaded and user preferences.
+ */
+void WM_init_splash_on_startup(struct bContext *C);
+/**
+ * Show the splash screen.
+ */
 void WM_init_splash(struct bContext *C);
 
 void WM_init_opengl(void);
@@ -138,6 +147,8 @@ typedef enum eWM_CapabilitiesFlag {
    * Reading from the back-buffer is supported.
    */
   WM_CAPABILITY_GPU_FRONT_BUFFER_READ = (1 << 3),
+  /** Ability to copy/paste system clipboard images. */
+  WM_CAPABILITY_CLIPBOARD_IMAGES = (1 << 4),
 } eWM_CapabilitiesFlag;
 
 eWM_CapabilitiesFlag WM_capabilities_flag(void);
@@ -163,29 +174,53 @@ wmWindow *WM_window_find_by_area(wmWindowManager *wm, const struct ScrArea *area
  * Read pixels from the front-buffer (fast).
  *
  * \note Internally this depends on the front-buffer state,
- * for a slower but more reliable method of reading pixels, use #WM_window_pixels_read_offscreen.
+ * for a slower but more reliable method of reading pixels,
+ * use #WM_window_pixels_read_from_offscreen.
  * Fast pixel access may be preferred for file-save thumbnails.
  *
  * \warning Drawing (swap-buffers) immediately before calling this function causes
  * the front-buffer state to be invalid under some EGL configurations.
  */
-uint *WM_window_pixels_read(struct wmWindowManager *wm, struct wmWindow *win, int r_size[2]);
-void WM_window_pixels_read_sample(const wmWindowManager *wm,
-                                  const wmWindow *win,
-                                  const int pos[2],
-                                  float r_col[3]);
+uint8_t *WM_window_pixels_read_from_frontbuffer(const struct wmWindowManager *wm,
+                                                const struct wmWindow *win,
+                                                int r_size[2]);
+/** A version of #WM_window_pixels_read_from_frontbuffer that samples a pixel at `pos`. */
+void WM_window_pixels_read_sample_from_frontbuffer(const wmWindowManager *wm,
+                                                   const struct wmWindow *win,
+                                                   const int pos[2],
+                                                   float r_col[3]);
 
 /**
- * Draw the window & read pixels from an off-screen buffer (slower than #WM_window_pixels_read).
+ * Draw the window & read pixels from an off-screen buffer
+ * (slower than #WM_window_pixels_read_from_frontbuffer).
  *
  * \note This is needed because the state of the front-buffer may be damaged
  * (see in-line code comments for details).
  */
-uint *WM_window_pixels_read_offscreen(struct bContext *C, struct wmWindow *win, int r_size[2]);
-bool WM_window_pixels_read_sample_offscreen(struct bContext *C,
-                                            struct wmWindow *win,
-                                            const int pos[2],
-                                            float r_col[3]);
+uint8_t *WM_window_pixels_read_from_offscreen(struct bContext *C,
+                                              struct wmWindow *win,
+                                              int r_size[2]);
+/** A version of #WM_window_pixels_read_from_offscreen that samples a pixel at `pos`. */
+bool WM_window_pixels_read_sample_from_offscreen(struct bContext *C,
+                                                 struct wmWindow *win,
+                                                 const int pos[2],
+                                                 float r_col[3]);
+
+/**
+ * Read from the screen.
+ *
+ * \note Use off-screen drawing when front-buffer reading is not supported.
+ */
+uint8_t *WM_window_pixels_read(struct bContext *C, struct wmWindow *win, int r_size[2]);
+/**
+ * Read a single pixel from the screen.
+ *
+ * \note Use off-screen drawing when front-buffer reading is not supported.
+ */
+bool WM_window_pixels_read_sample(struct bContext *C,
+                                  struct wmWindow *win,
+                                  const int pos[2],
+                                  float r_col[3]);
 
 /**
  * Support for native pixel size
@@ -484,7 +519,15 @@ void WM_event_free_ui_handler_all(struct bContext *C,
                                   wmUIHandlerFunc handle_fn,
                                   wmUIHandlerRemoveFunc remove_fn);
 
-struct wmEventHandler_Op *WM_event_add_modal_handler(struct bContext *C, struct wmOperator *op);
+/**
+ * Add a modal handler to `win`, `area` and `region` may optionally be NULL.
+ */
+struct wmEventHandler_Op *WM_event_add_modal_handler_ex(struct wmWindow *win,
+                                                        struct ScrArea *area,
+                                                        struct ARegion *region,
+                                                        wmOperator *op) ATTR_NONNULL(1, 4);
+struct wmEventHandler_Op *WM_event_add_modal_handler(struct bContext *C, struct wmOperator *op)
+    ATTR_NONNULL(1, 2);
 /**
  * Modal handlers store a pointer to an area which might be freed while the handler runs.
  * Use this function to NULL all handler pointers to \a old_area.
@@ -1317,8 +1360,12 @@ int WM_operator_flag_only_pass_through_on_press(int retval, const struct wmEvent
  * Start dragging immediately with the given data.
  * Note that \a poin should be valid allocated and not on stack.
  */
-void WM_event_start_drag(
-    struct bContext *C, int icon, int type, void *poin, double value, unsigned int flags);
+void WM_event_start_drag(struct bContext *C,
+                         int icon,
+                         eWM_DragDataType type,
+                         void *poin,
+                         double value,
+                         unsigned int flags);
 /**
  * Create and fill the dragging data, but don't start dragging just yet (unlike
  * #WM_event_start_drag()). Must be followed up by #WM_event_start_prepared_drag(), otherwise the
@@ -1326,15 +1373,19 @@ void WM_event_start_drag(
  *
  * Note that \a poin should be valid allocated and not on stack.
  */
-wmDrag *WM_drag_data_create(
-    struct bContext *C, int icon, int type, void *poin, double value, unsigned int flags);
+wmDrag *WM_drag_data_create(struct bContext *C,
+                            int icon,
+                            eWM_DragDataType type,
+                            void *poin,
+                            double value,
+                            unsigned int flags);
 /**
  * Invoke dragging using the given \a drag data.
  */
 void WM_event_start_prepared_drag(struct bContext *C, wmDrag *drag);
 void WM_event_drag_image(struct wmDrag *, struct ImBuf *, float scale);
 void WM_drag_free(struct wmDrag *drag);
-void WM_drag_data_free(int dragtype, void *poin);
+void WM_drag_data_free(eWM_DragDataType dragtype, void *poin);
 void WM_drag_free_list(struct ListBase *lb);
 struct wmDropBox *WM_dropbox_add(
     ListBase *lb,
@@ -1481,6 +1532,9 @@ typedef enum eWM_JobType {
   WM_JOB_TYPE_LINEART,
   WM_JOB_TYPE_SEQ_DRAW_THUMBNAIL,
   WM_JOB_TYPE_SEQ_DRAG_DROP_PREVIEW,
+  WM_JOB_TYPE_CALCULATE_SIMULATION_NODES,
+  WM_JOB_TYPE_BAKE_SIMULATION_NODES,
+  WM_JOB_TYPE_UV_PACK,
   /* add as needed, bake, seq proxy build
    * if having hard coded values is a problem */
 } eWM_JobType;
@@ -1570,14 +1624,15 @@ void WM_job_main_thread_lock_release(struct wmJob *job);
 
 /**
  * Return text from the clipboard.
- *
- * \note Caller needs to check for valid utf8 if this is a requirement.
+ * \param selection: Use the "primary" clipboard, see: #WM_CAPABILITY_PRIMARY_CLIPBOARD.
+ * \param ensure_utf8: Ensure the resulting string does not contain invalid UTF8 encoding.
  */
-char *WM_clipboard_text_get(bool selection, int *r_len);
+char *WM_clipboard_text_get(bool selection, bool ensure_utf8, int *r_len);
 /**
  * Convenience function for pasting to areas of Blender which don't support newlines.
  */
-char *WM_clipboard_text_get_firstline(bool selection, int *r_len);
+char *WM_clipboard_text_get_firstline(bool selection, bool ensure_utf8, int *r_len);
+
 void WM_clipboard_text_set(const char *buf, bool selection);
 
 /**
