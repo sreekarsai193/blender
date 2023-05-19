@@ -395,7 +395,8 @@ static Vector<OutputAttributeToStore> compute_attributes_to_store(
   for (const GeometryComponentType component_type : {GEO_COMPONENT_TYPE_MESH,
                                                      GEO_COMPONENT_TYPE_POINT_CLOUD,
                                                      GEO_COMPONENT_TYPE_CURVE,
-                                                     GEO_COMPONENT_TYPE_INSTANCES}) {
+                                                     GEO_COMPONENT_TYPE_INSTANCES})
+  {
     if (!geometry.has(component_type)) {
       continue;
     }
@@ -443,7 +444,8 @@ static void store_computed_output_attributes(
     /* Attempt to remove the attribute if it already exists but the domain and type don't match.
      * Removing the attribute won't succeed if it is built in and non-removable. */
     if (meta_data.has_value() &&
-        (meta_data->domain != store.domain || meta_data->data_type != data_type)) {
+        (meta_data->domain != store.domain || meta_data->data_type != data_type))
+    {
       attributes.remove(store.name);
     }
 
@@ -452,7 +454,8 @@ static void store_computed_output_attributes(
     if (attributes.add(store.name,
                        store.domain,
                        bke::cpp_type_to_custom_data_type(store.data.type()),
-                       bke::AttributeInitMoveArray(store.data.data()))) {
+                       bke::AttributeInitMoveArray(store.data.data())))
+    {
       continue;
     }
 
@@ -556,7 +559,9 @@ GeometrySet execute_geometry_nodes(
     param_outputs[i] = {type, buffer};
   }
 
-  lf::Context lf_context;
+  nodes::GeoNodesLFLocalUserData local_user_data(user_data);
+
+  lf::Context lf_context(graph_executor.init_storage(allocator), &user_data, &local_user_data);
   lf_context.storage = graph_executor.init_storage(allocator);
   lf_context.user_data = &user_data;
   lf::BasicParams lf_params{graph_executor,
@@ -640,7 +645,7 @@ void update_input_properties_from_node_tree(const bNodeTree &tree,
 
       if (old_properties == nullptr) {
         if (socket.default_attribute_name && socket.default_attribute_name[0] != '\0') {
-          IDP_AssignString(attribute_prop, socket.default_attribute_name, MAX_NAME);
+          IDP_AssignStringMaxSize(attribute_prop, socket.default_attribute_name, MAX_NAME);
           IDP_Int(use_attribute_prop) = 1;
         }
       }
@@ -674,7 +679,7 @@ void update_output_properties_from_node_tree(const bNodeTree &tree,
     }
 
     const std::string idprop_name = socket.identifier + attribute_name_suffix;
-    IDProperty *new_prop = IDP_NewString("", idprop_name.c_str(), MAX_NAME);
+    IDProperty *new_prop = IDP_NewStringMaxSize("", idprop_name.c_str(), MAX_NAME);
     if (socket.description[0] != '\0') {
       IDPropertyUIData *ui_data = IDP_ui_data_ensure(new_prop);
       ui_data->description = BLI_strdup(socket.description);
@@ -683,7 +688,7 @@ void update_output_properties_from_node_tree(const bNodeTree &tree,
 
     if (old_properties == nullptr) {
       if (socket.default_attribute_name && socket.default_attribute_name[0] != '\0') {
-        IDP_AssignString(new_prop, socket.default_attribute_name, MAX_NAME);
+        IDP_AssignStringMaxSize(new_prop, socket.default_attribute_name, MAX_NAME);
       }
     }
     else {
